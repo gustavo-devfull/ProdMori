@@ -277,6 +277,78 @@ code {
   select {
     font-size: 16px !important;
   }
+}
+
+/* Custom Bootstrap enhancements */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.transition-transform {
+  transition: transform 0.2s ease;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Card hover effects */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Custom badge styles */
+.badge {
+  font-weight: 500;
+}
+
+/* Form enhancements */
+.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button enhancements */
+.btn {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Modal enhancements */
+.modal-content {
+  border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* List group enhancements */
+.list-group-item {
+  border: none;
+  padding: 0.5rem 0;
+}
+
+/* Custom image styles */
+.img-fluid {
+  max-width: 100%;
+  height: auto;
+}
   
   .ant-card-actions .ant-btn {
     font-size: 12px !important;

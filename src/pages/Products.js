@@ -4,28 +4,15 @@ import {
   Button,
   Modal,
   Form,
-  Input,
-  Typography,
-  message,
-  Alert,
   Row,
   Col,
-  Empty,
-  Upload,
-  Select,
-  InputNumber
-} from 'antd';
-import { 
-  PlusOutlined, 
-  UploadOutlined
-} from '@ant-design/icons';
+  Alert,
+  Spinner,
+  Select
+} from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
 import productService from '../services/productService';
 import factoryService from '../services/factoryService';
-
-const { Title } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -33,7 +20,6 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [form] = Form.useForm();
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [selectedFactory, setSelectedFactory] = useState(null);
@@ -42,52 +28,13 @@ const Products = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Função para gerar cor única baseada no nome da fábrica
-  const getFactoryColor = (factoryName) => {
-    if (!factoryName) return '#1890ff'; // Cor padrão
-    
-    // Paleta de cores vibrantes e profissionais
-    const colors = [
-      '#1890ff', // Azul padrão
-      '#52c41a', // Verde
-      '#fa541c', // Laranja
-      '#722ed1', // Roxo
-      '#eb2f96', // Rosa
-      '#13c2c2', // Ciano
-      '#faad14', // Amarelo
-      '#f5222d', // Vermelho
-      '#2f54eb', // Azul escuro
-      '#52c41a', // Verde escuro
-      '#fa8c16', // Laranja escuro
-      '#a0d911', // Verde claro
-      '#faad14', // Amarelo escuro
-      '#13c2c2', // Turquesa
-      '#722ed1', // Violeta
-      '#eb2f96'  // Magenta
-    ];
-    
-    // Gerar hash simples baseado no nome da fábrica
-    let hash = 0;
-    for (let i = 0; i < factoryName.length; i++) {
-      hash = factoryName.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Usar o hash para selecionar uma cor da paleta
-    const colorIndex = Math.abs(hash) % colors.length;
-    return colors[colorIndex];
-  };
-
   useEffect(() => {
     loadData();
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
+    const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const loadData = async () => {
@@ -97,8 +44,10 @@ const Products = () => {
         productService.getAllProducts(),
         factoryService.getAllFactories()
       ]);
+      
       setProducts(productsData);
       setFactories(factoriesData);
+      setError(null);
     } catch (err) {
       setError('Erro ao carregar dados');
       console.error(err);
@@ -107,50 +56,82 @@ const Products = () => {
     }
   };
 
-  const handleAdd = () => {
-    setEditingProduct(null);
-    form.resetFields();
-    setModalVisible(true);
-  };
-
-  const handleEdit = (product) => {
-    setEditingProduct(product);
-    form.setFieldsValue(product);
-    setModalVisible(true);
-  };
-
-
   const handleImageUpload = async (file) => {
     try {
       setUploading(true);
-      const imageUrl = await productService.uploadProductImage(file);
-      form.setFieldsValue({ imageUrl });
-      message.success('Imagem enviada com sucesso!');
-      return false; // Prevent default upload
+      const imageUrl = await productService.uploadImage(file);
+      return imageUrl;
     } catch (err) {
-      message.error(`Erro ao enviar imagem: ${err.message}`);
-      console.error('Erro no upload:', err);
-      return false;
+      setError('Erro ao fazer upload da imagem');
+      console.error(err);
+      throw err;
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const values = Object.fromEntries(formData.entries());
+    
     try {
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, values);
-        message.success('Produto atualizado com sucesso!');
       } else {
         await productService.createProduct(values);
-        message.success('Produto criado com sucesso!');
       }
+      
       setModalVisible(false);
-      loadData();
+      setEditingProduct(null);
+      await loadData();
     } catch (err) {
-      message.error('Erro ao salvar produto');
+      setError('Erro ao salvar produto');
       console.error(err);
     }
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await productService.deleteProduct(id);
+      await loadData();
+    } catch (err) {
+      setError('Erro ao excluir produto');
+      console.error(err);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setEditingProduct(null);
+  };
+
+  const handlePreview = (imageUrl) => {
+    setPreviewImage(imageUrl);
+    setPreviewVisible(true);
+  };
+
+  const getFactoryColor = (factoryName) => {
+    if (!factoryName) return '#1890ff';
+    
+    const colors = [
+      '#1890ff', '#52c41a', '#fa541c', '#722ed1', '#eb2f96',
+      '#13c2c2', '#faad14', '#f5222d', '#2f54eb', '#52c41a',
+      '#fa8c16', '#a0d911', '#faad14', '#13c2c2', '#722ed1', '#eb2f96'
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < factoryName.length; i++) {
+      hash = factoryName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    const colorIndex = Math.abs(hash) % colors.length;
+    return colors[colorIndex];
   };
 
   const handleFactoryFilter = (factoryId) => {
@@ -162,413 +143,273 @@ const Products = () => {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesFactory = !selectedFactory || product.factoryId === selectedFactory;
+    const matchesFactory = !selectedFactory || product.factory?.id === selectedFactory;
     const matchesSegment = !selectedSegment || product.segment === selectedSegment;
     return matchesFactory && matchesSegment;
   });
 
-  // Obter segmentos únicos dos produtos
-  const uniqueSegments = [...new Set(products.map(product => product.segment).filter(Boolean))];
+  const uniqueSegments = [...new Set(products.map(p => p.segment).filter(Boolean))];
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={3} style={{ margin: 0 }}>Produtos</Title>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-            size="large"
-          >
-            Novo
-          </Button>
-        </div>
+      <div className="bg-primary text-white p-3 rounded mb-3">
+        <h2 className="mb-0 fs-5 fw-semibold">Produtos</h2>
       </div>
-
+      
       {error && (
-        <Alert
-          message="Erro"
-          description={error}
-          type="error"
-          showIcon
-          style={{ marginBottom: 24 }}
-        />
+        <Alert variant="danger" className="mb-3">
+          <Alert.Heading>Erro</Alert.Heading>
+          {error}
+        </Alert>
       )}
 
-      <Card className="content-card" style={{ marginBottom: 16 }}>
-        <div style={{ 
-          display: 'flex', 
-          flexWrap: 'wrap', 
-          gap: '12px', 
-          alignItems: 'center',
-          justifyContent: 'flex-start'
-        }}>
-          <Select
-            placeholder="Todas as fábricas"
-            style={{ 
-              width: isMobile ? '100%' : '200px',
-              minWidth: isMobile ? '150px' : '200px',
-              flex: isMobile ? '1 1 100%' : '0 0 auto'
-            }}
-            value={selectedFactory}
-            onChange={handleFactoryFilter}
-            allowClear
-          >
-            <Option key="all-factories" value={null}>
-              Todas as fábricas
-            </Option>
-            {factories.map(factory => (
-              <Option key={factory.id} value={factory.id}>
-                {factory.name}
-              </Option>
-            ))}
-          </Select>
-          
-          <Select
-            placeholder="Todos os segmentos"
-            style={{ 
-              width: isMobile ? '100%' : '200px',
-              minWidth: isMobile ? '150px' : '200px',
-              flex: isMobile ? '1 1 100%' : '0 0 auto'
-            }}
-            value={selectedSegment}
-            onChange={handleSegmentFilter}
-            allowClear
-          >
-            <Option key="all-segments" value={null}>
-              Todos os segmentos
-            </Option>
-            {uniqueSegments.map(segment => (
-              <Option key={segment} value={segment}>
-                {segment}
-              </Option>
-            ))}
-          </Select>
-          
-          {(selectedFactory || selectedSegment) && (
-            <span style={{ 
-              color: '#666', 
-              fontSize: isMobile ? '10px' : '12px',
-              flex: '0 0 auto',
-              whiteSpace: 'nowrap'
-            }}>
-              {filteredProducts.length} produto(s) encontrado(s)
-            </span>
-          )}
-        </div>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <Button 
+          variant="primary"
+          onClick={() => setModalVisible(true)}
+        >
+          <i className="bi bi-plus-circle me-2"></i>
+          Novo Produto
+        </Button>
+      </div>
+
+      <Card className="mb-3">
+        <Card.Body>
+          <div className="d-flex flex-wrap gap-3 align-items-center">
+            <div className="flex-grow-1" style={{ minWidth: '200px' }}>
+              <Form.Select
+                value={selectedFactory || ''}
+                onChange={(e) => handleFactoryFilter(e.target.value || null)}
+              >
+                <option value="">Todas as fábricas</option>
+                {factories.map(factory => (
+                  <option key={factory.id} value={factory.id}>
+                    {factory.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+            
+            <div className="flex-grow-1" style={{ minWidth: '200px' }}>
+              <Form.Select
+                value={selectedSegment || ''}
+                onChange={(e) => handleSegmentFilter(e.target.value || null)}
+              >
+                <option value="">Todos os segmentos</option>
+                {uniqueSegments.map(segment => (
+                  <option key={segment} value={segment}>
+                    {segment}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+            
+            {(selectedFactory || selectedSegment) && (
+              <small className="text-muted">
+                {filteredProducts.length} produto(s) encontrado(s)
+              </small>
+            )}
+          </div>
+        </Card.Body>
       </Card>
 
-      <Card className="content-card">
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '50px' }}>
-            <div>Carregando produtos...</div>
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <Empty 
-            description={selectedFactory ? "Nenhum produto encontrado para esta fábrica" : "Nenhum produto cadastrado"}
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        ) : (
-          <Row gutter={[12, 12]}>
-            {filteredProducts.map((product) => (
-              <Col xs={12} sm={12} md={6} lg={6} xl={6} key={product.id}>
-                <Card
-                  hoverable
-                  style={{ 
-                    height: isMobile ? '320px' : '420px',
-                    borderRadius: isMobile ? '8px' : '12px',
-                    boxShadow: isMobile ? '0 1px 4px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.1)',
-                    transition: 'all 0.3s ease',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}
-                  styles={{ 
-                    body: { 
-                      padding: '0',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    },
-                    cover: { margin: 0 }
-                  }}
-                  cover={
-                    <div style={{ position: 'relative' }}>
-                      <CustomImage 
-                        src={product.imageUrl} 
-                        alt={product.name}
-                        style={{ 
-                          height: isMobile ? '140px' : '220px',
-                          width: '100%',
-                          objectFit: 'cover'
-                        }}
-                        showPreview={true}
-                        onPreview={(src) => {
-                          setPreviewImage(src);
-                          setPreviewVisible(true);
-                        }}
-                      />
-                    </div>
-                  }
-                >
-          <div style={{ 
-            padding: isMobile ? '16px' : '24px',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            height: '100%',
-            flex: 1
-          }}>
-                    {/* Nome do produto */}
-                    <div style={{ 
-                      fontSize: isMobile ? '13px' : '16px', 
-                      fontWeight: 'bold',
-                      marginBottom: isMobile ? '4px' : '6px',
-                      color: '#262626',
-                      lineHeight: '1.2',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      minHeight: isMobile ? '32px' : '38px',
-                      maxHeight: isMobile ? '32px' : '38px'
-                    }}>
-                      {product.name}
-                    </div>
-
-                    {/* Tag da fábrica */}
+      {filteredProducts.length === 0 ? (
+        <Card>
+          <Card.Body className="text-center py-5">
+            <i className="bi bi-bag text-muted fs-1"></i>
+            <h5 className="mt-3 text-muted">Nenhum produto encontrado</h5>
+            <p className="text-muted">Clique em "Novo Produto" para começar</p>
+          </Card.Body>
+        </Card>
+      ) : (
+        <Row className="g-3">
+          {filteredProducts.map(product => (
+            <Col xs={12} sm={12} md={6} lg={6} xl={6} key={product.id}>
+              <Card className="h-100">
+                <div className="position-relative">
+                  <CustomImage
+                    src={product.imageUrl}
+                    alt={product.name}
+                    style={{ 
+                      height: isMobile ? '150px' : '200px',
+                      width: '100%',
+                      objectFit: 'cover'
+                    }}
+                    showPreview={true}
+                    onPreview={handlePreview}
+                  />
+                </div>
+                
+                <Card.Body className="d-flex flex-column">
+                  <div className="text-center mb-3">
+                    <h5 className="card-title mb-2">{product.name}</h5>
+                    
                     {product.factory && (
-                      <div style={{ 
-                        marginBottom: isMobile ? '6px' : '8px',
-                        display: 'flex',
-                        justifyContent: 'center'
-                      }}>
-                        <div style={{ 
-                          padding: isMobile ? '2px 6px' : '4px 8px', 
-                          backgroundColor: getFactoryColor(product.factory.name), 
-                          borderRadius: isMobile ? '8px' : '12px',
-                          fontSize: isMobile ? '9px' : '11px', 
-                          fontWeight: 'bold',
-                          color: 'white',
-                          backdropFilter: 'blur(4px)',
-                          textAlign: 'center',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }}>
+                      <div className="mb-2">
+                        <Badge 
+                          style={{ 
+                            backgroundColor: getFactoryColor(product.factory.name),
+                            color: 'white',
+                            fontSize: isMobile ? '9px' : '11px',
+                            padding: isMobile ? '2px 6px' : '4px 8px'
+                          }}
+                        >
                           {product.factory.name}
-                        </div>
+                        </Badge>
                       </div>
                     )}
                     
-                    {/* Preço */}
-                    <div style={{ 
-                      marginBottom: isMobile ? '8px' : '12px'
-                    }}>
-                      <div style={{ 
-                        fontSize: isMobile ? '16px' : '26px', 
-                        fontWeight: 'bold',
-                        color: '#1890ff',
-                        marginBottom: '4px'
-                      }}>
-                        {product.price ? `¥ ${product.price.toFixed(2)}` : 'Preço sob consulta'}
-                      </div>
-                    </div>
-
-                    {/* Link +info */}
-                    <div
-                      onClick={() => handleEdit(product)}
-                      style={{
-                        fontSize: isMobile ? '12px' : '13px',
-                        fontWeight: 'bold',
-                        color: '#1890ff',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        padding: isMobile ? '6px 0' : '8px 0',
-                        borderRadius: '4px',
-                        transition: 'all 0.3s ease',
-                        textDecoration: 'none',
-                        border: '1px solid #1890ff',
-                        backgroundColor: 'rgba(24, 144, 255, 0.05)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = 'rgba(24, 144, 255, 0.1)';
-                        e.target.style.color = '#40a9ff';
-                        e.target.style.transform = 'translateY(-1px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'rgba(24, 144, 255, 0.05)';
-                        e.target.style.color = '#1890ff';
-                        e.target.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      +info
+                    <div className="fs-5 fw-bold text-primary mb-3">
+                      {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
                     </div>
                   </div>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        )}
-      </Card>
+                  
+                  <div className="mt-auto">
+                    <Button 
+                      variant="primary" 
+                      className="w-100"
+                      onClick={() => handleEdit(product)}
+                    >
+                      Ver Detalhes
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
 
-      <Modal
-        title={editingProduct ? 'Editar Produto' : 'Novo Produto'}
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        footer={null}
-        width={isMobile ? '100%' : 800}
-        className={isMobile ? 'mobile-modal' : ''}
-        style={isMobile ? { margin: 0, top: 0 } : {}}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          className="mobile-form"
-        >
-          <Form.Item
-            name="imageUrl"
-            label="Imagem do Produto"
-          >
-            <div>
-              <Upload
-                beforeUpload={handleImageUpload}
-                showUploadList={false}
+      <Modal show={modalVisible} onHide={handleModalClose} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+          </Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Imagem do Produto</Form.Label>
+              <Form.Control
+                type="file"
                 accept="image/*"
-              >
-                <Button 
-                  icon={<UploadOutlined />} 
-                  loading={uploading}
-                  disabled={uploading}
-                >
-                  {uploading ? 'Enviando...' : 'Enviar Imagem'}
-                </Button>
-              </Upload>
-              <Form.Item shouldUpdate noStyle>
-                {({ getFieldValue }) => {
-                  const imageUrl = getFieldValue('imageUrl');
-                  return imageUrl ? (
-                    <div style={{ marginTop: 16 }}>
-                      <CustomImage
-                        src={imageUrl}
-                        style={{ width: 200, height: 200, objectFit: 'cover', borderRadius: '8px' }}
-                      />
-                    </div>
-                  ) : null;
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    try {
+                      const imageUrl = await handleImageUpload(file);
+                      e.target.form.imageUrl.value = imageUrl;
+                    } catch (err) {
+                      console.error('Erro no upload:', err);
+                    }
+                  }
                 }}
-              </Form.Item>
-            </div>
-          </Form.Item>
+              />
+              <Form.Control
+                type="hidden"
+                name="imageUrl"
+                defaultValue={editingProduct?.imageUrl || ''}
+              />
+            </Form.Group>
 
-          <Form.Item
-            name="name"
-            label="Nome do Produto"
-            rules={[{ required: true, message: 'Por favor, insira o nome!' }]}
-          >
-            <Input placeholder="Digite o nome do produto" />
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Nome do Produto</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                defaultValue={editingProduct?.name || ''}
+                placeholder="Digite o nome do produto"
+                required
+              />
+            </Form.Group>
 
-          <Form.Item
-            name="segment"
-            label="Segmento"
-            rules={[{ required: true, message: 'Por favor, insira o segmento!' }]}
-          >
-            <Input placeholder="Digite o segmento" />
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Segmento</Form.Label>
+              <Form.Control
+                type="text"
+                name="segment"
+                defaultValue={editingProduct?.segment || ''}
+                placeholder="Digite o segmento"
+                required
+              />
+            </Form.Group>
 
-          <Form.Item
-            name="dimensions"
-            label="Medidas"
-            rules={[{ required: true, message: 'Por favor, insira as medidas!' }]}
-          >
-            <Input placeholder="Ex: 10x20x5 cm" />
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Preço</Form.Label>
+              <Form.Control
+                type="number"
+                name="price"
+                step="0.01"
+                defaultValue={editingProduct?.price || ''}
+                placeholder="Digite o preço"
+              />
+            </Form.Group>
 
-          <Form.Item
-            name="price"
-            label="Preço (¥)"
-            rules={[{ required: true, message: 'Por favor, insira o preço!' }]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="Digite o preço"
-              min={0}
-              precision={2}
-            />
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Fábrica</Form.Label>
+              <Form.Select
+                name="factoryId"
+                defaultValue={editingProduct?.factory?.id || ''}
+                required
+              >
+                <option value="">Selecione uma fábrica</option>
+                {factories.map(factory => (
+                  <option key={factory.id} value={factory.id}>
+                    {factory.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-          <Form.Item
-            name="moq"
-            label="MOQ (Minimum Order Quantity)"
-            rules={[{ required: true, message: 'Por favor, insira o MOQ!' }]}
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="Digite o MOQ"
-              min={1}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="factoryId"
-            label="Fábrica/Loja"
-            rules={[{ required: true, message: 'Por favor, selecione uma fábrica!' }]}
-          >
-            <Select placeholder="Selecione uma fábrica/loja">
-              {factories.map(factory => (
-                <Option key={factory.id} value={factory.id}>
-                  {factory.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="observations"
-            label="Observações"
-          >
-            <TextArea
-              rows={4}
-              placeholder="Digite observações adicionais"
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <div className="mobile-buttons">
-              <Button type="primary" htmlType="submit" size="large">
-                {editingProduct ? 'Atualizar' : 'Criar'}
-              </Button>
-              <Button onClick={() => setModalVisible(false)} size="large">
-                Cancelar
-              </Button>
-            </div>
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Descrição</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="description"
+                defaultValue={editingProduct?.description || ''}
+                placeholder="Digite uma descrição"
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleModalClose}>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Salvando...
+                </>
+              ) : (
+                editingProduct ? 'Atualizar' : 'Criar'
+              )}
+            </Button>
+          </Modal.Footer>
         </Form>
       </Modal>
 
-      {/* Modal de Preview da Imagem */}
-      <Modal
-        title="Visualizar Imagem"
-        open={previewVisible}
-        onCancel={() => setPreviewVisible(false)}
-        footer={null}
-        width="auto"
-        centered
-        style={{ maxWidth: '90vw' }}
-      >
-        <div style={{ textAlign: 'center' }}>
+      <Modal show={previewVisible} onHide={() => setPreviewVisible(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Visualizar Imagem</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
           <img
             src={previewImage}
             alt="Preview"
-            style={{
-              maxWidth: '100%',
-              maxHeight: '80vh',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-            }}
+            className="img-fluid rounded"
+            style={{ maxHeight: '70vh' }}
           />
-        </div>
+        </Modal.Body>
       </Modal>
     </div>
   );

@@ -4,32 +4,15 @@ import {
   Button,
   Modal,
   Form,
-  Input,
-  Typography,
-  Popconfirm,
-  message,
-  Alert,
   Row,
   Col,
-  Tag,
-  List,
-  Empty,
-  Spin,
-  Tooltip
-} from 'antd';
-import { 
-  PlusOutlined, 
-  PhoneOutlined,
-  EnvironmentOutlined,
-  FileTextOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  ReloadOutlined
-} from '@ant-design/icons';
+  Alert,
+  Spinner,
+  ListGroup,
+  Badge
+} from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import factoryService from '../services/factoryService';
-
-const { Title } = Typography;
-const { TextArea } = Input;
 
 const Factories = () => {
   const [factories, setFactories] = useState([]);
@@ -37,7 +20,6 @@ const Factories = () => {
   const [submitting, setSubmitting] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingFactory, setEditingFactory] = useState(null);
-  const [form] = Form.useForm();
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState(new Set());
@@ -48,66 +30,60 @@ const Factories = () => {
 
   const loadFactories = async (showRefresh = false) => {
     try {
-      if (showRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+      setLoading(true);
+      if (showRefresh) setRefreshing(true);
+      
+      const data = await factoryService.getAllFactories();
+      setFactories(data);
       setError(null);
-      
-      const factoriesData = await factoryService.getAllFactories();
-      
-      // Carregar produtos para cada fábrica com melhor tratamento de erro
-      const factoriesWithProducts = await Promise.all(
-        factoriesData.map(async (factory) => {
-          try {
-            const products = await factoryService.getProductsByFactory(factory.id);
-            return { ...factory, products: products || [] };
-          } catch (err) {
-            console.error(`Erro ao carregar produtos da fábrica ${factory.name}:`, err);
-            return { ...factory, products: [] };
-          }
-        })
-      );
-      
-      setFactories(factoriesWithProducts);
-      
-      if (showRefresh) {
-        message.success('Fábricas atualizadas com sucesso!');
-      }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || 'Erro ao carregar fábricas';
-      setError(errorMessage);
-      message.error(errorMessage);
-      console.error('Erro ao carregar fábricas:', err);
+      setError('Erro ao carregar fábricas');
+      console.error(err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  const handleAdd = () => {
-    setEditingFactory(null);
-    form.resetFields();
-    setModalVisible(true);
+  const handleSubmit = async (values) => {
+    try {
+      setSubmitting(true);
+      
+      if (editingFactory) {
+        await factoryService.updateFactory(editingFactory.id, values);
+      } else {
+        await factoryService.createFactory(values);
+      }
+      
+      setModalVisible(false);
+      setEditingFactory(null);
+      await loadFactories();
+    } catch (err) {
+      setError('Erro ao salvar fábrica');
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEdit = (factory) => {
     setEditingFactory(factory);
-    form.setFieldsValue(factory);
     setModalVisible(true);
   };
 
   const handleDelete = async (id) => {
     try {
       await factoryService.deleteFactory(id);
-      message.success('Fábrica excluída com sucesso!');
-      loadFactories();
+      await loadFactories();
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || 'Erro ao excluir fábrica';
-      message.error(errorMessage);
-      console.error('Erro ao excluir fábrica:', err);
+      setError('Erro ao excluir fábrica');
+      console.error(err);
     }
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setEditingFactory(null);
   };
 
   const toggleProductsExpansion = (factoryId) => {
@@ -120,378 +96,232 @@ const Factories = () => {
     setExpandedProducts(newExpanded);
   };
 
-  const handleSubmit = async (values) => {
-    try {
-      setSubmitting(true);
-      
-      if (editingFactory) {
-        await factoryService.updateFactory(editingFactory.id, values);
-        message.success('Fábrica atualizada com sucesso!');
-      } else {
-        await factoryService.createFactory(values);
-        message.success('Fábrica criada com sucesso!');
-      }
-      
-      setModalVisible(false);
-      form.resetFields();
-      loadFactories();
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || 'Erro ao salvar fábrica';
-      message.error(errorMessage);
-      console.error('Erro ao salvar fábrica:', err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  if (loading && !refreshing) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <Title level={3} style={{ margin: 0 }}>Fábricas/Lojas</Title>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <Tooltip title="Atualizar lista">
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={() => loadFactories(true)}
-                loading={refreshing}
-                size="large"
-              >
-                Atualizar
-              </Button>
-            </Tooltip>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAdd}
-              size="large"
-            >
-              Nova Fábrica
-            </Button>
-          </div>
-        </div>
+      <div className="bg-primary text-white p-3 rounded mb-3">
+        <h2 className="mb-0 fs-5 fw-semibold">Fábricas/Lojas</h2>
       </div>
-
+      
       {error && (
-        <Alert
-          message="Erro"
-          description={error}
-          type="error"
-          showIcon
-          style={{ marginBottom: 24 }}
-        />
+        <Alert variant="danger" className="mb-3">
+          <Alert.Heading>Erro</Alert.Heading>
+          {error}
+        </Alert>
       )}
 
-      <Card className="content-card">
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '50px' }}>
-            <Spin size="large" />
-            <div style={{ marginTop: '16px', fontSize: '16px' }}>Carregando fábricas...</div>
-          </div>
-        ) : factories.length === 0 ? (
-          <Empty 
-            description="Nenhuma fábrica cadastrada"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        ) : (
-          <Row gutter={[16, 16]}>
-            {factories.map((factory) => (
-              <Col xs={24} sm={12} lg={8} key={factory.id}>
-                <Card
-                  hoverable
-                  style={{ height: '100%' }}
-                  bodyStyle={{ padding: '12px' }}
-                  actions={[]}
-                >
-                  <div style={{ margin: '0px', padding: '12px', borderRadius: '6px',
-                    backgroundColor: '#f0f0f0',
-                   }}>
-                    <div style={{ 
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '8px'
-                    }}>
-                      <div style={{ 
-                        fontSize: '16px', 
-                        fontWeight: 'bold', 
-                        color: '#262626',
-                        flex: 1
-                      }}>
-                        {factory.name}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <Button 
+          variant="primary"
+          onClick={() => setModalVisible(true)}
+        >
+          <i className="bi bi-plus-circle me-2"></i>
+          Nova Fábrica/Loja
+        </Button>
+        
+        <Button 
+          variant="outline-secondary"
+          onClick={() => loadFactories(true)}
+          disabled={refreshing}
+        >
+          <i className={`bi bi-arrow-clockwise me-2 ${refreshing ? 'spinning' : ''}`}></i>
+          Atualizar
+        </Button>
+      </div>
+
+      {factories.length === 0 ? (
+        <Card>
+          <Card.Body className="text-center py-5">
+            <i className="bi bi-shop text-muted fs-1"></i>
+            <h5 className="mt-3 text-muted">Nenhuma fábrica cadastrada</h5>
+            <p className="text-muted">Clique em "Nova Fábrica/Loja" para começar</p>
+          </Card.Body>
+        </Card>
+      ) : (
+        <Row className="g-3">
+          {factories.map(factory => (
+            <Col xs={12} md={6} lg={4} key={factory.id}>
+              <Card className="h-100">
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <div className="flex-grow-1">
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bi bi-tag-fill text-primary me-2"></i>
+                        <Badge bg="secondary" className="me-2">
+                          {factory.segment || 'Sem segmento'}
+                        </Badge>
                       </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        gap: '4px',
-                        alignItems: 'center'
-                      }}>
-                        <Tooltip title="Editar fábrica">
-                          <Button
-                            type="primary"
-                            icon={<EditOutlined />}
-                            onClick={() => handleEdit(factory)}
-                            size="small"
-                            style={{ 
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '4px',
-                              padding: '0',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                          />
-                        </Tooltip>
-                        <Popconfirm
-                          title="Excluir Fábrica"
-                          description="Tem certeza que deseja excluir esta fábrica? Esta ação não pode ser desfeita."
-                          onConfirm={() => handleDelete(factory.id)}
-                          okText="Sim, excluir"
-                          cancelText="Cancelar"
-                          okType="danger"
-                        >
-                          <Tooltip title="Excluir fábrica">
-                            <Button
-                              type="primary"
-                              danger
-                              icon={<DeleteOutlined />}
-                              size="small"
-                              style={{ 
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '4px',
-                                padding: '0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            />
-                          </Tooltip>
-                        </Popconfirm>
+                      <h5 className="card-title mb-1">{factory.name}</h5>
+                      <div className="d-flex align-items-center text-muted small mb-2">
+                        <i className="bi bi-geo-alt me-1"></i>
+                        <span>{factory.location || 'Localização não informada'}</span>
                       </div>
-                    </div>
-                    
-                    <div style={{ 
-                      display: 'flex', 
-                      flexWrap: 'wrap', 
-                      gap: '8px',
-                      alignItems: 'center',
-                      marginBottom: '8px'
-                    }}>
-                      <Tag color="blue">{factory.segment || 'Sem segmento'}</Tag>
-                      <div style={{ fontSize: '12px', color: '#666' }}>
-                        <EnvironmentOutlined /> {factory.location}
+                      <div className="d-flex align-items-center text-muted small">
+                        <i className="bi bi-telephone me-1"></i>
+                        <span>{factory.contact || 'Contato não informado'}</span>
                       </div>
-                    </div>
-                    
-                    <div style={{ fontSize: '12px', color: '#737373' }}>
-                      <div style={{ marginBottom: 4 }}>
-                        <PhoneOutlined /> {factory.contact}
-                      </div>
-                      {factory.observations && (
-                        <div>
-                          <FileTextOutlined /> {factory.observations.length > 50 
-                            ? `${factory.observations.substring(0, 50)}...` 
-                            : factory.observations}
-                        </div>
-                      )}
                     </div>
                   </div>
-                  
+
                   {factory.products && factory.products.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
+                    <div className="mt-3">
                       <div 
-                        style={{ 
-                          fontSize: '14px', 
-                          fontWeight: 'bold', 
-                          marginBottom: 8,
-                          cursor: 'pointer',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          backgroundColor: expandedProducts.has(factory.id) ? '#f0f0f0' : 'transparent',
-                          transition: 'background-color 0.2s ease',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between'
-                        }}
+                        className="d-flex align-items-center justify-content-between p-2 rounded bg-light cursor-pointer"
                         onClick={() => toggleProductsExpansion(factory.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            toggleProductsExpansion(factory.id);
-                          }
-                        }}
-                        tabIndex={0}
-                        role="button"
-                        aria-expanded={expandedProducts.has(factory.id)}
+                        style={{ cursor: 'pointer' }}
                       >
-                        <span>Produtos ({factory.products.length})</span>
-                        <span style={{ 
-                          fontSize: '12px',
-                          transform: expandedProducts.has(factory.id) ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease'
-                        }}>
-                          ▼
+                        <span className="fw-medium small">
+                          Produtos ({factory.products.length})
                         </span>
+                        <i 
+                          className={`bi bi-chevron-down transition-transform ${
+                            expandedProducts.has(factory.id) ? 'rotate-180' : ''
+                          }`}
+                        ></i>
                       </div>
                       
                       {expandedProducts.has(factory.id) && (
-                        <div style={{ 
-                          animation: 'fadeIn 0.3s ease-in',
-                          marginTop: '8px'
-                        }}>
-                          <List
-                            size="small"
-                            dataSource={factory.products}
-                            renderItem={(product) => (
-                              <List.Item style={{ padding: '4px 0' }}>
-                                <div style={{ 
-                                  display: 'flex', 
-                                  justifyContent: 'space-between', 
-                                  alignItems: 'center',
-                                  fontSize: '12px',
-                                  width: '100%'
-                                }}>
-                                  <div style={{ flex: 1, marginRight: '8px' }}>
+                        <div className="mt-2">
+                          <ListGroup variant="flush">
+                            {factory.products.map((product, index) => (
+                              <ListGroup.Item key={index} className="px-0 py-1 border-0">
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <span className="text-truncate me-2 flex-grow-1">
                                     {product.name}
-                                  </div>
-                                  <div style={{ 
-                                    fontSize: '11px', 
-                                    fontWeight: 'bold',
-                                    color: '#1890ff',
-                                    whiteSpace: 'nowrap'
-                                  }}>
+                                  </span>
+                                  <small className="text-muted">
                                     {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
-                                  </div>
+                                  </small>
                                 </div>
-                              </List.Item>
-                            )}
-                          />
+                              </ListGroup.Item>
+                            ))}
+                          </ListGroup>
                         </div>
                       )}
                     </div>
                   )}
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        )}
-      </Card>
 
-      <Modal
-        title={editingFactory ? 'Editar Fábrica/Loja' : 'Nova Fábrica/Loja'}
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        footer={null}
-        width={window.innerWidth < 768 ? '100%' : 600}
-        className={window.innerWidth < 768 ? 'mobile-modal' : ''}
-        style={window.innerWidth < 768 ? { margin: 0, top: 0 } : {}}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          className="mobile-form"
-        >
-          <Form.Item
-            name="name"
-            label="Nome da Fábrica/Loja"
-            rules={[
-              { required: true, message: 'Por favor, insira o nome!' },
-              { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' },
-              { max: 100, message: 'O nome deve ter no máximo 100 caracteres!' }
-            ]}
-          >
-            <Input 
-              placeholder="Digite o nome da fábrica/loja" 
-              maxLength={100}
-              showCount
-            />
-          </Form.Item>
+                  <div className="d-flex gap-2 mt-3">
+                    <Button 
+                      variant="outline-primary"
+                      size="sm"
+                      className="flex-fill"
+                      onClick={() => handleEdit(factory)}
+                    >
+                      <i className="bi bi-pencil me-1"></i>
+                      Editar
+                    </Button>
+                    <Button 
+                      variant="outline-danger"
+                      size="sm"
+                      className="flex-fill"
+                      onClick={() => {
+                        if (window.confirm('Tem certeza que deseja excluir esta fábrica?')) {
+                          handleDelete(factory.id);
+                        }
+                      }}
+                    >
+                      <i className="bi bi-trash me-1"></i>
+                      Excluir
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
 
-          <Form.Item
-            name="contact"
-            label="Contato"
-            rules={[
-              { required: true, message: 'Por favor, insira o contato!' },
-              { min: 8, message: 'O contato deve ter pelo menos 8 caracteres!' },
-              { max: 50, message: 'O contato deve ter no máximo 50 caracteres!' }
-            ]}
-          >
-            <Input 
-              placeholder="Digite o contato (telefone, email, etc.)" 
-              maxLength={50}
-              showCount
-            />
-          </Form.Item>
+      <Modal show={modalVisible} onHide={handleModalClose} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {editingFactory ? 'Editar Fábrica/Loja' : 'Nova Fábrica/Loja'}
+          </Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={(e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const values = Object.fromEntries(formData.entries());
+          handleSubmit(values);
+        }}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Nome da Fábrica/Loja</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                defaultValue={editingFactory?.name || ''}
+                placeholder="Digite o nome da fábrica/loja"
+                required
+              />
+            </Form.Group>
 
-          <Form.Item
-            name="location"
-            label="Localização"
-            rules={[
-              { required: true, message: 'Por favor, insira a localização!' },
-              { min: 5, message: 'A localização deve ter pelo menos 5 caracteres!' },
-              { max: 200, message: 'A localização deve ter no máximo 200 caracteres!' }
-            ]}
-          >
-            <Input 
-              placeholder="Digite a localização completa" 
-              maxLength={200}
-              showCount
-            />
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Contato</Form.Label>
+              <Form.Control
+                type="text"
+                name="contact"
+                defaultValue={editingFactory?.contact || ''}
+                placeholder="Digite o contato (telefone, email, etc.)"
+                required
+              />
+            </Form.Group>
 
-          <Form.Item
-            name="segment"
-            label="Segmento"
-            rules={[
-              { required: true, message: 'Por favor, insira o segmento!' },
-              { min: 2, message: 'O segmento deve ter pelo menos 2 caracteres!' },
-              { max: 50, message: 'O segmento deve ter no máximo 50 caracteres!' }
-            ]}
-          >
-            <Input 
-              placeholder="Ex: Eletrônicos, Têxtil, Brinquedos, etc." 
-              maxLength={50}
-              showCount
-            />
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Localização</Form.Label>
+              <Form.Control
+                type="text"
+                name="location"
+                defaultValue={editingFactory?.location || ''}
+                placeholder="Digite a localização"
+                required
+              />
+            </Form.Group>
 
-          <Form.Item
-            name="observations"
-            label="Observações"
-            rules={[
-              { max: 500, message: 'As observações devem ter no máximo 500 caracteres!' }
-            ]}
-          >
-            <TextArea
-              rows={4}
-              placeholder="Digite observações adicionais"
-              maxLength={500}
-              showCount
-            />
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Segmento</Form.Label>
+              <Form.Control
+                type="text"
+                name="segment"
+                defaultValue={editingFactory?.segment || ''}
+                placeholder="Digite o segmento de atuação"
+                required
+              />
+            </Form.Group>
 
-          <Form.Item>
-            <div className="mobile-buttons">
-              <Button 
-                type="primary" 
-                htmlType="submit" 
-                size="large"
-                loading={submitting}
-                disabled={submitting}
-              >
-                {editingFactory ? 'Atualizar' : 'Criar'}
-              </Button>
-              <Button 
-                onClick={() => setModalVisible(false)} 
-                size="large"
-                disabled={submitting}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </Form.Item>
+            <Form.Group className="mb-3">
+              <Form.Label>Descrição</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="description"
+                defaultValue={editingFactory?.description || ''}
+                placeholder="Digite uma descrição"
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleModalClose}>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Salvando...
+                </>
+              ) : (
+                editingFactory ? 'Atualizar' : 'Criar'
+              )}
+            </Button>
+          </Modal.Footer>
         </Form>
       </Modal>
     </div>
