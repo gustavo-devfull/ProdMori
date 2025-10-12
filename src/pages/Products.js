@@ -204,7 +204,7 @@ const Products = () => {
                 <Card
                   hoverable
                   style={{ 
-                    height: isMobile ? '280px' : '420px',
+                    height: isMobile ? '320px' : '420px',
                     borderRadius: isMobile ? '8px' : '12px',
                     boxShadow: isMobile ? '0 1px 4px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.1)',
                     transition: 'all 0.3s ease',
@@ -227,7 +227,7 @@ const Products = () => {
                         src={product.imageUrl} 
                         alt={product.name}
                         style={{ 
-                          height: isMobile ? '120px' : '220px',
+                          height: isMobile ? '140px' : '220px',
                           width: '100%',
                           objectFit: 'cover'
                         }}
@@ -241,7 +241,7 @@ const Products = () => {
                   }
                 >
           <div style={{ 
-            padding: isMobile ? '12px' : '24px',
+            padding: isMobile ? '16px' : '24px',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
