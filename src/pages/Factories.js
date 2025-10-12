@@ -190,63 +190,74 @@ const Factories = () => {
                   hoverable
                   style={{ height: '100%' }}
                   bodyStyle={{ padding: '12px' }}
-                  actions={[
-                    <Tooltip title="Editar fábrica">
-                      <Button
-                        type="primary"
-                        icon={<EditOutlined />}
-                        onClick={() => handleEdit(factory)}
-                        size="small"
-                        style={{ 
-                          fontSize: '14px', 
-                          padding: '8px 16px', 
-                          height: 'auto',
-                          width: '50%',
-                          borderRadius: '4px'
-                        }}
-                      >
-                        Editar
-                      </Button>
-                    </Tooltip>,
-                    <Popconfirm
-                      title="Excluir Fábrica"
-                      description="Tem certeza que deseja excluir esta fábrica? Esta ação não pode ser desfeita."
-                      onConfirm={() => handleDelete(factory.id)}
-                      okText="Sim, excluir"
-                      cancelText="Cancelar"
-                      okType="danger"
-                    >
-                      <Tooltip title="Excluir fábrica">
-                        <Button
-                          type="primary"
-                          danger
-                          icon={<DeleteOutlined />}
-                          size="small"
-                          style={{ 
-                            fontSize: '14px', 
-                            padding: '8px 16px', 
-                            height: 'auto',
-                            width: '50%',
-                            borderRadius: '4px'
-                          }}
-                        >
-                          Excluir
-                        </Button>
-                      </Tooltip>
-                    </Popconfirm>
-                  ]}
+                  actions={[]}
                 >
                   <div style={{ margin: '0px', padding: '12px', borderRadius: '6px',
                     backgroundColor: '#f0f0f0',
                    }}>
                     <div style={{ 
-                      fontSize: '16px', 
-                      fontWeight: 'bold', 
-                      marginBottom: '8px',
-                      color: '#262626',
-                      
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '8px'
                     }}>
-                      {factory.name}
+                      <div style={{ 
+                        fontSize: '16px', 
+                        fontWeight: 'bold', 
+                        color: '#262626',
+                        flex: 1
+                      }}>
+                        {factory.name}
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '4px',
+                        alignItems: 'center'
+                      }}>
+                        <Tooltip title="Editar fábrica">
+                          <Button
+                            type="primary"
+                            icon={<EditOutlined />}
+                            onClick={() => handleEdit(factory)}
+                            size="small"
+                            style={{ 
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '4px',
+                              padding: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          />
+                        </Tooltip>
+                        <Popconfirm
+                          title="Excluir Fábrica"
+                          description="Tem certeza que deseja excluir esta fábrica? Esta ação não pode ser desfeita."
+                          onConfirm={() => handleDelete(factory.id)}
+                          okText="Sim, excluir"
+                          cancelText="Cancelar"
+                          okType="danger"
+                        >
+                          <Tooltip title="Excluir fábrica">
+                            <Button
+                              type="primary"
+                              danger
+                              icon={<DeleteOutlined />}
+                              size="small"
+                              style={{ 
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '4px',
+                                padding: '0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            />
+                          </Tooltip>
+                        </Popconfirm>
+                      </div>
                     </div>
                     
                     <div style={{ 
