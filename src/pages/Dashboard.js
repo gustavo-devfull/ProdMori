@@ -6,15 +6,12 @@ import {
   Spin,
   Alert,
   Button,
-  List,
-  Typography
+  List
 } from 'antd';
 import { ShopOutlined, ShoppingOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import factoryService from '../services/factoryService';
 import productService from '../services/productService';
-
-const { Text } = Typography;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -41,18 +38,32 @@ const Dashboard = () => {
         productService.getAllProducts()
       ]);
       
+      // Verificar se os dados são arrays válidos
+      const validFactories = Array.isArray(factories) ? factories : [];
+      const validProducts = Array.isArray(products) ? products : [];
+      
       // Ordenar por data de criação (mais recentes primeiro) e pegar os 5 últimos
-      const recentFactories = factories
-        .sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))
+      const recentFactories = validFactories
+        .filter(factory => factory && typeof factory === 'object')
+        .sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.id || 0);
+          const dateB = new Date(b.createdAt || b.id || 0);
+          return dateB - dateA;
+        })
         .slice(0, 5);
       
-      const recentProducts = products
-        .sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))
+      const recentProducts = validProducts
+        .filter(product => product && typeof product === 'object')
+        .sort((a, b) => {
+          const dateA = new Date(a.createdAt || a.id || 0);
+          const dateB = new Date(b.createdAt || b.id || 0);
+          return dateB - dateA;
+        })
         .slice(0, 5);
       
       setStats({
-        factories: factories.length,
-        products: products.length
+        factories: validFactories.length,
+        products: validProducts.length
       });
       
       setRecentItems({
@@ -62,6 +73,17 @@ const Dashboard = () => {
     } catch (err) {
       setError('Erro ao carregar estatísticas');
       console.error(err);
+      
+      // Definir valores padrão em caso de erro
+      setStats({
+        factories: 0,
+        products: 0
+      });
+      
+      setRecentItems({
+        factories: [],
+        products: []
+      });
     } finally {
       setLoading(false);
     }
@@ -137,12 +159,21 @@ const Dashboard = () => {
                       alignItems: 'center',
                       width: '100%'
                     }}>
-                      <Text ellipsis style={{ flex: 1, marginRight: '8px' }}>
-                        {factory.name}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: '10px' }}>
-                        {factory.segment || 'Sem segmento'}
-                      </Text>
+                      <span style={{ 
+                        flex: 1, 
+                        marginRight: '8px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {factory?.name || 'Nome não disponível'}
+                      </span>
+                      <span style={{ 
+                        fontSize: '10px',
+                        color: '#666'
+                      }}>
+                        {factory?.segment || 'Sem segmento'}
+                      </span>
                     </div>
                   </List.Item>
                 )}
@@ -210,12 +241,21 @@ const Dashboard = () => {
                       alignItems: 'center',
                       width: '100%'
                     }}>
-                      <Text ellipsis style={{ flex: 1, marginRight: '8px' }}>
-                        {product.name}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: '10px' }}>
-                        {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
-                      </Text>
+                      <span style={{ 
+                        flex: 1, 
+                        marginRight: '8px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {product?.name || 'Nome não disponível'}
+                      </span>
+                      <span style={{ 
+                        fontSize: '10px',
+                        color: '#666'
+                      }}>
+                        {product?.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                      </span>
                     </div>
                   </List.Item>
                 )}
