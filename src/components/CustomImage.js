@@ -36,6 +36,25 @@ const CustomImage = ({
     }
   }, [src]);
 
+  // Pré-carregar imagem quando a URL muda
+  useEffect(() => {
+    if (imageUrl && imageUrl !== '') {
+      console.log('CustomImage - Iniciando pré-carregamento:', imageUrl);
+      const img = new Image();
+      img.onload = () => {
+        console.log('CustomImage - Pré-carregamento bem-sucedido:', imageUrl);
+        setLoading(false);
+        setError(false);
+      };
+      img.onerror = (e) => {
+        console.log('CustomImage - Erro no pré-carregamento:', imageUrl, e);
+        setLoading(false);
+        setError(true);
+      };
+      img.src = imageUrl;
+    }
+  }, [imageUrl]);
+
   const handleLoad = () => {
     console.log('CustomImage - Imagem carregada com sucesso:', imageUrl);
     setLoading(false);
@@ -139,11 +158,9 @@ const CustomImage = ({
 
   const imageElement = (
     <img
-      src={imageUrl || src}
+      src={imageUrl}
       alt={alt || 'Imagem do produto'}
       style={hoverStyle}
-      onLoad={handleLoad}
-      onError={handleError}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={showPreview ? handlePreview : undefined}
