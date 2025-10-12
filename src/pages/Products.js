@@ -244,7 +244,7 @@ const Products = () => {
       ) : (
         <Row className="g-3">
           {filteredProducts.map(product => (
-            <Col xs={12} sm={12} md={6} lg={6} xl={6} key={product.id}>
+            <Col xs={12} sm={6} md={4} lg={2} xl={2} key={product.id}>
               <Card className="h-100">
                 <div className="position-relative">
                   <CustomImage
