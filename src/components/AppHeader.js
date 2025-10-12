@@ -36,18 +36,28 @@ const AppHeader = () => {
       
       <Nav className="ms-auto d-flex align-items-center gap-2">
         <Button
-          variant={location.pathname === '/' ? 'primary' : 'outline-primary'}
+          variant="light"
           onClick={() => handleNavigation('/')}
           size={isMobile ? 'sm' : 'md'}
-          className="px-3"
+          className="px-3 fw-semibold"
+          style={{ 
+            backgroundColor: 'white', 
+            borderColor: 'white',
+            color: '#0d6efd'
+          }}
         >
           Dashboard
         </Button>
         <Button
-          variant={location.pathname === '/factories' ? 'primary' : 'outline-primary'}
+          variant="light"
           onClick={() => handleNavigation('/factories')}
           size={isMobile ? 'sm' : 'md'}
-          className="px-3"
+          className="px-3 fw-semibold"
+          style={{ 
+            backgroundColor: 'white', 
+            borderColor: 'white',
+            color: '#0d6efd'
+          }}
         >
           Fábricas
         </Button>
