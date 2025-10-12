@@ -251,16 +251,17 @@ const Products = () => {
           }}>
                     {/* Nome do produto */}
                     <div style={{ 
-                      fontSize: isMobile ? '14px' : '20px', 
+                      fontSize: isMobile ? '13px' : '16px', 
                       fontWeight: 'bold',
-                      marginBottom: isMobile ? '6px' : '8px',
+                      marginBottom: isMobile ? '4px' : '6px',
                       color: '#262626',
-                      lineHeight: '1.3',
+                      lineHeight: '1.2',
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: 'vertical',
                       overflow: 'hidden',
-                      minHeight: isMobile ? '40px' : '46px'
+                      minHeight: isMobile ? '32px' : '38px',
+                      maxHeight: isMobile ? '32px' : '38px'
                     }}>
                       {product.name}
                     </div>
@@ -268,7 +269,7 @@ const Products = () => {
                     {/* Tag da fábrica */}
                     {product.factory && (
                       <div style={{ 
-                        marginBottom: isMobile ? '8px' : '12px',
+                        marginBottom: isMobile ? '6px' : '8px',
                         display: 'flex',
                         justifyContent: 'center'
                       }}>
@@ -289,7 +290,7 @@ const Products = () => {
                     
                     {/* Preço */}
                     <div style={{ 
-                      marginBottom: isMobile ? '12px' : '16px'
+                      marginBottom: isMobile ? '8px' : '12px'
                     }}>
                       <div style={{ 
                         fontSize: isMobile ? '16px' : '26px', 
@@ -304,14 +305,26 @@ const Products = () => {
                     {/* Botão Ver Detalhes */}
                     <Button
                       type="primary"
-                      size={isMobile ? "small" : "large"}
+                      size={isMobile ? "small" : "middle"}
                       onClick={() => handleEdit(product)}
                       style={{
                         borderRadius: '8px',
                         fontWeight: 'bold',
-                        fontSize: isMobile ? '12px' : '14px',
-                        height: isMobile ? '28px' : '44px',
-                        boxShadow: '0 2px 8px rgba(24, 144, 255, 0.3)'
+                        fontSize: isMobile ? '13px' : '15px',
+                        height: isMobile ? '32px' : '40px',
+                        width: '100%',
+                        boxShadow: '0 3px 12px rgba(24, 144, 255, 0.4)',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 5px 16px rgba(24, 144, 255, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 3px 12px rgba(24, 144, 255, 0.4)';
                       }}
                     >
                       Ver Detalhes
