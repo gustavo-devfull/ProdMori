@@ -247,7 +247,7 @@ const Products = () => {
               <Card className="h-100">
                 <div className="position-relative">
                   <CustomImage
-                    src={product.imageUrl}
+                    src={imageService.getImageUrl(product.imageUrl)}
                     alt={product.name}
                     style={{ 
                       height: isMobile ? '200px' : '280px',
