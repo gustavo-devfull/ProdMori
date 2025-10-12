@@ -5,12 +5,16 @@ import {
   Col, 
   Spin,
   Alert,
-  Button
+  Button,
+  List,
+  Typography
 } from 'antd';
-import { ShopOutlined, ShoppingOutlined, PlusOutlined } from '@ant-design/icons';
+import { ShopOutlined, ShoppingOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import factoryService from '../services/factoryService';
 import productService from '../services/productService';
+
+const { Text } = Typography;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -18,6 +22,10 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     factories: 0,
     products: 0
+  });
+  const [recentItems, setRecentItems] = useState({
+    factories: [],
+    products: []
   });
   const [error, setError] = useState(null);
 
@@ -33,9 +41,23 @@ const Dashboard = () => {
         productService.getAllProducts()
       ]);
       
+      // Ordenar por data de criação (mais recentes primeiro) e pegar os 5 últimos
+      const recentFactories = factories
+        .sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))
+        .slice(0, 5);
+      
+      const recentProducts = products
+        .sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))
+        .slice(0, 5);
+      
       setStats({
         factories: factories.length,
         products: products.length
+      });
+      
+      setRecentItems({
+        factories: recentFactories,
+        products: recentProducts
       });
     } catch (err) {
       setError('Erro ao carregar estatísticas');
@@ -56,7 +78,7 @@ const Dashboard = () => {
   return (
     <div>
       <div className="page-header">
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>Dashboard</h2>
+        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#ffffff', backgroundColor: '#0175a6', padding: '10px', borderRadius: '5px' }}>ProductMobile Ravi</h2>
       </div>
       
       {error && (
@@ -90,6 +112,43 @@ const Dashboard = () => {
                 {stats.factories}
               </div>
             </div>
+            
+            {/* Lista dos 5 últimos cadastrados */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: 8,
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#666'
+              }}>
+                <CalendarOutlined style={{ marginRight: '4px' }} />
+                Últimos 5 cadastrados:
+              </div>
+              <List
+                size="small"
+                dataSource={recentItems.factories}
+                renderItem={(factory) => (
+                  <List.Item style={{ padding: '4px 0', fontSize: '12px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      width: '100%'
+                    }}>
+                      <Text ellipsis style={{ flex: 1, marginRight: '8px' }}>
+                        {factory.name}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: '10px' }}>
+                        {factory.segment || 'Sem segmento'}
+                      </Text>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </div>
+            
             <div>
               <Button 
                 type="primary" 
@@ -126,6 +185,43 @@ const Dashboard = () => {
                 {stats.products}
               </div>
             </div>
+            
+            {/* Lista dos 5 últimos cadastrados */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: 8,
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#666'
+              }}>
+                <CalendarOutlined style={{ marginRight: '4px' }} />
+                Últimos 5 cadastrados:
+              </div>
+              <List
+                size="small"
+                dataSource={recentItems.products}
+                renderItem={(product) => (
+                  <List.Item style={{ padding: '4px 0', fontSize: '12px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      width: '100%'
+                    }}>
+                      <Text ellipsis style={{ flex: 1, marginRight: '8px' }}>
+                        {product.name}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: '10px' }}>
+                        {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                      </Text>
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </div>
+            
             <div>
               <Button 
                 type="primary" 
