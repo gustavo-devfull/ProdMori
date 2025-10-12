@@ -58,15 +58,12 @@ const Products = () => {
 
   const handleImageUpload = async (file) => {
     try {
-      setUploading(true);
       const imageUrl = await productService.uploadImage(file);
       return imageUrl;
     } catch (err) {
       setError('Erro ao fazer upload da imagem');
       console.error(err);
       throw err;
-    } finally {
-      setUploading(false);
     }
   };
 
