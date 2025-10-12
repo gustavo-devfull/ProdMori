@@ -40,6 +40,7 @@ const Factories = () => {
   const [form] = Form.useForm();
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedProducts, setExpandedProducts] = useState(new Set());
 
   useEffect(() => {
     loadFactories();
@@ -107,6 +108,16 @@ const Factories = () => {
       message.error(errorMessage);
       console.error('Erro ao excluir fábrica:', err);
     }
+  };
+
+  const toggleProductsExpansion = (factoryId) => {
+    const newExpanded = new Set(expandedProducts);
+    if (newExpanded.has(factoryId)) {
+      newExpanded.delete(factoryId);
+    } else {
+      newExpanded.add(factoryId);
+    }
+    setExpandedProducts(newExpanded);
   };
 
   const handleSubmit = async (values) => {
@@ -289,39 +300,73 @@ const Factories = () => {
                   
                   {factory.products && factory.products.length > 0 && (
                     <div style={{ marginTop: 16 }}>
-                      <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: 8 }}>
-                        Produtos ({factory.products.length})
+                      <div 
+                        style={{ 
+                          fontSize: '14px', 
+                          fontWeight: 'bold', 
+                          marginBottom: 8,
+                          cursor: 'pointer',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: expandedProducts.has(factory.id) ? '#f0f0f0' : 'transparent',
+                          transition: 'background-color 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}
+                        onClick={() => toggleProductsExpansion(factory.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleProductsExpansion(factory.id);
+                          }
+                        }}
+                        tabIndex={0}
+                        role="button"
+                        aria-expanded={expandedProducts.has(factory.id)}
+                      >
+                        <span>Produtos ({factory.products.length})</span>
+                        <span style={{ 
+                          fontSize: '12px',
+                          transform: expandedProducts.has(factory.id) ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease'
+                        }}>
+                          ▼
+                        </span>
                       </div>
-                      <List
-                        size="small"
-                        dataSource={factory.products.slice(0, 3)}
-                        renderItem={(product) => (
-                          <List.Item style={{ padding: '4px 0' }}>
-                            <div style={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center',
-                              fontSize: '12px',
-                              width: '100%'
-                            }}>
-                              <div style={{ flex: 1, marginRight: '8px' }}>
-                                {product.name}
-                              </div>
-                              <div style={{ 
-                                fontSize: '11px', 
-                                fontWeight: 'bold',
-                                color: '#1890ff',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
-                              </div>
-                            </div>
-                          </List.Item>
-                        )}
-                      />
-                      {factory.products.length > 3 && (
-                        <div style={{ fontSize: '12px', color: '#666', textAlign: 'center', marginTop: 8 }}>
-                          +{factory.products.length - 3} produtos
+                      
+                      {expandedProducts.has(factory.id) && (
+                        <div style={{ 
+                          animation: 'fadeIn 0.3s ease-in',
+                          marginTop: '8px'
+                        }}>
+                          <List
+                            size="small"
+                            dataSource={factory.products}
+                            renderItem={(product) => (
+                              <List.Item style={{ padding: '4px 0' }}>
+                                <div style={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between', 
+                                  alignItems: 'center',
+                                  fontSize: '12px',
+                                  width: '100%'
+                                }}>
+                                  <div style={{ flex: 1, marginRight: '8px' }}>
+                                    {product.name}
+                                  </div>
+                                  <div style={{ 
+                                    fontSize: '11px', 
+                                    fontWeight: 'bold',
+                                    color: '#1890ff',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                                  </div>
+                                </div>
+                              </List.Item>
+                            )}
+                          />
                         </div>
                       )}
                     </div>
