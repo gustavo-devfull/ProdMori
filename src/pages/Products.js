@@ -254,52 +254,59 @@ const Products = () => {
                     })()}
                     alt={product.name}
                     style={{ 
-                      height: isMobile ? '200px' : '280px',
+                      height: '250px',
                       width: '100%',
                       objectFit: 'cover'
                     }}
                     showPreview={true}
                     onPreview={handlePreview}
                   />
+                  
+                  {/* Tag da fábrica sobreposta à imagem */}
+                  {product.factory && (
+                    <div className="position-absolute" style={{ 
+                      top: '12px', 
+                      right: '12px',
+                      padding: '12px'
+                    }}>
+                      {(() => {
+                        const factoryColor = getFactoryColor(product.factory.name);
+                        console.log(`Aplicando cor ${factoryColor} para fábrica: ${product.factory.name}`);
+                        return (
+                          <span 
+                            style={{ 
+                              backgroundColor: factoryColor,
+                              color: 'white',
+                              fontSize: isMobile ? '12px' : '14px',
+                              padding: isMobile ? '4px 8px' : '6px 12px',
+                              border: 'none',
+                              fontWeight: '500',
+                              borderRadius: '4px',
+                              display: 'inline-block'
+                            }}
+                          >
+                            {product.factory.name}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
                 
                 <Card.Body className="d-flex flex-column p-3">
-                  <div className="text-center mb-3">
-                    <h5 className="card-title mb-2" style={{ 
+                  {/* Nome e preço na mesma linha */}
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="card-title mb-0" style={{ 
                       fontSize: isMobile ? '16px' : '15px',
                       lineHeight: '1.2',
-                      height: 'auto',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      flex: '1',
+                      marginRight: '10px'
                     }}>{product.name}</h5>
                     
-                    {product.factory && (
-                      <div className="mb-3">
-                        {(() => {
-                          const factoryColor = getFactoryColor(product.factory.name);
-                          console.log(`Aplicando cor ${factoryColor} para fábrica: ${product.factory.name}`);
-                          return (
-                            <span 
-                              style={{ 
-                                backgroundColor: factoryColor,
-                                color: 'white',
-                                fontSize: isMobile ? '12px' : '14px',
-                                padding: isMobile ? '4px 8px' : '6px 12px',
-                                border: 'none',
-                                fontWeight: '500',
-                                borderRadius: '4px',
-                                display: 'inline-block'
-                              }}
-                            >
-                              {product.factory.name}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    )}
-                    
-                    <div className="fs-5 fw-bold text-primary mb-4" style={{ fontSize: isMobile ? '18px' : '16px' }}>
+                    <div className="fs-5 fw-bold text-primary" style={{ fontSize: isMobile ? '18px' : '16px' }}>
                       {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
                     </div>
                   </div>
