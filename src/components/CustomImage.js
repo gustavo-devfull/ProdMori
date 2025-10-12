@@ -21,37 +21,59 @@ const CustomImage = ({
   // Processar URL da imagem quando src muda
   useEffect(() => {
     console.log('CustomImage - src recebido:', src);
+    let isMounted = true;
+    
     if (src) {
       const processedUrl = imageService.getImageUrl(src);
       console.log('CustomImage - URL processada:', processedUrl);
-      setImageUrl(processedUrl);
-      setLoading(true);
-      setError(false);
-      setRetryCount(0);
+      
+      if (isMounted) {
+        setImageUrl(processedUrl);
+        setLoading(true);
+        setError(false);
+        setRetryCount(0);
+      }
     } else {
       console.log('CustomImage - src vazio ou inválido');
-      setImageUrl('');
-      setLoading(false);
-      setError(true);
+      
+      if (isMounted) {
+        setImageUrl('');
+        setLoading(false);
+        setError(true);
+      }
     }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [src]);
 
   // Pré-carregar imagem quando a URL muda
   useEffect(() => {
     if (imageUrl && imageUrl !== '') {
       console.log('CustomImage - Iniciando pré-carregamento:', imageUrl);
+      let isMounted = true;
+      
       const img = new Image();
       img.onload = () => {
-        console.log('CustomImage - Pré-carregamento bem-sucedido:', imageUrl);
-        setLoading(false);
-        setError(false);
+        if (isMounted) {
+          console.log('CustomImage - Pré-carregamento bem-sucedido:', imageUrl);
+          setLoading(false);
+          setError(false);
+        }
       };
       img.onerror = (e) => {
-        console.log('CustomImage - Erro no pré-carregamento:', imageUrl, e);
-        setLoading(false);
-        setError(true);
+        if (isMounted) {
+          console.log('CustomImage - Erro no pré-carregamento:', imageUrl, e);
+          setLoading(false);
+          setError(true);
+        }
       };
       img.src = imageUrl;
+      
+      return () => {
+        isMounted = false;
+      };
     }
   }, [imageUrl]);
 
@@ -80,11 +102,19 @@ const CustomImage = ({
       // Aguardar um pouco antes de tentar novamente
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Recarregar a imagem
-      const img = new Image();
-      img.onload = handleLoad;
-      img.onerror = handleError;
-      img.src = imageUrl;
+      // Recarregar a imagem apenas se o componente ainda estiver montado
+      if (imageUrl) {
+        const img = new Image();
+        img.onload = () => {
+          setLoading(false);
+          setError(false);
+        };
+        img.onerror = () => {
+          setLoading(false);
+          setError(true);
+        };
+        img.src = imageUrl;
+      }
     }
   };
 
