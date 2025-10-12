@@ -310,8 +310,8 @@ const Products = () => {
                       style={{
                         borderRadius: '6px',
                         fontWeight: 'bold',
-                        fontSize: isMobile ? '11px' : '12px',
-                        height: isMobile ? '28px' : '32px',
+                        fontSize: isMobile ? '12px' : '12px',
+                        height: isMobile ? '24px' : '32px',
                         width: '100%',
                         boxShadow: '0 2px 8px rgba(24, 144, 255, 0.3)',
                         border: 'none',
