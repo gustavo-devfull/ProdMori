@@ -169,9 +169,19 @@ class ImageService {
       // Se é um nome de arquivo, construir URL
       let constructedUrl;
       if (this.isVercel) {
-        constructedUrl = `https://ideolog.ia.br/${imageUrl}`;
+        // Se já contém /api/image/, usar diretamente
+        if (imageUrl.startsWith('/api/image/')) {
+          constructedUrl = `https://ideolog.ia.br${imageUrl}`;
+        } else {
+          constructedUrl = `https://ideolog.ia.br/api/image/${imageUrl}`;
+        }
       } else {
-        constructedUrl = `${this.apiUrl}/image/${imageUrl}`;
+        // Se já contém /api/image/, usar diretamente
+        if (imageUrl.startsWith('/api/image/')) {
+          constructedUrl = `${this.apiUrl}${imageUrl}`;
+        } else {
+          constructedUrl = `${this.apiUrl}/image/${imageUrl}`;
+        }
       }
       
       // Validar se a URL construída é válida
