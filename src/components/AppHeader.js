@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button } from 'antd';
+import { Layout, Button } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const { Header } = Layout;
-const { Title } = Typography;
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -39,21 +38,9 @@ const AppHeader = () => {
           src="/RAVI-LOGO-BRANCO.svg" 
           alt="RAVI Logo" 
           style={{ 
-            height: isMobile ? '28px' : '32px',
-            marginRight: isMobile ? '8px' : '12px'
+            height: isMobile ? '32px' : '40px'
           }}
         />
-        <Title 
-          level={isMobile ? 5 : 4} 
-          style={{ 
-            color: 'white', 
-            margin: 0,
-            fontSize: isMobile ? '14px' : '16px',
-            fontWeight: '600'
-          }}
-        >
-          ProductMobile
-        </Title>
       </div>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px' }}>
