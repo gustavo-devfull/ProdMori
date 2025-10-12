@@ -13,7 +13,6 @@ import {
   Col,
   Empty,
   Upload,
-  Image,
   Select,
   InputNumber,
   Space
@@ -25,6 +24,7 @@ import {
   UploadOutlined,
   ShoppingOutlined
 } from '@ant-design/icons';
+import CustomImage from '../components/CustomImage';
 import productService from '../services/productService';
 import factoryService from '../services/factoryService';
 
@@ -212,7 +212,7 @@ const Products = () => {
                         </div>
                       )}
                       {product.imageUrl ? (
-                        <Image
+                        <CustomImage
                           src={product.imageUrl}
                           alt={product.name}
                           style={{ 
@@ -220,7 +220,6 @@ const Products = () => {
                             width: '100%',
                             objectFit: 'contain' 
                           }}
-                          fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
                         />
                       ) : (
                         <div style={{ 
@@ -327,11 +326,9 @@ const Products = () => {
                   const imageUrl = getFieldValue('imageUrl');
                   return imageUrl ? (
                     <div style={{ marginTop: 16 }}>
-                      <Image
-                        width={200}
-                        height={200}
+                      <CustomImage
                         src={imageUrl}
-                        style={{ objectFit: 'cover', borderRadius: '8px' }}
+                        style={{ width: 200, height: 200, objectFit: 'cover', borderRadius: '8px' }}
                       />
                     </div>
                   ) : null;
