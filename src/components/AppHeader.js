@@ -62,10 +62,19 @@ const AppHeader = () => {
           Fábricas
         </Button>
         <Button
-          variant={location.pathname === '/products' ? 'primary' : 'outline-primary'}
+          variant={location.pathname === '/products' ? 'primary' : 'outline-light'}
           onClick={() => handleNavigation('/products')}
           size={isMobile ? 'sm' : 'md'}
-          className="px-3"
+          className="px-3 fw-semibold"
+          style={location.pathname === '/products' ? {
+            backgroundColor: '#0d6efd',
+            borderColor: '#0d6efd',
+            color: 'white'
+          } : {
+            backgroundColor: 'transparent',
+            borderColor: 'white',
+            color: 'white'
+          }}
         >
           Produtos
         </Button>
