@@ -350,6 +350,14 @@ code {
   height: auto;
 }
 
+/* Factory badge styles */
+.factory-badge {
+  background-color: var(--factory-color) !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 500 !important;
+}
+
 
 /* Mobile responsive styles */
 @media (max-width: 480px) {

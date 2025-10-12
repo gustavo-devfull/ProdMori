@@ -264,16 +264,25 @@ const Products = () => {
                     
                     {product.factory && (
                       <div className="mb-2">
-                        <Badge 
-                          style={{ 
-                            backgroundColor: getFactoryColor(product.factory.name),
-                            color: 'white',
-                            fontSize: isMobile ? '14px' : '18px',
-                            padding: isMobile ? '6px 12px' : '12px 24px'
-                          }}
-                        >
-                          {product.factory.name}
-                        </Badge>
+                        {(() => {
+                          const factoryColor = getFactoryColor(product.factory.name);
+                          console.log(`Aplicando cor ${factoryColor} para fábrica: ${product.factory.name}`);
+                          return (
+                            <Badge 
+                              style={{ 
+                                backgroundColor: factoryColor,
+                                color: 'white',
+                                fontSize: isMobile ? '14px' : '18px',
+                                padding: isMobile ? '6px 12px' : '12px 24px',
+                                border: 'none',
+                                fontWeight: '500'
+                              }}
+                              className="factory-badge"
+                            >
+                              {product.factory.name}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                     )}
                     
