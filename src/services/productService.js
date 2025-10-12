@@ -42,10 +42,17 @@ class ProductService {
     try {
       const q = query(collection(db, this.collectionName), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
-      const products = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const products = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Converter preço para número se existir
+        if (data.price && typeof data.price === 'string') {
+          data.price = parseFloat(data.price);
+        }
+        return {
+          id: doc.id,
+          ...data
+        };
+      });
       
       console.log('ProductService - Produtos brutos do Firebase:', products);
       

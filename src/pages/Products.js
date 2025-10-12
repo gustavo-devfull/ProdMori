@@ -73,6 +73,11 @@ const Products = () => {
     const formData = new FormData(e.target);
     const values = Object.fromEntries(formData.entries());
     
+    // Converter preço para número se existir
+    if (values.price && values.price !== '') {
+      values.price = parseFloat(values.price);
+    }
+    
     try {
       setSubmitting(true);
       
