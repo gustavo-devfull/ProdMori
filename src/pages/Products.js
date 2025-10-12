@@ -287,6 +287,7 @@ const Products = () => {
                                 fontWeight: '500',
                                 borderRadius: '4px'
                               }}
+                              className="custom-factory-badge"
                             >
                               {product.factory.name}
                             </Badge>
