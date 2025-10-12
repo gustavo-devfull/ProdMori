@@ -270,7 +270,7 @@ const Products = () => {
                   {/* Tag da fábrica sobreposta à imagem */}
                   {product.factory && (
                     <div className="position-absolute" style={{ 
-                      top: '-8px', 
+                      top: '-18px', 
                       right: '6px',
                       padding: '4px'
                     }}>
