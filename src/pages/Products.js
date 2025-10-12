@@ -281,12 +281,12 @@ const Products = () => {
                               style={{ 
                                 backgroundColor: factoryColor,
                                 color: 'white',
-                                fontSize: isMobile ? '14px' : '18px',
-                                padding: isMobile ? '6px 12px' : '12px 24px',
+                                fontSize: isMobile ? '12px' : '14px',
+                                padding: isMobile ? '4px 8px' : '6px 12px',
                                 border: 'none',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                borderRadius: '4px'
                               }}
-                              className="factory-badge"
                             >
                               {product.factory.name}
                             </Badge>
