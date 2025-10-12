@@ -172,7 +172,22 @@ const Products = () => {
   return (
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
-        <h2 className="mb-0 fs-5 fw-semibold">Produtos</h2>
+        <div className="d-flex justify-content-between align-items-center">
+          <h2 className="mb-0 fs-5 fw-semibold">Produtos</h2>
+          <Button 
+            variant="light"
+            className="text-primary fw-semibold"
+            onClick={() => setModalVisible(true)}
+            style={{ 
+              backgroundColor: 'white', 
+              borderColor: 'white',
+              color: '#0d6efd'
+            }}
+          >
+            <i className="bi bi-plus-circle me-2"></i>
+            Novo Produto
+          </Button>
+        </div>
       </div>
       
       {error && (
@@ -181,16 +196,6 @@ const Products = () => {
           {error}
         </Alert>
       )}
-
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <Button 
-          variant="primary"
-          onClick={() => setModalVisible(true)}
-        >
-          <i className="bi bi-plus-circle me-2"></i>
-          Novo Produto
-        </Button>
-      </div>
 
       <Card className="mb-3">
         <Card.Body>
