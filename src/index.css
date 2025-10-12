@@ -349,71 +349,10 @@ code {
   max-width: 100%;
   height: auto;
 }
-  
-  /* Mobile product cards */
-  .ant-card-cover img {
-    height: 150px !important;
-    width: 100% !important;
-  }
-  
-  .ant-card-cover div div:last-child {
-    height: 150px !important;
-    width: 100% !important;
-  }
-  
-  .ant-card-meta-title {
-    font-size: 12px !important;
-  }
-  
-  .ant-card-meta-description {
-    font-size: 10px !important;
-  }
-  
-  .ant-card-body {
-    padding: 6px !important;
-  }
-  
-  .ant-card-actions {
-    padding: 4px !important;
-  }
-  
-  .ant-card-actions .ant-btn {
-    font-size: 12px !important;
-    padding: 12px 24px !important;
-    height: auto !important;
-  }
-  
-  /* Mobile factory name above photo */
-  .ant-card-cover div div:first-child {
-    font-size: 10px !important;
-    padding: 6px 8px !important;
-  }
-  
-  /* Mobile filter */
-  .ant-space {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-  }
-  
-  .ant-space .ant-select {
-    width: 100% !important;
-  }
 
 
+/* Mobile responsive styles */
 @media (max-width: 480px) {
-  .ant-layout-content {
-    padding: 8px;
-  }
-  
-  .page-header {
-    padding: 8px;
-    margin-bottom: 8px;
-  }
-  
-  .content-card {
-    padding: 8px;
-  }
-  
   .image-preview {
     max-width: 120px;
     max-height: 120px;

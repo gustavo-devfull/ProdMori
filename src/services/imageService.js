@@ -159,17 +159,27 @@ class ImageService {
       return null;
     }
     
-    // Primeiro, tentar normalizar a URL se já for válida
-    const normalizedUrl = this.normalizeImageUrl(imageUrl);
-    if (normalizedUrl) {
-      return normalizedUrl;
-    }
-    
-    // Se é um nome de arquivo, construir URL
-    if (this.isVercel) {
-      return `https://ideolog.ia.br/${imageUrl}`;
-    } else {
-      return `${this.apiUrl}/image/${imageUrl}`;
+    try {
+      // Primeiro, tentar normalizar a URL se já for válida
+      const normalizedUrl = this.normalizeImageUrl(imageUrl);
+      if (normalizedUrl) {
+        return normalizedUrl;
+      }
+      
+      // Se é um nome de arquivo, construir URL
+      let constructedUrl;
+      if (this.isVercel) {
+        constructedUrl = `https://ideolog.ia.br/${imageUrl}`;
+      } else {
+        constructedUrl = `${this.apiUrl}/image/${imageUrl}`;
+      }
+      
+      // Validar se a URL construída é válida
+      new URL(constructedUrl);
+      return constructedUrl;
+    } catch (error) {
+      console.error('Erro ao construir URL da imagem:', error, 'imageUrl:', imageUrl);
+      return null;
     }
   }
 
