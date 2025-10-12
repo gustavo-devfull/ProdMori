@@ -1,48 +1,10 @@
 {
-  "version": 2,
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "build",
-  "installCommand": "npm ci --only=production",
-  "framework": "create-react-app",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    },
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
-  "env": {
-    "REACT_APP_API_URL": "https://ideolog.ia.br",
-    "NODE_ENV": "production"
-  },
   "functions": {
     "api/*.js": {
       "maxDuration": 30
     }
   },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
+  "env": {
+    "REACT_APP_API_URL": "https://ideolog.ia.br"
   }
 }
