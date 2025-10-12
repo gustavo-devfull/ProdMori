@@ -283,7 +283,7 @@ const Products = () => {
                     )}
                     
                     <div className="fs-5 fw-bold text-primary mb-3">
-                      {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                      {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
                     </div>
                   </div>
                   
