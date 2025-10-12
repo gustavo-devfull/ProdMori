@@ -23,9 +23,9 @@ class ImageService {
         throw new Error('Apenas arquivos de imagem são permitidos');
       }
 
-      // Validar tamanho (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('Arquivo muito grande. Máximo 5MB permitido.');
+      // Validar tamanho (máximo 25MB)
+      if (file.size > 25 * 1024 * 1024) {
+        throw new Error('Arquivo muito grande. Máximo 25MB permitido.');
       }
 
       // Criar FormData para envio
