@@ -398,7 +398,7 @@ code {
   .ant-space .ant-select {
     width: 100% !important;
   }
-}
+
 
 @media (max-width: 480px) {
   .ant-layout-content {

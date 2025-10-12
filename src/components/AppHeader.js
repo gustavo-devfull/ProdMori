@@ -23,7 +23,7 @@ const AppHeader = () => {
   };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
+    <Navbar bg="dark" variant="dark" className="px-3">
       <Navbar.Brand className="d-flex align-items-center">
         <img 
           src="/RAVI-LOGO-BRANCO.svg" 
@@ -34,35 +34,32 @@ const AppHeader = () => {
         />
       </Navbar.Brand>
       
-      <Navbar.Toggle aria-controls="basic-navbar-nav" />
-      <Navbar.Collapse id="basic-navbar-nav">
-        <Nav className="ms-auto d-flex align-items-center gap-2">
-          <Button
-            variant={location.pathname === '/' ? 'primary' : 'outline-primary'}
-            onClick={() => handleNavigation('/')}
-            size={isMobile ? 'sm' : 'md'}
-            className="px-3"
-          >
-            Dashboard
-          </Button>
-          <Button
-            variant={location.pathname === '/factories' ? 'primary' : 'outline-primary'}
-            onClick={() => handleNavigation('/factories')}
-            size={isMobile ? 'sm' : 'md'}
-            className="px-3"
-          >
-            Fábricas
-          </Button>
-          <Button
-            variant={location.pathname === '/products' ? 'primary' : 'outline-primary'}
-            onClick={() => handleNavigation('/products')}
-            size={isMobile ? 'sm' : 'md'}
-            className="px-3"
-          >
-            Produtos
-          </Button>
-        </Nav>
-      </Navbar.Collapse>
+      <Nav className="ms-auto d-flex align-items-center gap-2">
+        <Button
+          variant={location.pathname === '/' ? 'primary' : 'outline-primary'}
+          onClick={() => handleNavigation('/')}
+          size={isMobile ? 'sm' : 'md'}
+          className="px-3"
+        >
+          Dashboard
+        </Button>
+        <Button
+          variant={location.pathname === '/factories' ? 'primary' : 'outline-primary'}
+          onClick={() => handleNavigation('/factories')}
+          size={isMobile ? 'sm' : 'md'}
+          className="px-3"
+        >
+          Fábricas
+        </Button>
+        <Button
+          variant={location.pathname === '/products' ? 'primary' : 'outline-primary'}
+          onClick={() => handleNavigation('/products')}
+          size={isMobile ? 'sm' : 'md'}
+          className="px-3"
+        >
+          Produtos
+        </Button>
+      </Nav>
     </Navbar>
   );
 };
