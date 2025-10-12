@@ -66,3 +66,4 @@ const q = query(
 - ✅ **Flexibilidade**: Ordenação pode ser ajustada facilmente
 - ✅ **Performance**: Para pequenas quantidades de dados, a ordenação local é eficiente
 
+

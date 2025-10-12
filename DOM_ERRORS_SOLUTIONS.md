@@ -146,3 +146,4 @@ Se os erros persistirem:
 3. **Verificar porta**: Certificar que a porta 3000 está livre
 4. **Browser**: Testar em modo incógnito para evitar extensões
 
+

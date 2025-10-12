@@ -197,3 +197,4 @@ Se problemas persistirem:
 3. **Testar Error Boundary**: Verificar se está capturando erros
 4. **Revisar componentes**: Simplificar ainda mais se necessário
 
+
