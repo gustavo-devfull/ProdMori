@@ -42,6 +42,41 @@ const Products = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  // Função para gerar cor única baseada no nome da fábrica
+  const getFactoryColor = (factoryName) => {
+    if (!factoryName) return '#1890ff'; // Cor padrão
+    
+    // Paleta de cores vibrantes e profissionais
+    const colors = [
+      '#1890ff', // Azul padrão
+      '#52c41a', // Verde
+      '#fa541c', // Laranja
+      '#722ed1', // Roxo
+      '#eb2f96', // Rosa
+      '#13c2c2', // Ciano
+      '#faad14', // Amarelo
+      '#f5222d', // Vermelho
+      '#2f54eb', // Azul escuro
+      '#52c41a', // Verde escuro
+      '#fa8c16', // Laranja escuro
+      '#a0d911', // Verde claro
+      '#faad14', // Amarelo escuro
+      '#13c2c2', // Turquesa
+      '#722ed1', // Violeta
+      '#eb2f96'  // Magenta
+    ];
+    
+    // Gerar hash simples baseado no nome da fábrica
+    let hash = 0;
+    for (let i = 0; i < factoryName.length; i++) {
+      hash = factoryName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Usar o hash para selecionar uma cor da paleta
+    const colorIndex = Math.abs(hash) % colors.length;
+    return colors[colorIndex];
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -306,13 +341,14 @@ const Products = () => {
                       }}>
                         <div style={{ 
                           padding: isMobile ? '2px 6px' : '4px 8px', 
-                          backgroundColor: 'rgba(24, 144, 255, 0.9)', 
+                          backgroundColor: getFactoryColor(product.factory.name), 
                           borderRadius: isMobile ? '8px' : '12px',
                           fontSize: isMobile ? '9px' : '11px', 
                           fontWeight: 'bold',
                           color: 'white',
                           backdropFilter: 'blur(4px)',
-                          textAlign: 'center'
+                          textAlign: 'center',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}>
                           {product.factory.name}
                         </div>
