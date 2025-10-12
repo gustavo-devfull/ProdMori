@@ -266,7 +266,7 @@ const Products = () => {
         ) : (
           <Row gutter={[12, 12]}>
             {filteredProducts.map((product) => (
-              <Col xs={12} sm={12} md={12} lg={12} xl={12} key={product.id}>
+              <Col xs={12} sm={12} md={6} lg={6} xl={6} key={product.id}>
                 <Card
                   hoverable
                   style={{ 
