@@ -106,6 +106,9 @@ class ImageService {
   // Método para validar URL de imagem
   isValidImageUrl(url) {
     try {
+      if (!url || typeof url !== 'string' || url.trim() === '') {
+        return false;
+      }
       new URL(url);
       return url.includes('ideolog.ia.br') || 
              url.includes('localhost:3001/api/image') ||
@@ -133,7 +136,9 @@ class ImageService {
 
   // Método para obter URL de imagem otimizada
   getImageUrl(imageUrl) {
-    if (!imageUrl) return null;
+    if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
+      return null;
+    }
     
     // Se já é uma URL válida, retornar como está
     if (this.isValidImageUrl(imageUrl)) {

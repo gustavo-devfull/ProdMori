@@ -100,7 +100,6 @@ const Dashboard = () => {
                 }}
                 size="large"
                 style={{ width: '100%', height: '48px', fontSize: '16px' }}
-                wave={false}
               >
                 Cadastrar Fábrica
               </Button>
@@ -137,7 +136,6 @@ const Dashboard = () => {
                 }}
                 size="large"
                 style={{ width: '100%', height: '48px', fontSize: '16px' }}
-                wave={false}
               >
                 Cadastrar Produto
               </Button>
