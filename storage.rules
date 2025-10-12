@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Permitir leitura e escrita para todos os usuários
+    // Em produção, você deve implementar autenticação adequada
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}

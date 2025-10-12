@@ -1,0 +1,22 @@
+{
+  "name": "produtos-china-server",
+  "version": "1.0.0",
+  "description": "Servidor backend para upload de imagens via FTP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "basic-ftp": "^5.0.3",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["ftp", "upload", "images", "express"],
+  "author": "",
+  "license": "MIT"
+}
