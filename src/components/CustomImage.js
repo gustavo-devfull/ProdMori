@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Spin, Tooltip } from 'antd';
-import { ShoppingOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Spinner, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import imageService from '../services/imageService';
 
 const CustomImage = ({ 
@@ -53,13 +52,20 @@ const CustomImage = ({
       setLoading(true);
       setError(false);
       
-      // Tentar novamente após um pequeno delay
-      setTimeout(() => {
-        const img = new Image();
-        img.onload = handleLoad;
-        img.onerror = handleError;
-        img.src = imageUrl;
-      }, 1000);
+      // Aguardar um pouco antes de tentar novamente
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Recarregar a imagem
+      const img = new Image();
+      img.onload = handleLoad;
+      img.onerror = handleError;
+      img.src = imageUrl;
+    }
+  };
+
+  const handlePreview = () => {
+    if (onPreview && imageUrl) {
+      onPreview(imageUrl);
     }
   };
 
@@ -67,124 +73,94 @@ const CustomImage = ({
     width: '100%',
     height: '200px',
     objectFit: 'cover',
-    backgroundColor: '#f5f5f5',
-    borderRadius: '8px 8px 0 0',
-    transition: 'all 0.3s ease',
+    borderRadius: '8px',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    cursor: showPreview ? 'pointer' : 'default',
     ...style
   };
 
-  const placeholderStyle = {
+  const hoverStyle = {
     ...defaultStyle,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#999',
-    backgroundColor: '#f5f5f5',
-    borderRadius: '8px 8px 0 0'
+    transform: hovered ? 'scale(1.05)' : 'scale(1)',
+    boxShadow: hovered ? '0 8px 25px rgba(0,0,0,0.15)' : '0 2px 8px rgba(0,0,0,0.1)'
   };
 
-  const handlePreview = (e) => {
-    e.stopPropagation();
-    if (onPreview) {
-      onPreview(imageUrl);
-    }
-  };
-
-  if (error || !src) {
+  if (loading) {
     return (
-      <div style={placeholderStyle}>
-        <div style={{ textAlign: 'center' }}>
-          <ShoppingOutlined style={{ fontSize: '48px', marginBottom: '8px' }} />
-          <div style={{ fontSize: '12px', color: '#999' }}>
-            {!src ? 'Sem imagem' : 'Erro ao carregar'}
-          </div>
-          {src && retryCount < 3 && (
-            <button
-              onClick={handleRetry}
-              style={{
-                marginTop: '8px',
-                padding: '4px 8px',
-                fontSize: '12px',
-                border: '1px solid #d9d9d9',
-                borderRadius: '4px',
-                backgroundColor: '#fff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <ReloadOutlined />
-              Tentar novamente
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div 
-      style={{ 
-        position: 'relative', 
-        ...defaultStyle,
-        cursor: showPreview ? 'pointer' : 'default'
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={showPreview ? handlePreview : undefined}
-    >
-      {loading && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+      <div 
+        style={{
+          ...defaultStyle,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: '#f5f5f5',
-          zIndex: 1,
-          borderRadius: '8px 8px 0 0'
-        }}>
-          <Spin size="large" />
-        </div>
-      )}
-      
-      {showPreview && hovered && !loading && (
-        <div style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
-          borderRadius: '4px',
-          padding: '4px',
-          zIndex: 2,
-          transition: 'all 0.3s ease'
-        }}>
-          <Tooltip title="Visualizar imagem">
-            <EyeOutlined style={{ color: 'white', fontSize: '16px' }} />
-          </Tooltip>
-        </div>
-      )}
+          border: '1px solid #d9d9d9'
+        }}
+      >
+        <Spinner animation="border" size="sm" />
+      </div>
+    );
+  }
 
-      <img
-        src={imageUrl || src}
-        alt={alt}
+  if (error) {
+    return (
+      <div 
         style={{
           ...defaultStyle,
-          opacity: loading ? 0 : 1,
-          transform: hovered ? 'scale(1.05)' : 'scale(1)',
-          transition: 'all 0.3s ease'
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f5f5f5',
+          border: '1px solid #d9d9d9',
+          color: '#999'
         }}
-        onLoad={handleLoad}
-        onError={handleError}
-        {...props}
-      />
-    </div>
+      >
+        <i className="bi bi-image text-muted fs-1"></i>
+        <small className="mt-2">Erro ao carregar imagem</small>
+        {retryCount < 3 && (
+          <button 
+            className="btn btn-sm btn-outline-secondary mt-2"
+            onClick={handleRetry}
+          >
+            <i className="bi bi-arrow-clockwise me-1"></i>
+            Tentar novamente
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const imageElement = (
+    <img
+      src={imageUrl || src}
+      alt={alt || 'Imagem do produto'}
+      style={hoverStyle}
+      onLoad={handleLoad}
+      onError={handleError}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={showPreview ? handlePreview : undefined}
+      {...props}
+    />
   );
+
+  if (showPreview) {
+    return (
+      <OverlayTrigger
+        placement="top"
+        overlay={
+          <Tooltip>
+            Clique para visualizar
+          </Tooltip>
+        }
+      >
+        {imageElement}
+      </OverlayTrigger>
+    );
+  }
+
+  return imageElement;
 };
 
 export default CustomImage;
-

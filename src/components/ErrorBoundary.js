@@ -1,6 +1,5 @@
 import React from 'react';
-import { Alert, Button, Card } from 'antd';
-import { ReloadOutlined, BugOutlined } from '@ant-design/icons';
+import { Alert, Button, Card } from 'react-bootstrap';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -51,32 +50,18 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       // Custom fallback UI
       return (
-        <div style={{ 
-          padding: '24px', 
-          minHeight: '400px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Card 
-            style={{ 
-              maxWidth: '600px', 
-              width: '100%',
-              textAlign: 'center'
-            }}
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <BugOutlined style={{ marginRight: '8px', color: '#ff4d4f' }} />
-                Erro na Aplicação
-              </div>
-            }
-          >
-            <Alert
-              message="Ocorreu um erro inesperado"
-              description={
+        <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '400px' }}>
+          <Card className="w-100" style={{ maxWidth: '600px' }}>
+            <Card.Header className="text-center">
+              <i className="bi bi-bug-fill text-danger me-2"></i>
+              Erro na Aplicação
+            </Card.Header>
+            <Card.Body>
+              <Alert variant="danger">
+                <Alert.Heading>Ocorreu um erro inesperado</Alert.Heading>
                 <div>
                   <p>Algo deu errado na aplicação. Isso pode ser causado por:</p>
-                  <ul style={{ textAlign: 'left', margin: '16px 0' }}>
+                  <ul>
                     <li>Problemas de conectividade</li>
                     <li>Dados corrompidos</li>
                     <li>Conflitos de CSS dinâmico</li>
@@ -84,70 +69,47 @@ class ErrorBoundary extends React.Component {
                   </ul>
                   <p><strong>Tentativas de recuperação:</strong> {this.state.retryCount}</p>
                 </div>
-              }
-              type="error"
-              showIcon
-              style={{ marginBottom: '24px' }}
-            />
-            
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <Button 
-                type="primary" 
-                icon={<ReloadOutlined />}
-                onClick={this.handleRetry}
-                size="large"
-              >
-                Tentar Novamente
-              </Button>
+              </Alert>
               
-              <Button 
-                icon={<ReloadOutlined />}
-                onClick={this.handleReload}
-                size="large"
-              >
-                Recarregar Página
-              </Button>
-            </div>
-            
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details style={{ 
-                marginTop: '24px', 
-                textAlign: 'left',
-                backgroundColor: '#f5f5f5',
-                padding: '16px',
-                borderRadius: '6px',
-                border: '1px solid #d9d9d9'
-              }}>
-                <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>
-                  Detalhes do Erro (Desenvolvimento)
-                </summary>
-                <div style={{ marginTop: '12px' }}>
-                  <h4>Erro:</h4>
-                  <pre style={{ 
-                    whiteSpace: 'pre-wrap', 
-                    fontSize: '12px',
-                    backgroundColor: '#fff',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #d9d9d9'
-                  }}>
-                    {this.state.error && this.state.error.toString()}
-                  </pre>
-                  
-                  <h4>Stack Trace:</h4>
-                  <pre style={{ 
-                    whiteSpace: 'pre-wrap', 
-                    fontSize: '12px',
-                    backgroundColor: '#fff',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #d9d9d9'
-                  }}>
-                    {this.state.errorInfo && this.state.errorInfo.componentStack}
-                  </pre>
-                </div>
-              </details>
-            )}
+              <div className="d-flex gap-2 justify-content-center">
+                <Button 
+                  variant="primary" 
+                  onClick={this.handleRetry}
+                  size="lg"
+                >
+                  <i className="bi bi-arrow-clockwise me-2"></i>
+                  Tentar Novamente
+                </Button>
+                
+                <Button 
+                  variant="outline-secondary"
+                  onClick={this.handleReload}
+                  size="lg"
+                >
+                  <i className="bi bi-arrow-clockwise me-2"></i>
+                  Recarregar Página
+                </Button>
+              </div>
+              
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <details className="mt-4">
+                  <summary className="fw-bold" style={{ cursor: 'pointer' }}>
+                    Detalhes do Erro (Desenvolvimento)
+                  </summary>
+                  <div className="mt-3">
+                    <h5>Erro:</h5>
+                    <pre className="bg-light p-3 rounded border" style={{ fontSize: '12px' }}>
+                      {this.state.error && this.state.error.toString()}
+                    </pre>
+                    
+                    <h5>Stack Trace:</h5>
+                    <pre className="bg-light p-3 rounded border" style={{ fontSize: '12px' }}>
+                      {this.state.errorInfo && this.state.errorInfo.componentStack}
+                    </pre>
+                  </div>
+                </details>
+              )}
+            </Card.Body>
           </Card>
         </div>
       );
