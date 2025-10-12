@@ -246,7 +246,7 @@ const Products = () => {
           </Card.Body>
         </Card>
       ) : (
-        <Row className="g-3 justify-content-center">
+        <Row className="justify-content-center" style={{ gap: '24px' }}>
           {filteredProducts.map(product => (
             <Col xs={12} sm={6} md={4} lg={3} xl={2} key={product.id}>
               <Card className="h-100">
