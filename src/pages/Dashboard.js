@@ -195,7 +195,7 @@ const Dashboard = () => {
                           {product?.name || 'Nome não disponível'}
                         </span>
                         <small className="text-muted">
-                          {product?.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                          {product?.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
                         </small>
                       </div>
                     </ListGroup.Item>
