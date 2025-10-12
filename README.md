@@ -1,169 +1,203 @@
 # Sistema de Produtos China
 
-Sistema completo para gerenciamento de produtos e fábricas/lojas chinesas, desenvolvido em React com Firebase e FTP para armazenamento de imagens.
+Sistema de gerenciamento de produtos e fábricas desenvolvido com React, Ant Design, Firebase e FTP.
 
-## 🚀 Funcionalidades
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gustavo-devfull/ProductMR)
 
-### Fábricas/Lojas
-- ✅ Cadastro completo com nome, contato, localização e observações
-- ✅ Listagem com paginação e busca
-- ✅ Edição e exclusão de registros
-- ✅ Interface intuitiva com Ant Design
+## 🚀 Deploy no Vercel
 
-### Produtos
-- ✅ Cadastro com foto, nome, segmento, medidas, preço, MOQ e observações
-- ✅ Upload de imagens via FTP
-- ✅ Associação com fábricas/lojas
-- ✅ Listagem com preview de imagens
-- ✅ Edição e exclusão de produtos
+### Configuração Automática
+1. Acesse [Vercel](https://vercel.com)
+2. Conecte sua conta GitHub
+3. Importe o repositório `gustavo-devfull/ProductMR`
+4. Configure as variáveis de ambiente:
+   - `REACT_APP_API_URL`: `https://ideolog.ia.br`
+5. Deploy automático! ✨
 
-### Dashboard
-- ✅ Estatísticas gerais do sistema
-- ✅ Contadores de fábricas e produtos
-- ✅ Interface responsiva
+### Configuração Manual
+```bash
+# Clone o repositório
+git clone https://github.com/gustavo-devfull/ProductMR.git
 
-## 🛠️ Tecnologias Utilizadas
+# Instale o Vercel CLI
+npm i -g vercel
 
-- **React 18** - Framework frontend
-- **Ant Design 5** - Biblioteca de componentes UI
+# Deploy
+vercel --prod
+```
+
+## 🛠 Tecnologias Utilizadas
+
+- **React** - Framework frontend
+- **Ant Design** - Biblioteca de componentes UI
 - **Firebase Firestore** - Banco de dados NoSQL
-- **Express.js** - Servidor backend
-- **FTP** - Armazenamento de imagens via servidor
-- **React Router** - Navegação entre páginas
+- **FTP** - Armazenamento de imagens
+- **Express.js** - Backend para proxy de imagens
+- **React Router** - Roteamento
+- **Vercel** - Deploy e hospedagem
+- **JavaScript/JSX** - Linguagem de programação
 
-## 📦 Instalação
+## ✨ Funcionalidades
 
-1. **Clone o repositório**
+### 🏭 Fábricas/Lojas
+- Cadastro de fábricas com nome, contato, localização e observações
+- Campo de segmento para categorização
+- Listagem em cards com informações detalhadas
+- Edição e exclusão de fábricas
+- Exibição dos produtos associados a cada fábrica
+
+### 📦 Produtos
+- Cadastro de produtos com foto, nome, segmento, medidas, preço, MOQ e observações
+- Upload de imagens via FTP
+- Listagem em cards com foto, nome, preço e fábrica associada
+- Filtro por fábrica
+- Edição e exclusão de produtos
+- Imagens responsivas (100% largura do card)
+
+### 📊 Dashboard
+- Estatísticas de fábricas e produtos
+- Navegação rápida para cadastros
+- Cards clicáveis para navegação
+- Layout responsivo
+
+## 🚀 Instalação Local
+
+### Pré-requisitos
+- Node.js (versão 14 ou superior)
+- npm ou yarn
+- Acesso ao Firebase
+- Credenciais FTP
+
+### Instalação
 ```bash
-git clone <url-do-repositorio>
-cd produtos-china
-```
+# Clone o repositório
+git clone https://github.com/gustavo-devfull/ProductMR.git
 
-2. **Instale as dependências**
-```bash
+# Instale as dependências
 npm install
+
+# Instale as dependências do servidor
+npm install --prefix server
 ```
 
-3. **Execute o projeto**
-O sistema possui frontend e backend integrados:
-
-**Opção 1 - Executar tudo junto (recomendado):**
+### Execução
 ```bash
+# Desenvolvimento (frontend + backend)
 npm run dev
-```
 
-**Opção 2 - Executar separadamente:**
-```bash
-# Terminal 1 - Backend (FTP)
+# Apenas frontend
+npm start
+
+# Apenas backend
 npm run server
 
-# Terminal 2 - Frontend
-npm start
-```
-
-O sistema estará disponível em:
-- **Frontend**: `http://localhost:3000`
-- **Backend API**: `http://localhost:3001`
-
-## 🗂️ Estrutura do Projeto
-
-```
-PMR/
-├── src/                    # Frontend React
-│   ├── components/         # Componentes reutilizáveis
-│   │   ├── AppHeader.js   # Cabeçalho da aplicação
-│   │   └── AppSidebar.js  # Menu lateral
-│   ├── config/            # Configurações
-│   │   └── firebase.js    # Configuração do Firebase
-│   ├── pages/             # Páginas principais
-│   │   ├── Dashboard.js   # Página inicial
-│   │   ├── Factories.js   # Gerenciamento de fábricas
-│   │   └── Products.js    # Gerenciamento de produtos
-│   ├── services/          # Serviços de API
-│   │   ├── factoryService.js  # CRUD de fábricas
-│   │   ├── productService.js  # CRUD de produtos
-│   │   └── imageService.js    # Upload/download via API
-│   ├── App.js             # Componente principal
-│   ├── index.js           # Ponto de entrada
-│   └── index.css          # Estilos globais
-├── server.js              # Servidor backend Express
-├── package.json           # Dependências do projeto
-└── README.md              # Documentação
-```
-
-## 🔧 Configurações
-
-### Firebase
-O Firebase está configurado com:
-- **Projeto**: loja-13939
-- **Firestore**: Para armazenamento de dados
-- **Storage**: Para backup de imagens
-
-### FTP
-O FTP está configurado com:
-- **Host**: 46.202.90.62
-- **Porta**: 21
-- **Domínio**: ideolog.ia.br
-- **Upload**: Imagens são salvas via servidor backend
-- **URLs**: Imagens acessíveis via http://ideolog.ia.br/
-
-## 📱 Como Usar
-
-### 1. Cadastrar Fábrica/Loja
-1. Acesse "Fábricas/Lojas" no menu
-2. Clique em "Nova Fábrica/Loja"
-3. Preencha os dados obrigatórios
-4. Salve o registro
-
-### 2. Cadastrar Produto
-1. Acesse "Produtos" no menu
-2. Clique em "Novo Produto"
-3. Faça upload da imagem do produto
-4. Preencha todos os dados
-5. Selecione a fábrica associada
-6. Salve o produto
-
-### 3. Visualizar Dashboard
-1. Acesse a página inicial
-2. Veja as estatísticas gerais
-3. Monitore o crescimento do sistema
-
-## 🔒 Segurança
-
-- Todas as operações são validadas no frontend
-- Imagens são armazenadas com nomes únicos
-- Firebase Firestore com regras de segurança
-- FTP com credenciais seguras
-
-## 🚀 Deploy
-
-Para fazer deploy em produção:
-
-1. **Build do projeto**
-```bash
+# Build para produção
 npm run build
 ```
 
-2. **Configure o servidor**
-- Configure um servidor web (Nginx, Apache)
-- Aponte para a pasta `build/`
-- Configure HTTPS para segurança
+## ⚙️ Configuração
 
-3. **Variáveis de ambiente**
-- Mantenha as credenciais seguras
-- Configure CORS no Firebase se necessário
+### Firebase
+Configure as credenciais do Firebase em `src/config/firebase.js`:
+
+```javascript
+const firebaseConfig = {
+  apiKey: "AIzaSyCsgETTEl2bWeCAaAosdwAT5FfUvnWJydY",
+  authDomain: "loja-13939.firebaseapp.com",
+  projectId: "loja-13939",
+  storageBucket: "loja-13939.firebasestorage.app",
+  messagingSenderId: "803150163726",
+  appId: "1:803150163726:web:86d7d8049f74d6bf94b15f"
+};
+```
+
+### FTP
+Configure as credenciais FTP em `server.js`:
+
+```javascript
+const ftpConfig = {
+  host: '46.202.90.62',
+  port: 21,
+  user: 'u715606397.ideolog.ia.br',
+  password: ']X9CC>t~ihWhdzNq'
+};
+```
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── components/          # Componentes reutilizáveis
+│   ├── AppHeader.js     # Cabeçalho da aplicação
+│   ├── AppSidebar.js    # Barra lateral de navegação
+│   └── ErrorBoundary.js # Captura de erros
+├── pages/              # Páginas da aplicação
+│   ├── Dashboard.js    # Página inicial
+│   ├── Factories.js    # Gerenciamento de fábricas
+│   └── Products.js     # Gerenciamento de produtos
+├── services/           # Serviços de API
+│   ├── factoryService.js
+│   ├── productService.js
+│   ├── imageService.js
+│   └── ftpService.js
+├── config/             # Configurações
+│   └── firebase.js
+├── App.js              # Componente principal
+├── index.js            # Ponto de entrada
+└── index.css           # Estilos globais
+
+server.js               # Servidor Express para proxy FTP
+vercel.json             # Configuração do Vercel
+config-overrides.js     # Configurações do webpack
+package.json            # Dependências do projeto
+```
+
+## 🌐 Deploy
+
+### Vercel (Recomendado)
+- ✅ Deploy automático via GitHub
+- ✅ CDN global
+- ✅ SSL automático
+- ✅ Preview de branches
+- ✅ Configuração em `vercel.json`
+
+### Outras Plataformas
+- **Netlify**: Compatível com React
+- **Heroku**: Requer configuração adicional
+- **AWS S3 + CloudFront**: Para usuários avançados
+
+## 📱 Responsividade
+
+- **Mobile**: Drawer para navegação, cards otimizados
+- **Tablet**: Layout adaptativo
+- **Desktop**: Sidebar fixa, layout completo
+
+## 🔧 Melhorias Implementadas
+
+- ✅ Imagens responsivas (100% largura do card)
+- ✅ Layout responsivo completo
+- ✅ Error Boundary para captura de erros
+- ✅ Configurações otimizadas do webpack
+- ✅ Meta tag anti-tradução para estabilidade
+- ✅ Botões com padding aumentado (16px 32px)
+- ✅ Filtro por fábrica na página de produtos
+- ✅ Cards com informações detalhadas
+- ✅ Navegação otimizada para mobile
+- ✅ Deploy configurado para Vercel
+
+## 📄 Licença
+
+Este projeto é privado e destinado ao uso interno.
+
+## 🤝 Contribuição
+
+Para contribuir com o projeto:
+1. Fork o repositório
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
 
 ## 📞 Suporte
 
-Para dúvidas ou problemas:
-- Verifique os logs do console do navegador
-- Confirme as credenciais do Firebase e FTP
-- Teste a conectividade de rede
-
-## 🔄 Atualizações Futuras
-
-- [ ] Sistema de autenticação
-- [ ] Relatórios avançados
-- [ ] Exportação de dados
-- [ ] Notificações push
-- [ ] API REST para integração
+Para suporte técnico, entre em contato através do GitHub Issues.
