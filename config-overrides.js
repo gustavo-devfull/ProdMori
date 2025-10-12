@@ -8,14 +8,14 @@ module.exports = override(
       'process.env.GENERATE_SOURCEMAP': JSON.stringify('false'),
     })
   ),
-  // Configurações para melhorar a estabilidade do HMR
+  // Configurações para resolver problemas de DOM e CSS dinâmico
   (config) => {
     // Desabilitar source maps em desenvolvimento para reduzir problemas de DOM
     if (process.env.NODE_ENV === 'development') {
       config.devtool = false;
     }
     
-    // Configurações do dev server
+    // Configurações do dev server para estabilidade
     if (config.devServer) {
       config.devServer.hot = true;
       config.devServer.liveReload = false;
@@ -29,6 +29,17 @@ module.exports = override(
           port: 3000,
           pathname: '/ws',
         },
+        logging: 'warn', // Reduzir logs verbosos
+      };
+      
+      // Configurações adicionais para estabilidade
+      config.devServer.historyApiFallback = {
+        disableDotRule: true,
+      };
+      
+      config.devServer.static = {
+        directory: config.devServer.static?.directory || './public',
+        publicPath: '/',
       };
     }
     
@@ -37,6 +48,8 @@ module.exports = override(
       ...config.optimization,
       splitChunks: {
         chunks: 'all',
+        minSize: 20000,
+        maxSize: 244000,
         cacheGroups: {
           default: {
             minChunks: 1,
@@ -48,9 +61,59 @@ module.exports = override(
             name: 'vendors',
             priority: -10,
             chunks: 'all',
+            enforce: true,
+          },
+          antd: {
+            test: /[\\/]node_modules[\\/]antd[\\/]/,
+            name: 'antd',
+            priority: 10,
+            chunks: 'all',
+            enforce: true,
           },
         },
       },
+      // Desabilitar minimização em desenvolvimento para debug
+      minimize: process.env.NODE_ENV === 'production',
+    };
+    
+    // Configurações para resolver problemas de módulos Node.js
+    config.resolve = {
+      ...config.resolve,
+      fallback: {
+        ...config.resolve.fallback,
+        "buffer": false,
+        "fs": false,
+        "net": false,
+        "tls": false,
+        "crypto": false,
+        "stream": false,
+        "util": false,
+        "zlib": false,
+        "path": false,
+        "os": false,
+      },
+    };
+    
+    // Configurações para melhorar a estabilidade do CSS
+    config.module.rules.push({
+      test: /\.css$/,
+      use: [
+        'style-loader',
+        {
+          loader: 'css-loader',
+          options: {
+            modules: false,
+            sourceMap: false,
+          },
+        },
+      ],
+    });
+    
+    // Configurações para melhorar performance e estabilidade
+    config.performance = {
+      hints: false,
+      maxEntrypointSize: 512000,
+      maxAssetSize: 512000,
     };
     
     return config;
