@@ -272,7 +272,7 @@ const Products = () => {
                     <div className="position-absolute" style={{ 
                       top: '12px', 
                       right: '12px',
-                      padding: '12px'
+                      padding: '4px'
                     }}>
                       {(() => {
                         const factoryColor = getFactoryColor(product.factory.name);
