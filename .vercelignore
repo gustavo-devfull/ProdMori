@@ -35,8 +35,7 @@ coverage/
 build/
 dist/
 
-# Arquivos de configuração local
-config-overrides.js
+# Arquivos de servidor (não necessários para build estático)
 server.js
 server-package.json
 package-server.json
