@@ -305,26 +305,26 @@ const Products = () => {
                     {/* Botão Ver Detalhes */}
                     <Button
                       type="primary"
-                      size={isMobile ? "small" : "middle"}
+                      size="small"
                       onClick={() => handleEdit(product)}
                       style={{
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         fontWeight: 'bold',
-                        fontSize: isMobile ? '13px' : '15px',
-                        height: isMobile ? '32px' : '40px',
+                        fontSize: isMobile ? '11px' : '12px',
+                        height: isMobile ? '28px' : '32px',
                         width: '100%',
-                        boxShadow: '0 3px 12px rgba(24, 144, 255, 0.4)',
+                        boxShadow: '0 2px 8px rgba(24, 144, 255, 0.3)',
                         border: 'none',
                         background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
                         transition: 'all 0.3s ease'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 5px 16px rgba(24, 144, 255, 0.5)';
+                        e.target.style.transform = 'translateY(-1px)';
+                        e.target.style.boxShadow = '0 3px 12px rgba(24, 144, 255, 0.4)';
                       }}
                       onMouseLeave={(e) => {
                         e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 3px 12px rgba(24, 144, 255, 0.4)';
+                        e.target.style.boxShadow = '0 2px 8px rgba(24, 144, 255, 0.3)';
                       }}
                     >
                       Ver Detalhes
