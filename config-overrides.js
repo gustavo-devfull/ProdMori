@@ -94,20 +94,7 @@ module.exports = override(
       },
     };
     
-    // Configurações para melhorar a estabilidade do CSS
-    config.module.rules.push({
-      test: /\.css$/,
-      use: [
-        'style-loader',
-        {
-          loader: 'css-loader',
-          options: {
-            modules: false,
-            sourceMap: false,
-          },
-        },
-      ],
-    });
+    // Usar configurações CSS padrão do Create React App
     
     // Configurações para melhorar performance e estabilidade
     config.performance = {
