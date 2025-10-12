@@ -1,19 +1,17 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { Layout } from 'antd';
+import { Container } from 'react-bootstrap';
 import AppHeader from './components/AppHeader';
 import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Factories from './pages/Factories';
 import Products from './pages/Products';
 
-const { Content } = Layout;
-
 function App() {
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <div className="min-vh-100 d-flex flex-column">
       <AppHeader />
-      <Content className="ant-layout-content">
+      <Container fluid className="flex-grow-1 py-3">
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Dashboard />} />
@@ -21,8 +19,8 @@ function App() {
             <Route path="/products" element={<Products />} />
           </Routes>
         </ErrorBoundary>
-      </Content>
-    </Layout>
+      </Container>
+    </div>
   );
 }
 

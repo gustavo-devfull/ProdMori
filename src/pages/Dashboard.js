@@ -3,12 +3,11 @@ import {
   Card, 
   Row, 
   Col, 
-  Spin,
+  Spinner,
   Alert,
   Button,
-  List
-} from 'antd';
-import { ShopOutlined, ShoppingOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons';
+  ListGroup
+} from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import factoryService from '../services/factoryService';
 import productService from '../services/productService';
@@ -91,191 +90,132 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Spin size="large" />
+      <div className="text-center py-5">
+        <Spinner animation="border" size="lg" />
       </div>
     );
   }
 
   return (
     <div>
-      <div className="page-header">
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#ffffff', backgroundColor: '#0175a6', padding: '10px', borderRadius: '5px' }}>ProductMobile Ravi</h2>
+      <div className="bg-primary text-white p-3 rounded mb-3">
+        <h2 className="mb-0 fs-5 fw-semibold">ProductMobile Ravi</h2>
       </div>
       
       {error && (
-        <Alert
-          message="Erro"
-          description={error}
-          type="error"
-          showIcon
-          style={{ marginBottom: 24 }}
-        />
+        <Alert variant="danger" className="mb-3">
+          <Alert.Heading>Erro</Alert.Heading>
+          {error}
+        </Alert>
       )}
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12}>
+      <Row className="g-3">
+        <Col xs={12} md={6}>
           <Card 
-            hoverable
+            className="h-100"
             onClick={() => navigate('/factories')}
             style={{ cursor: 'pointer' }}
           >
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: 16
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <ShopOutlined style={{ fontSize: '20px', color: '#3f8600', marginRight: '8px' }} />
-                <span style={{ fontSize: '16px', fontWeight: '500' }}>Total de Fábricas/Lojas</span>
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-shop me-2 text-success fs-5"></i>
+                  <span className="fw-medium">Total de Fábricas/Lojas</span>
+                </div>
+                <div className="fs-3 fw-bold text-success">
+                  {stats.factories}
+                </div>
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3f8600' }}>
-                {stats.factories}
+              
+              {/* Lista dos 5 últimos cadastrados */}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2 text-muted small">
+                  <i className="bi bi-calendar me-1"></i>
+                  Últimos 5 cadastrados:
+                </div>
+                <ListGroup variant="flush">
+                  {recentItems.factories.map((factory, index) => (
+                    <ListGroup.Item key={index} className="px-0 py-1 border-0">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="text-truncate me-2 flex-grow-1">
+                          {factory?.name || 'Nome não disponível'}
+                        </span>
+                        <small className="text-muted">
+                          {factory?.segment || 'Sem segmento'}
+                        </small>
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
               </div>
-            </div>
-            
-            {/* Lista dos 5 últimos cadastrados */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                marginBottom: 8,
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666'
-              }}>
-                <CalendarOutlined style={{ marginRight: '4px' }} />
-                Últimos 5 cadastrados:
-              </div>
-              <List
-                size="small"
-                dataSource={recentItems.factories}
-                renderItem={(factory) => (
-                  <List.Item style={{ padding: '4px 0', fontSize: '12px' }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      width: '100%'
-                    }}>
-                      <span style={{ 
-                        flex: 1, 
-                        marginRight: '8px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {factory?.name || 'Nome não disponível'}
-                      </span>
-                      <span style={{ 
-                        fontSize: '10px',
-                        color: '#666'
-                      }}>
-                        {factory?.segment || 'Sem segmento'}
-                      </span>
-                    </div>
-                  </List.Item>
-                )}
-              />
-            </div>
-            
-            <div>
+              
               <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
+                variant="primary"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate('/factories');
                 }}
-                size="large"
-                style={{ width: '100%', height: '48px', fontSize: '16px' }}
+                className="w-100"
+                size="lg"
               >
+                <i className="bi bi-plus-circle me-2"></i>
                 Cadastrar Fábrica
               </Button>
-            </div>
+            </Card.Body>
           </Card>
         </Col>
-        <Col xs={24} sm={12}>
+        <Col xs={12} md={6}>
           <Card 
-            hoverable
+            className="h-100"
             onClick={() => navigate('/products')}
             style={{ cursor: 'pointer' }}
           >
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: 16
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <ShoppingOutlined style={{ fontSize: '20px', color: '#1890ff', marginRight: '8px' }} />
-                <span style={{ fontSize: '16px', fontWeight: '500' }}>Total de Produtos</span>
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-bag me-2 text-primary fs-5"></i>
+                  <span className="fw-medium">Total de Produtos</span>
+                </div>
+                <div className="fs-3 fw-bold text-primary">
+                  {stats.products}
+                </div>
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#1890ff' }}>
-                {stats.products}
+              
+              {/* Lista dos 5 últimos cadastrados */}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2 text-muted small">
+                  <i className="bi bi-calendar me-1"></i>
+                  Últimos 5 cadastrados:
+                </div>
+                <ListGroup variant="flush">
+                  {recentItems.products.map((product, index) => (
+                    <ListGroup.Item key={index} className="px-0 py-1 border-0">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="text-truncate me-2 flex-grow-1">
+                          {product?.name || 'Nome não disponível'}
+                        </span>
+                        <small className="text-muted">
+                          {product?.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                        </small>
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
               </div>
-            </div>
-            
-            {/* Lista dos 5 últimos cadastrados */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                marginBottom: 8,
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#666'
-              }}>
-                <CalendarOutlined style={{ marginRight: '4px' }} />
-                Últimos 5 cadastrados:
-              </div>
-              <List
-                size="small"
-                dataSource={recentItems.products}
-                renderItem={(product) => (
-                  <List.Item style={{ padding: '4px 0', fontSize: '12px' }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      width: '100%'
-                    }}>
-                      <span style={{ 
-                        flex: 1, 
-                        marginRight: '8px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {product?.name || 'Nome não disponível'}
-                      </span>
-                      <span style={{ 
-                        fontSize: '10px',
-                        color: '#666'
-                      }}>
-                        {product?.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
-                      </span>
-                    </div>
-                  </List.Item>
-                )}
-              />
-            </div>
-            
-            <div>
+              
               <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
+                variant="primary"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate('/products');
                 }}
-                size="large"
-                style={{ width: '100%', height: '48px', fontSize: '16px' }}
+                className="w-100"
+                size="lg"
               >
+                <i className="bi bi-plus-circle me-2"></i>
                 Cadastrar Produto
               </Button>
-            </div>
+            </Card.Body>
           </Card>
         </Col>
       </Row>

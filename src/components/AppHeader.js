@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Button } from 'antd';
+import { Navbar, Nav, Button } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-
-const { Header } = Layout;
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -25,15 +23,8 @@ const AppHeader = () => {
   };
 
   return (
-    <Header className="ant-layout-header" style={{ 
-      display: 'flex', 
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: isMobile ? '0 12px' : '0 16px',
-      backgroundColor: '#001529',
-      minHeight: '64px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', flex: '0 0 auto' }}>
+    <Navbar bg="dark" variant="dark" expand="lg" className="px-3">
+      <Navbar.Brand className="d-flex align-items-center">
         <img 
           src="/RAVI-LOGO-BRANCO.svg" 
           alt="RAVI Logo" 
@@ -41,59 +32,38 @@ const AppHeader = () => {
             height: isMobile ? '32px' : '40px'
           }}
         />
-      </div>
+      </Navbar.Brand>
       
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px' }}>
-        <Button
-          type={location.pathname === '/' ? 'primary' : 'default'}
-          onClick={() => handleNavigation('/')}
-          size={isMobile ? 'small' : 'middle'}
-          style={{
-            color: location.pathname === '/' ? 'white' : '#1890ff',
-            borderColor: '#1890ff',
-            backgroundColor: location.pathname === '/' ? '#1890ff' : 'transparent',
-            fontSize: isMobile ? '12px' : '14px',
-            padding: isMobile ? '4px 8px' : '6px 12px',
-            height: isMobile ? '28px' : '32px',
-            minWidth: isMobile ? '60px' : '80px'
-          }}
-        >
-          Dashboard
-        </Button>
-        <Button
-          type={location.pathname === '/factories' ? 'primary' : 'default'}
-          onClick={() => handleNavigation('/factories')}
-          size={isMobile ? 'small' : 'middle'}
-          style={{
-            color: location.pathname === '/factories' ? 'white' : '#1890ff',
-            borderColor: '#1890ff',
-            backgroundColor: location.pathname === '/factories' ? '#1890ff' : 'transparent',
-            fontSize: isMobile ? '12px' : '14px',
-            padding: isMobile ? '4px 8px' : '6px 12px',
-            height: isMobile ? '28px' : '32px',
-            minWidth: isMobile ? '60px' : '80px'
-          }}
-        >
-          Fábricas
-        </Button>
-        <Button
-          type={location.pathname === '/products' ? 'primary' : 'default'}
-          onClick={() => handleNavigation('/products')}
-          size={isMobile ? 'small' : 'middle'}
-          style={{
-            color: location.pathname === '/products' ? 'white' : '#1890ff',
-            borderColor: '#1890ff',
-            backgroundColor: location.pathname === '/products' ? '#1890ff' : 'transparent',
-            fontSize: isMobile ? '12px' : '14px',
-            padding: isMobile ? '4px 8px' : '6px 12px',
-            height: isMobile ? '28px' : '32px',
-            minWidth: isMobile ? '60px' : '80px'
-          }}
-        >
-          Produtos
-        </Button>
-      </div>
-    </Header>
+      <Navbar.Toggle aria-controls="basic-navbar-nav" />
+      <Navbar.Collapse id="basic-navbar-nav">
+        <Nav className="ms-auto d-flex align-items-center gap-2">
+          <Button
+            variant={location.pathname === '/' ? 'primary' : 'outline-primary'}
+            onClick={() => handleNavigation('/')}
+            size={isMobile ? 'sm' : 'md'}
+            className="px-3"
+          >
+            Dashboard
+          </Button>
+          <Button
+            variant={location.pathname === '/factories' ? 'primary' : 'outline-primary'}
+            onClick={() => handleNavigation('/factories')}
+            size={isMobile ? 'sm' : 'md'}
+            className="px-3"
+          >
+            Fábricas
+          </Button>
+          <Button
+            variant={location.pathname === '/products' ? 'primary' : 'outline-primary'}
+            onClick={() => handleNavigation('/products')}
+            size={isMobile ? 'sm' : 'md'}
+            className="px-3"
+          >
+            Produtos
+          </Button>
+        </Nav>
+      </Navbar.Collapse>
+    </Navbar>
   );
 };
 
