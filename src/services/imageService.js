@@ -155,7 +155,10 @@ class ImageService {
 
   // Método para obter URL de imagem otimizada
   getImageUrl(imageUrl) {
+    console.log('ImageService.getImageUrl - Input:', imageUrl);
+    
     if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
+      console.log('ImageService.getImageUrl - Returning null (empty/invalid input)');
       return null;
     }
     
@@ -163,6 +166,7 @@ class ImageService {
       // Primeiro, tentar normalizar a URL se já for válida
       const normalizedUrl = this.normalizeImageUrl(imageUrl);
       if (normalizedUrl) {
+        console.log('ImageService.getImageUrl - Using normalized URL:', normalizedUrl);
         return normalizedUrl;
       }
       
@@ -186,6 +190,7 @@ class ImageService {
       
       // Validar se a URL construída é válida
       new URL(constructedUrl);
+      console.log('ImageService.getImageUrl - Using constructed URL:', constructedUrl);
       return constructedUrl;
     } catch (error) {
       console.error('Erro ao construir URL da imagem:', error, 'imageUrl:', imageUrl);
