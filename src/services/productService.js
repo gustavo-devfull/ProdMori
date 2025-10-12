@@ -47,6 +47,8 @@ class ProductService {
         ...doc.data()
       }));
       
+      console.log('ProductService - Produtos brutos do Firebase:', products);
+      
       // Carregar informações da fábrica para cada produto
       const productsWithFactory = await Promise.all(
         products.map(async (product) => {
@@ -63,6 +65,7 @@ class ProductService {
         })
       );
       
+      console.log('ProductService - Produtos com fábrica:', productsWithFactory);
       return productsWithFactory;
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);

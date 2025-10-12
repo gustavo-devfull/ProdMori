@@ -20,13 +20,16 @@ const CustomImage = ({
 
   // Processar URL da imagem quando src muda
   useEffect(() => {
+    console.log('CustomImage - src recebido:', src);
     if (src) {
       const processedUrl = imageService.getImageUrl(src);
+      console.log('CustomImage - URL processada:', processedUrl);
       setImageUrl(processedUrl);
       setLoading(true);
       setError(false);
       setRetryCount(0);
     } else {
+      console.log('CustomImage - src vazio ou inválido');
       setImageUrl('');
       setLoading(false);
       setError(true);
@@ -34,11 +37,14 @@ const CustomImage = ({
   }, [src]);
 
   const handleLoad = () => {
+    console.log('CustomImage - Imagem carregada com sucesso:', imageUrl);
     setLoading(false);
     setError(false);
   };
 
   const handleError = (e) => {
+    console.log('CustomImage - Erro ao carregar imagem:', e);
+    console.log('CustomImage - URL que falhou:', imageUrl);
     setLoading(false);
     setError(true);
     if (onError) {
