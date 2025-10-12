@@ -36,27 +36,35 @@ const AppHeader = () => {
       
       <Nav className="ms-auto d-flex align-items-center gap-2">
         <Button
-          variant="light"
+          variant={location.pathname === '/' ? 'primary' : 'outline-light'}
           onClick={() => handleNavigation('/')}
           size={isMobile ? 'sm' : 'md'}
           className="px-3 fw-semibold"
-          style={{ 
-            backgroundColor: 'white', 
+          style={location.pathname === '/' ? {
+            backgroundColor: '#0d6efd',
+            borderColor: '#0d6efd',
+            color: 'white'
+          } : {
+            backgroundColor: 'transparent',
             borderColor: 'white',
-            color: '#0d6efd'
+            color: 'white'
           }}
         >
           Dashboard
         </Button>
         <Button
-          variant="light"
+          variant={location.pathname === '/factories' ? 'primary' : 'outline-light'}
           onClick={() => handleNavigation('/factories')}
           size={isMobile ? 'sm' : 'md'}
           className="px-3 fw-semibold"
-          style={{ 
-            backgroundColor: 'white', 
+          style={location.pathname === '/factories' ? {
+            backgroundColor: '#0d6efd',
+            borderColor: '#0d6efd',
+            color: 'white'
+          } : {
+            backgroundColor: 'transparent',
             borderColor: 'white',
-            color: '#0d6efd'
+            color: 'white'
           }}
         >
           Fábricas
