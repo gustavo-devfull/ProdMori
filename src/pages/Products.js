@@ -8,7 +8,7 @@ import {
   Col,
   Alert,
   Spinner,
-  Select
+  Badge
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
 import productService from '../services/productService';
@@ -22,6 +22,7 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedFactory, setSelectedFactory] = useState(null);
   const [selectedSegment, setSelectedSegment] = useState(null);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -76,6 +77,8 @@ const Products = () => {
     const values = Object.fromEntries(formData.entries());
     
     try {
+      setSubmitting(true);
+      
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, values);
       } else {
@@ -88,6 +91,8 @@ const Products = () => {
     } catch (err) {
       setError('Erro ao salvar produto');
       console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -96,15 +101,6 @@ const Products = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await productService.deleteProduct(id);
-      await loadData();
-    } catch (err) {
-      setError('Erro ao excluir produto');
-      console.error(err);
-    }
-  };
 
   const handleModalClose = () => {
     setModalVisible(false);

@@ -350,11 +350,6 @@ code {
   height: auto;
 }
   
-  .ant-card-actions .ant-btn {
-    font-size: 12px !important;
-    padding: 4px 8px !important;
-  }
-  
   /* Mobile product cards */
   .ant-card-cover img {
     height: 150px !important;

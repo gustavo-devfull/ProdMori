@@ -11,7 +11,6 @@ import {
   ListGroup,
   Badge
 } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 import factoryService from '../services/factoryService';
 
 const Factories = () => {
