@@ -215,6 +215,9 @@ const Products = () => {
             onChange={handleFactoryFilter}
             allowClear
           >
+            <Option key="all-factories" value={null}>
+              Todas as fábricas
+            </Option>
             {factories.map(factory => (
               <Option key={factory.id} value={factory.id}>
                 {factory.name}
@@ -233,6 +236,9 @@ const Products = () => {
             onChange={handleSegmentFilter}
             allowClear
           >
+            <Option key="all-segments" value={null}>
+              Todos os segmentos
+            </Option>
             {uniqueSegments.map(segment => (
               <Option key={segment} value={segment}>
                 {segment}
