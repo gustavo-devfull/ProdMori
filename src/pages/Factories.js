@@ -286,8 +286,24 @@ const Factories = () => {
                         dataSource={factory.products.slice(0, 3)}
                         renderItem={(product) => (
                           <List.Item style={{ padding: '4px 0' }}>
-                            <div style={{ fontSize: '12px' }}>
-                              {product.name} - {product.segment || 'Sem segmento'}
+                            <div style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              fontSize: '12px',
+                              width: '100%'
+                            }}>
+                              <div style={{ flex: 1, marginRight: '8px' }}>
+                                {product.name}
+                              </div>
+                              <div style={{ 
+                                fontSize: '11px', 
+                                fontWeight: 'bold',
+                                color: '#1890ff',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                              </div>
                             </div>
                           </List.Item>
                         )}
