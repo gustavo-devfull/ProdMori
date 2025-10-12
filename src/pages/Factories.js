@@ -146,7 +146,7 @@ const Factories = () => {
         <Row className="g-3">
           {factories.map(factory => (
             <Col xs={12} md={6} lg={4} key={factory.id}>
-              <Card className="h-100">
+              <Card className="h-100 shadow-sm">
                 <Card.Body>
                   {/* Segmento, Localização e Contato na mesma linha */}
                   <div className="d-flex flex-wrap gap-3 mb-3">
