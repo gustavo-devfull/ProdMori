@@ -78,3 +78,4 @@ Se ainda houver problemas:
 - Confirme se o Storage está habilitado
 - Verifique as regras de segurança
 - Teste com uma imagem pequena (< 1MB)
+

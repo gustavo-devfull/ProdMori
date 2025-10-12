@@ -20,3 +20,4 @@ export default async function handler(req, res) {
     environment: process.env.NODE_ENV || 'production'
   });
 }
+

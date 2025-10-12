@@ -196,3 +196,4 @@ Se problemas persistirem:
 2. **Verificar console**: Procurar por novos erros
 3. **Testar Error Boundary**: Verificar se está capturando erros
 4. **Revisar componentes**: Simplificar ainda mais se necessário
+

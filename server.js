@@ -103,35 +103,94 @@ app.post('/api/upload-image', upload.single('image'), async (req, res) => {
   }
 });
 
-// Rota para servir imagens via proxy
+// Cache de imagens em memória
+const imageCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+// Função para verificar se o cache é válido
+function isCacheValid(timestamp) {
+  return Date.now() - timestamp < CACHE_DURATION;
+}
+
+// Rota para servir imagens via proxy com cache
 app.get('/api/image/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
+    
+    // Verificar cache primeiro
+    const cached = imageCache.get(filename);
+    if (cached && isCacheValid(cached.timestamp)) {
+      console.log(`Serving cached image: ${filename}`);
+      
+      // Configurar headers para cache
+      res.setHeader('Content-Type', cached.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutos
+      res.setHeader('Content-Length', cached.buffer.length);
+      
+      return res.status(200).send(cached.buffer);
+    }
+
+    console.log(`Fetching image from FTP: ${filename}`);
     const client = new ftp.Client();
     
     await client.access(ftpConfig);
     
-    // Baixar imagem do FTP
-    const localPath = `temp/${filename}`;
-    await client.downloadTo(localPath, filename);
+    // Verificar se o arquivo existe no FTP
+    const files = await client.list();
+    const fileExists = files.some(file => file.name === filename);
     
-    // Servir a imagem
-    res.sendFile(path.resolve(localPath), (err) => {
-      // Limpar arquivo temporário
-      if (fs.existsSync(localPath)) {
-        fs.unlinkSync(localPath);
-      }
-      
-      if (err) {
-        console.error('Erro ao servir imagem:', err);
-        res.status(404).json({ error: 'Imagem não encontrada' });
-      }
+    if (!fileExists) {
+      await client.close();
+      return res.status(404).json({ error: 'Imagem não encontrada no FTP' });
+    }
+    
+    // Baixar imagem do FTP
+    const tempPath = `temp/${filename}`;
+    await client.downloadTo(tempPath, filename);
+    await client.close();
+    
+    // Ler o arquivo para buffer
+    const imageBuffer = fs.readFileSync(tempPath);
+    
+    // Limpar arquivo temporário
+    fs.unlinkSync(tempPath);
+    
+    // Determinar tipo de conteúdo
+    const extension = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml'
+    };
+    
+    const contentType = mimeTypes[extension] || 'application/octet-stream';
+    
+    // Armazenar no cache
+    imageCache.set(filename, {
+      buffer: imageBuffer,
+      contentType: contentType,
+      timestamp: Date.now()
     });
     
-    client.close();
+    // Limpar cache antigo (manter apenas os últimos 100 itens)
+    if (imageCache.size > 100) {
+      const oldestKey = imageCache.keys().next().value;
+      imageCache.delete(oldestKey);
+    }
+    
+    // Configurar headers
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutos
+    res.setHeader('Content-Length', imageBuffer.length);
+    
+    res.status(200).send(imageBuffer);
+    
   } catch (error) {
     console.error('Erro no proxy de imagem:', error);
-    res.status(500).json({ error: 'Erro ao carregar imagem' });
+    res.status(500).json({ error: 'Erro ao carregar imagem do FTP' });
   }
 });
 
@@ -162,6 +221,98 @@ app.delete('/api/delete-image/:filename', async (req, res) => {
 // Rota de teste
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API funcionando!' });
+});
+
+// Rota de teste para imagens
+app.get('/api/test-image', async (req, res) => {
+  try {
+    const client = new ftp.Client();
+    await client.access(ftpConfig);
+    const files = await client.list();
+    await client.close();
+    
+    res.json({ 
+      message: 'Conexão FTP OK', 
+      filesCount: files.length,
+      files: files.map(f => f.name)
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: 'Erro na conexão FTP',
+      details: error.message 
+    });
+  }
+});
+
+// Rota de teste para download de imagem específica
+app.get('/api/test-download/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    console.log(`Tentando baixar: ${filename}`);
+    
+    const client = new ftp.Client();
+    await client.access(ftpConfig);
+    
+    // Verificar se o arquivo existe
+    const files = await client.list();
+    const fileExists = files.some(file => file.name === filename);
+    
+    if (!fileExists) {
+      await client.close();
+      return res.status(404).json({ error: 'Arquivo não encontrado', availableFiles: files.map(f => f.name) });
+    }
+    
+    console.log(`Arquivo encontrado, baixando...`);
+    
+    // Usar downloadTo para arquivo temporário
+    const tempPath = `temp/${filename}`;
+    await client.downloadTo(tempPath, filename);
+    await client.close();
+    
+    // Ler o arquivo para buffer
+    const imageBuffer = fs.readFileSync(tempPath);
+    
+    // Limpar arquivo temporário
+    fs.unlinkSync(tempPath);
+    
+    console.log(`Download concluído, tamanho: ${imageBuffer.length} bytes`);
+    
+    // Determinar tipo de conteúdo
+    const extension = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml'
+    };
+    
+    const contentType = mimeTypes[extension] || 'application/octet-stream';
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', imageBuffer.length);
+    res.status(200).send(imageBuffer);
+    
+  } catch (error) {
+    console.error('Erro no teste de download:', error);
+    res.status(500).json({ 
+      error: 'Erro ao baixar imagem',
+      details: error.message 
+    });
+  }
+});
+
+// Rota de teste para verificar produtos do Firebase
+app.get('/api/test-products', async (req, res) => {
+  try {
+    res.json({
+      message: 'Endpoint de teste de produtos',
+      note: 'Para testar produtos, use o frontend em http://localhost:3000'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.listen(PORT, () => {

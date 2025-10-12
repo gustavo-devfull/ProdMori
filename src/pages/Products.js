@@ -6,7 +6,6 @@ import {
   Form,
   Input,
   Typography,
-  Popconfirm,
   message,
   Alert,
   Row,
@@ -19,10 +18,7 @@ import {
 } from 'antd';
 import { 
   PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  UploadOutlined,
-  ShoppingOutlined
+  UploadOutlined
 } from '@ant-design/icons';
 import CustomImage from '../components/CustomImage';
 import productService from '../services/productService';
@@ -42,9 +38,21 @@ const Products = () => {
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [selectedFactory, setSelectedFactory] = useState(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const loadData = async () => {
@@ -76,16 +84,6 @@ const Products = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await productService.deleteProduct(id);
-      message.success('Produto excluído com sucesso!');
-      loadData();
-    } catch (err) {
-      message.error('Erro ao excluir produto');
-      console.error(err);
-    }
-  };
 
   const handleImageUpload = async (file) => {
     try {
@@ -156,10 +154,18 @@ const Products = () => {
 
       <Card className="content-card" style={{ marginBottom: 16 }}>
         <Space wrap>
-          <span style={{ fontWeight: 'bold' }}>Filtrar por fábrica:</span>
+          <span style={{ 
+            fontWeight: 'bold',
+            fontSize: isMobile ? '14px' : '16px'
+          }}>
+            Filtrar por fábrica:
+          </span>
           <Select
             placeholder="Todas as fábricas"
-            style={{ width: 200 }}
+            style={{ 
+              width: isMobile ? '100%' : '200px',
+              minWidth: isMobile ? '150px' : '200px'
+            }}
             value={selectedFactory}
             onChange={handleFactoryFilter}
             allowClear
@@ -171,7 +177,10 @@ const Products = () => {
             ))}
           </Select>
           {selectedFactory && (
-            <span style={{ color: '#666', fontSize: '12px' }}>
+            <span style={{ 
+              color: '#666', 
+              fontSize: isMobile ? '10px' : '12px' 
+            }}>
               {filteredProducts.length} produto(s) encontrado(s)
             </span>
           )}
@@ -189,97 +198,124 @@ const Products = () => {
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />
         ) : (
-          <Row gutter={[16, 16]}>
+          <Row gutter={[12, 12]}>
             {filteredProducts.map((product) => (
-              <Col xs={12} sm={8} md={6} lg={4} key={product.id}>
+              <Col xs={12} sm={12} md={12} lg={12} xl={12} key={product.id}>
                 <Card
                   hoverable
-                  style={{ height: '100%' }}
-                  styles={{ body: { padding: '8px' } }}
+                  style={{ 
+                    height: isMobile ? '280px' : '420px',
+                    borderRadius: isMobile ? '8px' : '12px',
+                    boxShadow: isMobile ? '0 1px 4px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.1)',
+                    transition: 'all 0.3s ease',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  styles={{ 
+                    body: { 
+                      padding: '0',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    },
+                    cover: { margin: 0 }
+                  }}
                   cover={
-                    <div>
-                      {product.factory && (
-                        <div style={{ 
-                          padding: '8px 12px', 
-                          backgroundColor: '#f0f0f0', 
-                          fontSize: '12px', 
-                          fontWeight: 'bold',
-                          color: '#666',
-                          textAlign: 'center',
-                          borderBottom: '1px solid #d9d9d9'
-                        }}>
-                          {product.factory.name}
-                        </div>
-                      )}
-                      {product.imageUrl ? (
-                        <CustomImage
-                          src={product.imageUrl}
-                          alt={product.name}
-                          style={{ 
-                            height: '200px', 
-                            width: '100%',
-                            objectFit: 'contain' 
-                          }}
-                        />
-                      ) : (
-                        <div style={{ 
-                          height: '200px', 
+                    <div style={{ position: 'relative' }}>
+                      <CustomImage 
+                        src={product.imageUrl} 
+                        alt={product.name}
+                        style={{ 
+                          height: isMobile ? '120px' : '220px',
                           width: '100%',
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          backgroundColor: '#f5f5f5',
-                          color: '#999'
-                        }}>
-                          <ShoppingOutlined style={{ fontSize: '48px' }} />
-                        </div>
-                      )}
+                          objectFit: 'cover'
+                        }}
+                        showPreview={true}
+                        onPreview={(src) => {
+                          setPreviewImage(src);
+                          setPreviewVisible(true);
+                        }}
+                      />
                     </div>
                   }
-                  actions={[
-                    <Button
-                      type="primary"
-                      icon={<EditOutlined />}
-                      onClick={() => handleEdit(product)}
-                      size="small"
-                      style={{ fontSize: '14px', padding: '16px 32px', height: 'auto' }}
-                    />,
-                    <Popconfirm
-                      title="Tem certeza que deseja excluir este produto?"
-                      onConfirm={() => handleDelete(product.id)}
-                      okText="Sim"
-                      cancelText="Não"
-                    >
-                      <Button
-                        type="primary"
-                        danger
-                        icon={<DeleteOutlined />}
-                        size="small"
-                        style={{ fontSize: '14px', padding: '16px 32px', height: 'auto' }}
-                      />
-                    </Popconfirm>
-                  ]}
                 >
-                  <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            padding: isMobile ? '12px' : '24px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            height: '100%',
+            flex: 1
+          }}>
+                    {/* Nome do produto */}
                     <div style={{ 
-                      fontSize: '14px', 
-                      fontWeight: 'bold', 
-                      marginBottom: '4px',
-                      lineHeight: '1.2'
+                      fontSize: isMobile ? '14px' : '20px', 
+                      fontWeight: 'bold',
+                      marginBottom: isMobile ? '6px' : '8px',
+                      color: '#262626',
+                      lineHeight: '1.3',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      minHeight: isMobile ? '40px' : '46px'
                     }}>
                       {product.name}
                     </div>
+
+                    {/* Tag da fábrica */}
+                    {product.factory && (
+                      <div style={{ 
+                        marginBottom: isMobile ? '8px' : '12px',
+                        display: 'flex',
+                        justifyContent: 'center'
+                      }}>
+                        <div style={{ 
+                          padding: isMobile ? '2px 6px' : '4px 8px', 
+                          backgroundColor: 'rgba(24, 144, 255, 0.9)', 
+                          borderRadius: isMobile ? '8px' : '12px',
+                          fontSize: isMobile ? '9px' : '11px', 
+                          fontWeight: 'bold',
+                          color: 'white',
+                          backdropFilter: 'blur(4px)',
+                          textAlign: 'center'
+                        }}>
+                          {product.factory.name}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Preço */}
                     <div style={{ 
-                      fontSize: '12px', 
-                      color: '#666',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
+                      marginBottom: isMobile ? '12px' : '16px'
                     }}>
-                      <span>
-                        {product.price ? `R$ ${product.price.toFixed(2)}` : 'Sem preço'}
-                      </span>
+                      <div style={{ 
+                        fontSize: isMobile ? '16px' : '26px', 
+                        fontWeight: 'bold',
+                        color: '#1890ff',
+                        marginBottom: '4px'
+                      }}>
+                        {product.price ? `¥ ${product.price.toFixed(2)}` : 'Preço sob consulta'}
+                      </div>
                     </div>
+
+                    {/* Botão Ver Detalhes */}
+                    <Button
+                      type="primary"
+                      size={isMobile ? "small" : "large"}
+                      onClick={() => handleEdit(product)}
+                      style={{
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        fontSize: isMobile ? '12px' : '14px',
+                        height: isMobile ? '28px' : '44px',
+                        boxShadow: '0 2px 8px rgba(24, 144, 255, 0.3)'
+                      }}
+                    >
+                      Ver Detalhes
+                    </Button>
                   </div>
                 </Card>
               </Col>
@@ -293,9 +329,9 @@ const Products = () => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
-        width={window.innerWidth < 768 ? '100%' : 800}
-        className={window.innerWidth < 768 ? 'mobile-modal' : ''}
-        style={window.innerWidth < 768 ? { margin: 0, top: 0 } : {}}
+        width={isMobile ? '100%' : 800}
+        className={isMobile ? 'mobile-modal' : ''}
+        style={isMobile ? { margin: 0, top: 0 } : {}}
       >
         <Form
           form={form}
@@ -421,6 +457,30 @@ const Products = () => {
             </div>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Modal de Preview da Imagem */}
+      <Modal
+        title="Visualizar Imagem"
+        open={previewVisible}
+        onCancel={() => setPreviewVisible(false)}
+        footer={null}
+        width="auto"
+        centered
+        style={{ maxWidth: '90vw' }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <img
+            src={previewImage}
+            alt="Preview"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '80vh',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}
+          />
+        </div>
       </Modal>
     </div>
   );

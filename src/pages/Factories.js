@@ -13,14 +13,10 @@ import {
   Col,
   Tag,
   List,
-  Avatar,
   Empty
 } from 'antd';
 import { 
   PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  ShopOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
   FileTextOutlined
@@ -152,14 +148,22 @@ const Factories = () => {
                 <Card
                   hoverable
                   style={{ height: '100%' }}
+                  bodyStyle={{ padding: '12px' }}
                   actions={[
                     <Button
                       type="primary"
-                      icon={<EditOutlined />}
                       onClick={() => handleEdit(factory)}
                       size="small"
-                      style={{ fontSize: '14px', padding: '16px 32px', height: 'auto' }}
-                    />,
+                      style={{ 
+                        fontSize: '14px', 
+                        padding: '8px 16px', 
+                        height: 'auto',
+                        width: '50%',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      Editar
+                    </Button>,
                     <Popconfirm
                       title="Tem certeza que deseja excluir esta fábrica?"
                       onConfirm={() => handleDelete(factory.id)}
@@ -169,39 +173,59 @@ const Factories = () => {
                       <Button
                         type="primary"
                         danger
-                        icon={<DeleteOutlined />}
                         size="small"
-                        style={{ fontSize: '14px', padding: '16px 32px', height: 'auto' }}
-                      />
+                        style={{ 
+                          fontSize: '14px', 
+                          padding: '8px 16px', 
+                          height: 'auto',
+                          width: '50%',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        Excluir
+                      </Button>
                     </Popconfirm>
                   ]}
                 >
-                  <Card.Meta
-                    avatar={<Avatar icon={<ShopOutlined />} size="large" />}
-                    title={factory.name}
-                    description={
-                      <div>
-                        <div style={{ marginBottom: 8 }}>
-                          <Tag color="blue">{factory.segment || 'Sem segmento'}</Tag>
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#666' }}>
-                          <div style={{ marginBottom: 4 }}>
-                            <PhoneOutlined /> {factory.contact}
-                          </div>
-                          <div style={{ marginBottom: 4 }}>
-                            <EnvironmentOutlined /> {factory.location}
-                          </div>
-                          {factory.observations && (
-                            <div>
-                              <FileTextOutlined /> {factory.observations.length > 50 
-                                ? `${factory.observations.substring(0, 50)}...` 
-                                : factory.observations}
-                            </div>
-                          )}
-                        </div>
+                  <div style={{ margin: '0px', padding: '12px', borderRadius: '6px',
+                    backgroundColor: '#f0f0f0',
+                   }}>
+                    <div style={{ 
+                      fontSize: '16px', 
+                      fontWeight: 'bold', 
+                      marginBottom: '8px',
+                      color: '#262626',
+                      
+                    }}>
+                      {factory.name}
+                    </div>
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: '8px',
+                      alignItems: 'center',
+                      marginBottom: '8px'
+                    }}>
+                      <Tag color="blue">{factory.segment || 'Sem segmento'}</Tag>
+                      <div style={{ fontSize: '12px', color: '#666' }}>
+                        <EnvironmentOutlined /> {factory.location}
                       </div>
-                    }
-                  />
+                    </div>
+                    
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      <div style={{ marginBottom: 4 }}>
+                        <PhoneOutlined /> {factory.contact}
+                      </div>
+                      {factory.observations && (
+                        <div>
+                          <FileTextOutlined /> {factory.observations.length > 50 
+                            ? `${factory.observations.substring(0, 50)}...` 
+                            : factory.observations}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   
                   {factory.products && factory.products.length > 0 && (
                     <div style={{ marginTop: 16 }}>

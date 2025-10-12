@@ -65,3 +65,4 @@ const q = query(
 - ✅ **Funcionamento Imediato**: Consultas funcionam instantaneamente
 - ✅ **Flexibilidade**: Ordenação pode ser ajustada facilmente
 - ✅ **Performance**: Para pequenas quantidades de dados, a ordenação local é eficiente
+

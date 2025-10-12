@@ -118,6 +118,25 @@ class ImageService {
     }
   }
 
+  // Método para normalizar URL de imagem
+  normalizeImageUrl(url) {
+    if (!url || typeof url !== 'string' || url.trim() === '') {
+      return null;
+    }
+    
+    // Se já é uma URL válida, verificar se precisa normalizar
+    if (this.isValidImageUrl(url)) {
+      // Se tem query parameter, converter para path parameter
+      if (url.includes('/api/image?filename=')) {
+        const filename = url.split('filename=')[1];
+        return `${this.apiUrl}/image/${filename}`;
+      }
+      return url;
+    }
+    
+    return null;
+  }
+
   // Método para testar conexão com a API
   async testConnection() {
     try {
@@ -140,16 +159,38 @@ class ImageService {
       return null;
     }
     
-    // Se já é uma URL válida, retornar como está
-    if (this.isValidImageUrl(imageUrl)) {
-      return imageUrl;
+    // Primeiro, tentar normalizar a URL se já for válida
+    const normalizedUrl = this.normalizeImageUrl(imageUrl);
+    if (normalizedUrl) {
+      return normalizedUrl;
     }
     
     // Se é um nome de arquivo, construir URL
     if (this.isVercel) {
       return `https://ideolog.ia.br/${imageUrl}`;
     } else {
-      return `${this.apiUrl}/image?filename=${imageUrl}`;
+      return `${this.apiUrl}/image/${imageUrl}`;
+    }
+  }
+
+  // Método para pré-carregar imagens
+  async preloadImage(imageUrl) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imageUrl;
+    });
+  }
+
+  // Método para verificar se a imagem existe no servidor
+  async checkImageExists(imageUrl) {
+    try {
+      const response = await fetch(imageUrl, { method: 'HEAD' });
+      return response.ok;
+    } catch (error) {
+      console.error('Erro ao verificar imagem:', error);
+      return false;
     }
   }
 }

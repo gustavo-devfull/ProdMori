@@ -145,3 +145,4 @@ Se os erros persistirem:
 2. **Reinstalar dependências**: `rm -rf node_modules && npm install`
 3. **Verificar porta**: Certificar que a porta 3000 está livre
 4. **Browser**: Testar em modo incógnito para evitar extensões
+
