@@ -302,33 +302,35 @@ const Products = () => {
                       </div>
                     </div>
 
-                    {/* Botão Ver Detalhes */}
-                    <Button
-                      type="primary"
-                      size="small"
+                    {/* Link +info */}
+                    <div
                       onClick={() => handleEdit(product)}
                       style={{
-                        borderRadius: '6px',
+                        fontSize: isMobile ? '12px' : '13px',
                         fontWeight: 'bold',
-                        fontSize: isMobile ? '12px' : '12px',
-                        height: isMobile ? '24px' : '32px',
-                        width: '100%',
-                        boxShadow: '0 2px 8px rgba(24, 144, 255, 0.3)',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
-                        transition: 'all 0.3s ease'
+                        color: '#1890ff',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        padding: isMobile ? '6px 0' : '8px 0',
+                        borderRadius: '4px',
+                        transition: 'all 0.3s ease',
+                        textDecoration: 'none',
+                        border: '1px solid #1890ff',
+                        backgroundColor: 'rgba(24, 144, 255, 0.05)'
                       }}
                       onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = 'rgba(24, 144, 255, 0.1)';
+                        e.target.style.color = '#40a9ff';
                         e.target.style.transform = 'translateY(-1px)';
-                        e.target.style.boxShadow = '0 3px 12px rgba(24, 144, 255, 0.4)';
                       }}
                       onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = 'rgba(24, 144, 255, 0.05)';
+                        e.target.style.color = '#1890ff';
                         e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 2px 8px rgba(24, 144, 255, 0.3)';
                       }}
                     >
-                      Ver Detalhes
-                    </Button>
+                      +info
+                    </div>
                   </div>
                 </Card>
               </Col>
