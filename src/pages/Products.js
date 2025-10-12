@@ -13,8 +13,7 @@ import {
   Empty,
   Upload,
   Select,
-  InputNumber,
-  Space
+  InputNumber
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -163,12 +162,19 @@ const Products = () => {
       )}
 
       <Card className="content-card" style={{ marginBottom: 16 }}>
-        <Space wrap>
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '12px', 
+          alignItems: 'center',
+          justifyContent: 'flex-start'
+        }}>
           <Select
             placeholder="Todas as fábricas"
             style={{ 
               width: isMobile ? '100%' : '200px',
-              minWidth: isMobile ? '150px' : '200px'
+              minWidth: isMobile ? '150px' : '200px',
+              flex: isMobile ? '1 1 100%' : '0 0 auto'
             }}
             value={selectedFactory}
             onChange={handleFactoryFilter}
@@ -185,7 +191,8 @@ const Products = () => {
             placeholder="Todos os segmentos"
             style={{ 
               width: isMobile ? '100%' : '200px',
-              minWidth: isMobile ? '150px' : '200px'
+              minWidth: isMobile ? '150px' : '200px',
+              flex: isMobile ? '1 1 100%' : '0 0 auto'
             }}
             value={selectedSegment}
             onChange={handleSegmentFilter}
@@ -201,12 +208,14 @@ const Products = () => {
           {(selectedFactory || selectedSegment) && (
             <span style={{ 
               color: '#666', 
-              fontSize: isMobile ? '10px' : '12px' 
+              fontSize: isMobile ? '10px' : '12px',
+              flex: '0 0 auto',
+              whiteSpace: 'nowrap'
             }}>
               {filteredProducts.length} produto(s) encontrado(s)
             </span>
           )}
-        </Space>
+        </div>
       </Card>
 
       <Card className="content-card">
