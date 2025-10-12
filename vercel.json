@@ -28,11 +28,15 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://ideolog.ia.br"
+    "REACT_APP_API_URL": "https://ideolog.ia.br",
+    "NODE_ENV": "production"
   },
   "functions": {
     "api/*.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "installCommand": "npm install"
 }
