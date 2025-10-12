@@ -38,6 +38,7 @@ const Products = () => {
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [selectedFactory, setSelectedFactory] = useState(null);
+  const [selectedSegment, setSelectedSegment] = useState(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -122,9 +123,18 @@ const Products = () => {
     setSelectedFactory(factoryId);
   };
 
-  const filteredProducts = selectedFactory 
-    ? products.filter(product => product.factoryId === selectedFactory)
-    : products;
+  const handleSegmentFilter = (segment) => {
+    setSelectedSegment(segment);
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesFactory = !selectedFactory || product.factoryId === selectedFactory;
+    const matchesSegment = !selectedSegment || product.segment === selectedSegment;
+    return matchesFactory && matchesSegment;
+  });
+
+  // Obter segmentos únicos dos produtos
+  const uniqueSegments = [...new Set(products.map(product => product.segment).filter(Boolean))];
 
   return (
     <div>
@@ -154,12 +164,6 @@ const Products = () => {
 
       <Card className="content-card" style={{ marginBottom: 16 }}>
         <Space wrap>
-          <span style={{ 
-            fontWeight: 'bold',
-            fontSize: isMobile ? '14px' : '16px'
-          }}>
-            Filtrar por fábrica:
-          </span>
           <Select
             placeholder="Todas as fábricas"
             style={{ 
@@ -176,7 +180,25 @@ const Products = () => {
               </Option>
             ))}
           </Select>
-          {selectedFactory && (
+          
+          <Select
+            placeholder="Todos os segmentos"
+            style={{ 
+              width: isMobile ? '100%' : '200px',
+              minWidth: isMobile ? '150px' : '200px'
+            }}
+            value={selectedSegment}
+            onChange={handleSegmentFilter}
+            allowClear
+          >
+            {uniqueSegments.map(segment => (
+              <Option key={segment} value={segment}>
+                {segment}
+              </Option>
+            ))}
+          </Select>
+          
+          {(selectedFactory || selectedSegment) && (
             <span style={{ 
               color: '#666', 
               fontSize: isMobile ? '10px' : '12px' 
