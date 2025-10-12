@@ -21,7 +21,6 @@ const Products = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [error, setError] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedFactory, setSelectedFactory] = useState(null);
   const [selectedSegment, setSelectedSegment] = useState(null);

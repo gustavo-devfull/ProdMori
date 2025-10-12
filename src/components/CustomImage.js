@@ -77,21 +77,6 @@ const CustomImage = ({
     }
   }, [imageUrl]);
 
-  const handleLoad = () => {
-    console.log('CustomImage - Imagem carregada com sucesso:', imageUrl);
-    setLoading(false);
-    setError(false);
-  };
-
-  const handleError = (e) => {
-    console.log('CustomImage - Erro ao carregar imagem:', e);
-    console.log('CustomImage - URL que falhou:', imageUrl);
-    setLoading(false);
-    setError(true);
-    if (onError) {
-      onError(e);
-    }
-  };
 
   const handleRetry = async () => {
     if (retryCount < 3) {
