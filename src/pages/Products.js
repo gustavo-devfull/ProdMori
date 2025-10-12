@@ -13,6 +13,7 @@ import {
 import CustomImage from '../components/CustomImage';
 import productService from '../services/productService';
 import factoryService from '../services/factoryService';
+import imageService from '../services/imageService';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -58,7 +59,7 @@ const Products = () => {
 
   const handleImageUpload = async (file) => {
     try {
-      const imageUrl = await productService.uploadImage(file);
+      const imageUrl = await imageService.uploadFile(file);
       return imageUrl;
     } catch (err) {
       setError('Erro ao fazer upload da imagem');
