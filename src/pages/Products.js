@@ -262,7 +262,14 @@ const Products = () => {
                 
                 <Card.Body className="d-flex flex-column p-3">
                   <div className="text-center mb-3">
-                    <h5 className="card-title mb-2" style={{ fontSize: isMobile ? '16px' : '15px' }}>{product.name}</h5>
+                    <h5 className="card-title mb-2" style={{ 
+                      fontSize: isMobile ? '16px' : '15px',
+                      lineHeight: '1.2',
+                      height: 'auto',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>{product.name}</h5>
                     
                     {product.factory && (
                       <div className="mb-2">
