@@ -277,7 +277,7 @@ const Products = () => {
                           const factoryColor = getFactoryColor(product.factory.name);
                           console.log(`Aplicando cor ${factoryColor} para fábrica: ${product.factory.name}`);
                           return (
-                            <Badge 
+                            <span 
                               style={{ 
                                 backgroundColor: factoryColor,
                                 color: 'white',
@@ -285,12 +285,12 @@ const Products = () => {
                                 padding: isMobile ? '4px 8px' : '6px 12px',
                                 border: 'none',
                                 fontWeight: '500',
-                                borderRadius: '4px'
+                                borderRadius: '4px',
+                                display: 'inline-block'
                               }}
-                              className="custom-factory-badge"
                             >
                               {product.factory.name}
-                            </Badge>
+                            </span>
                           );
                         })()}
                       </div>

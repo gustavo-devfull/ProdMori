@@ -350,19 +350,6 @@ code {
   height: auto;
 }
 
-/* Custom factory badge styles */
-.custom-factory-badge {
-  background-color: inherit !important;
-  color: white !important;
-  border: none !important;
-  font-weight: 500 !important;
-  border-radius: 4px !important;
-}
-
-.custom-factory-badge:hover {
-  background-color: inherit !important;
-  color: white !important;
-}
 
 
 /* Mobile responsive styles */
