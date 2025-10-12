@@ -1,6 +1,14 @@
 class ImageService {
   constructor() {
-    this.apiUrl = 'http://localhost:3001/api';
+    // Detectar se está rodando no Vercel ou localmente
+    this.isVercel = typeof window !== 'undefined' && 
+      (window.location.hostname.includes('vercel.app') || 
+       window.location.hostname.includes('vercel.com'));
+    
+    // URL base da API
+    this.apiUrl = this.isVercel 
+      ? '/api'  // Vercel Functions
+      : 'http://localhost:3001/api';  // Servidor local
   }
 
   async uploadFile(file) {
@@ -38,11 +46,15 @@ class ImageService {
       const result = await response.json();
       console.log('Upload realizado com sucesso:', result.imageUrl);
       
-      // Converter URL do FTP para URL do proxy
-      const filename = result.imageUrl.split('/').pop();
-      const proxyUrl = `http://localhost:3001/api/image/${filename}`;
-      
-      return proxyUrl;
+      // Para Vercel, usar URL direta do FTP
+      // Para local, usar proxy
+      if (this.isVercel) {
+        return result.imageUrl; // URL direta do FTP
+      } else {
+        // Converter URL do FTP para URL do proxy local
+        const filename = result.imageUrl.split('/').pop();
+        return `${this.apiUrl}/image?filename=${filename}`;
+      }
 
     } catch (error) {
       console.error('Erro ao fazer upload da imagem:', error);
@@ -56,15 +68,17 @@ class ImageService {
         throw new Error('URL da imagem não fornecida');
       }
 
-      // Extrair o nome do arquivo da URL (pode ser proxy ou FTP direto)
+      // Extrair o nome do arquivo da URL
       let filename;
-      if (imageUrl.includes('localhost:3001/api/image/')) {
-        filename = imageUrl.split('/api/image/')[1];
+      if (imageUrl.includes('/api/image?filename=')) {
+        filename = imageUrl.split('filename=')[1];
+      } else if (imageUrl.includes('ideolog.ia.br/')) {
+        filename = imageUrl.split('ideolog.ia.br/')[1];
       } else {
         filename = imageUrl.split('/').pop().split('?')[0];
       }
 
-      const response = await fetch(`${this.apiUrl}/delete-image/${filename}`, {
+      const response = await fetch(`${this.apiUrl}/delete-image?filename=${filename}`, {
         method: 'DELETE',
       });
 
@@ -93,7 +107,9 @@ class ImageService {
   isValidImageUrl(url) {
     try {
       new URL(url);
-      return url.includes('localhost:3001/api/image/') || url.includes('ideolog.ia.br');
+      return url.includes('ideolog.ia.br') || 
+             url.includes('localhost:3001/api/image') ||
+             url.includes('/api/image');
     } catch {
       return false;
     }
@@ -112,6 +128,23 @@ class ImageService {
     } catch (error) {
       console.error('Erro na conexão com API:', error);
       return false;
+    }
+  }
+
+  // Método para obter URL de imagem otimizada
+  getImageUrl(imageUrl) {
+    if (!imageUrl) return null;
+    
+    // Se já é uma URL válida, retornar como está
+    if (this.isValidImageUrl(imageUrl)) {
+      return imageUrl;
+    }
+    
+    // Se é um nome de arquivo, construir URL
+    if (this.isVercel) {
+      return `https://ideolog.ia.br/${imageUrl}`;
+    } else {
+      return `${this.apiUrl}/image?filename=${imageUrl}`;
     }
   }
 }

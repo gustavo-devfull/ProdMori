@@ -7,9 +7,17 @@
       "config": {
         "distDir": "build"
       }
+    },
+    {
+      "src": "api/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
     {
       "src": "/static/(.*)",
       "dest": "/static/$1"
@@ -21,5 +29,10 @@
   ],
   "env": {
     "REACT_APP_API_URL": "https://ideolog.ia.br"
+  },
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
   }
 }

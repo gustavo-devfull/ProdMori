@@ -44,3 +44,6 @@ tmp/
 
 # Server files
 server-package.json
+
+# Vercel Functions
+# api/ (mantido no git para deploy)
