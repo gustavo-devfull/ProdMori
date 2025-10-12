@@ -101,6 +101,7 @@ const CustomImage = ({
     borderRadius: '8px',
     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     cursor: showPreview ? 'pointer' : 'default',
+    aspectRatio: '1 / 1', // Força formato quadrado
     ...style
   };
 
@@ -119,7 +120,8 @@ const CustomImage = ({
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: '#f5f5f5',
-          border: '1px solid #d9d9d9'
+          border: '1px solid #d9d9d9',
+          aspectRatio: '1 / 1' // Força formato quadrado no loading
         }}
       >
         <Spinner animation="border" size="sm" />
@@ -138,7 +140,8 @@ const CustomImage = ({
           justifyContent: 'center',
           backgroundColor: '#f5f5f5',
           border: '1px solid #d9d9d9',
-          color: '#999'
+          color: '#999',
+          aspectRatio: '1 / 1' // Força formato quadrado no erro
         }}
       >
         <i className="bi bi-image text-muted fs-1"></i>
