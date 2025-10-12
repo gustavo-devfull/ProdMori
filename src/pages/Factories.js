@@ -8,8 +8,7 @@ import {
   Col,
   Alert,
   Spinner,
-  ListGroup,
-  Badge
+  ListGroup
 } from 'react-bootstrap';
 import factoryService from '../services/factoryService';
 
@@ -149,25 +148,24 @@ const Factories = () => {
             <Col xs={12} md={6} lg={4} key={factory.id}>
               <Card className="h-100">
                 <Card.Body>
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="flex-grow-1">
-                      <div className="d-flex align-items-center mb-2">
-                        <i className="bi bi-tag-fill text-primary me-2"></i>
-                        <Badge bg="secondary" className="me-2">
-                          {factory.segment || 'Sem segmento'}
-                        </Badge>
-                      </div>
-                      <h5 className="card-title mb-1">{factory.name}</h5>
-                      <div className="d-flex align-items-center text-muted small mb-2">
-                        <i className="bi bi-geo-alt me-1"></i>
-                        <span>{factory.location || 'Localização não informada'}</span>
-                      </div>
-                      <div className="d-flex align-items-center text-muted small">
-                        <i className="bi bi-telephone me-1"></i>
-                        <span>{factory.contact || 'Contato não informado'}</span>
-                      </div>
+                  {/* Segmento, Localização e Contato na mesma linha */}
+                  <div className="d-flex flex-wrap gap-3 mb-3">
+                    <div className="d-flex align-items-center text-muted small">
+                      <i className="bi bi-tag-fill text-primary me-1"></i>
+                      <span>{factory.segment || 'Sem segmento'}</span>
+                    </div>
+                    <div className="d-flex align-items-center text-muted small">
+                      <i className="bi bi-geo-alt me-1"></i>
+                      <span>{factory.location || 'Localização não informada'}</span>
+                    </div>
+                    <div className="d-flex align-items-center text-muted small">
+                      <i className="bi bi-telephone me-1"></i>
+                      <span>{factory.contact || 'Contato não informado'}</span>
                     </div>
                   </div>
+                  
+                  {/* Nome da fábrica/loja */}
+                  <h5 className="card-title mb-3">{factory.name}</h5>
 
                   {factory.products && factory.products.length > 0 && (
                     <div className="mt-3">
@@ -209,18 +207,18 @@ const Factories = () => {
 
                   <div className="d-flex gap-2 mt-3">
                     <Button 
-                      variant="outline-primary"
+                      variant="primary"
                       size="sm"
-                      className="flex-fill"
+                      className="flex-fill fw-semibold"
                       onClick={() => handleEdit(factory)}
                     >
                       <i className="bi bi-pencil me-1"></i>
                       Editar
                     </Button>
                     <Button 
-                      variant="outline-danger"
+                      variant="danger"
                       size="sm"
-                      className="flex-fill"
+                      className="flex-fill fw-semibold"
                       onClick={() => {
                         if (window.confirm('Tem certeza que deseja excluir esta fábrica?')) {
                           handleDelete(factory.id);
