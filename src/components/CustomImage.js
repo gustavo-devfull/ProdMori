@@ -151,6 +151,9 @@ const CustomImage = ({
           justifyContent: 'center',
           backgroundColor: '#f5f5f5',
           border: '1px solid #d9d9d9',
+          width: '100%',
+          height: '250px',
+          objectFit: 'contain',
           aspectRatio: '1 / 1' // Força formato quadrado no loading
         }}
       >
