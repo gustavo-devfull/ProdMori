@@ -244,14 +244,14 @@ const Products = () => {
       ) : (
         <Row className="g-3">
           {filteredProducts.map(product => (
-            <Col xs={12} sm={6} md={4} lg={2} xl={2} key={product.id}>
+            <Col xs={12} sm={6} md={4} lg={1} xl={1} key={product.id}>
               <Card className="h-100">
                 <div className="position-relative">
                   <CustomImage
                     src={product.imageUrl}
                     alt={product.name}
                     style={{ 
-                      height: isMobile ? '300px' : '400px',
+                      height: isMobile ? '200px' : '250px',
                       width: '100%',
                       objectFit: 'cover'
                     }}
@@ -260,9 +260,9 @@ const Products = () => {
                   />
                 </div>
                 
-                <Card.Body className="d-flex flex-column">
-                  <div className="text-center mb-3">
-                    <h5 className="card-title mb-2">{product.name}</h5>
+                <Card.Body className="d-flex flex-column p-2">
+                  <div className="text-center mb-2">
+                    <h5 className="card-title mb-1" style={{ fontSize: isMobile ? '16px' : '14px' }}>{product.name}</h5>
                     
                     {product.factory && (
                       <div className="mb-2">
@@ -288,7 +288,7 @@ const Products = () => {
                       </div>
                     )}
                     
-                    <div className="fs-5 fw-bold text-primary mb-3">
+                    <div className="fs-6 fw-bold text-primary mb-2" style={{ fontSize: isMobile ? '18px' : '16px' }}>
                       {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
                     </div>
                   </div>
@@ -297,6 +297,8 @@ const Products = () => {
                     <Button 
                       variant="primary" 
                       className="w-100"
+                      size={isMobile ? 'lg' : 'sm'}
+                      style={{ fontSize: isMobile ? '16px' : '12px' }}
                       onClick={() => handleEdit(product)}
                     >
                       Ver Detalhes
