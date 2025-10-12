@@ -13,13 +13,18 @@ import {
   Col,
   Tag,
   List,
-  Empty
+  Empty,
+  Spin,
+  Tooltip
 } from 'antd';
 import { 
   PlusOutlined, 
   PhoneOutlined,
   EnvironmentOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined
 } from '@ant-design/icons';
 import factoryService from '../services/factoryService';
 
@@ -29,26 +34,34 @@ const { TextArea } = Input;
 const Factories = () => {
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingFactory, setEditingFactory] = useState(null);
   const [form] = Form.useForm();
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadFactories();
   }, []);
 
-  const loadFactories = async () => {
+  const loadFactories = async (showRefresh = false) => {
     try {
-      setLoading(true);
+      if (showRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      
       const factoriesData = await factoryService.getAllFactories();
       
-      // Carregar produtos para cada fábrica
+      // Carregar produtos para cada fábrica com melhor tratamento de erro
       const factoriesWithProducts = await Promise.all(
         factoriesData.map(async (factory) => {
           try {
             const products = await factoryService.getProductsByFactory(factory.id);
-            return { ...factory, products };
+            return { ...factory, products: products || [] };
           } catch (err) {
             console.error(`Erro ao carregar produtos da fábrica ${factory.name}:`, err);
             return { ...factory, products: [] };
@@ -57,11 +70,18 @@ const Factories = () => {
       );
       
       setFactories(factoriesWithProducts);
+      
+      if (showRefresh) {
+        message.success('Fábricas atualizadas com sucesso!');
+      }
     } catch (err) {
-      setError('Erro ao carregar fábricas');
-      console.error(err);
+      const errorMessage = err.response?.data?.message || err.message || 'Erro ao carregar fábricas';
+      setError(errorMessage);
+      message.error(errorMessage);
+      console.error('Erro ao carregar fábricas:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -83,13 +103,16 @@ const Factories = () => {
       message.success('Fábrica excluída com sucesso!');
       loadFactories();
     } catch (err) {
-      message.error('Erro ao excluir fábrica');
-      console.error(err);
+      const errorMessage = err.response?.data?.message || err.message || 'Erro ao excluir fábrica';
+      message.error(errorMessage);
+      console.error('Erro ao excluir fábrica:', err);
     }
   };
 
   const handleSubmit = async (values) => {
     try {
+      setSubmitting(true);
+      
       if (editingFactory) {
         await factoryService.updateFactory(editingFactory.id, values);
         message.success('Fábrica atualizada com sucesso!');
@@ -97,27 +120,44 @@ const Factories = () => {
         await factoryService.createFactory(values);
         message.success('Fábrica criada com sucesso!');
       }
+      
       setModalVisible(false);
+      form.resetFields();
       loadFactories();
     } catch (err) {
-      message.error('Erro ao salvar fábrica');
-      console.error(err);
+      const errorMessage = err.response?.data?.message || err.message || 'Erro ao salvar fábrica';
+      message.error(errorMessage);
+      console.error('Erro ao salvar fábrica:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div>
       <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <Title level={3} style={{ margin: 0 }}>Fábricas/Lojas</Title>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAdd}
-            size="large"
-          >
-            Nova
-          </Button>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <Tooltip title="Atualizar lista">
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => loadFactories(true)}
+                loading={refreshing}
+                size="large"
+              >
+                Atualizar
+              </Button>
+            </Tooltip>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAdd}
+              size="large"
+            >
+              Nova Fábrica
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -134,7 +174,8 @@ const Factories = () => {
       <Card className="content-card">
         {loading ? (
           <div style={{ textAlign: 'center', padding: '50px' }}>
-            <div>Carregando fábricas...</div>
+            <Spin size="large" />
+            <div style={{ marginTop: '16px', fontSize: '16px' }}>Carregando fábricas...</div>
           </div>
         ) : factories.length === 0 ? (
           <Empty 
@@ -150,29 +191,11 @@ const Factories = () => {
                   style={{ height: '100%' }}
                   bodyStyle={{ padding: '12px' }}
                   actions={[
-                    <Button
-                      type="primary"
-                      onClick={() => handleEdit(factory)}
-                      size="small"
-                      style={{ 
-                        fontSize: '14px', 
-                        padding: '8px 16px', 
-                        height: 'auto',
-                        width: '50%',
-                        borderRadius: '4px'
-                      }}
-                    >
-                      Editar
-                    </Button>,
-                    <Popconfirm
-                      title="Tem certeza que deseja excluir esta fábrica?"
-                      onConfirm={() => handleDelete(factory.id)}
-                      okText="Sim"
-                      cancelText="Não"
-                    >
+                    <Tooltip title="Editar fábrica">
                       <Button
                         type="primary"
-                        danger
+                        icon={<EditOutlined />}
+                        onClick={() => handleEdit(factory)}
                         size="small"
                         style={{ 
                           fontSize: '14px', 
@@ -182,8 +205,34 @@ const Factories = () => {
                           borderRadius: '4px'
                         }}
                       >
-                        Excluir
+                        Editar
                       </Button>
+                    </Tooltip>,
+                    <Popconfirm
+                      title="Excluir Fábrica"
+                      description="Tem certeza que deseja excluir esta fábrica? Esta ação não pode ser desfeita."
+                      onConfirm={() => handleDelete(factory.id)}
+                      okText="Sim, excluir"
+                      cancelText="Cancelar"
+                      okType="danger"
+                    >
+                      <Tooltip title="Excluir fábrica">
+                        <Button
+                          type="primary"
+                          danger
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          style={{ 
+                            fontSize: '14px', 
+                            padding: '8px 16px', 
+                            height: 'auto',
+                            width: '50%',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          Excluir
+                        </Button>
+                      </Tooltip>
                     </Popconfirm>
                   ]}
                 >
@@ -213,7 +262,7 @@ const Factories = () => {
                       </div>
                     </div>
                     
-                    <div style={{ fontSize: '12px', color: '#666' }}>
+                    <div style={{ fontSize: '12px', color: '#737373' }}>
                       <div style={{ marginBottom: 4 }}>
                         <PhoneOutlined /> {factory.contact}
                       </div>
@@ -275,51 +324,98 @@ const Factories = () => {
           <Form.Item
             name="name"
             label="Nome da Fábrica/Loja"
-            rules={[{ required: true, message: 'Por favor, insira o nome!' }]}
+            rules={[
+              { required: true, message: 'Por favor, insira o nome!' },
+              { min: 2, message: 'O nome deve ter pelo menos 2 caracteres!' },
+              { max: 100, message: 'O nome deve ter no máximo 100 caracteres!' }
+            ]}
           >
-            <Input placeholder="Digite o nome da fábrica/loja" />
+            <Input 
+              placeholder="Digite o nome da fábrica/loja" 
+              maxLength={100}
+              showCount
+            />
           </Form.Item>
 
           <Form.Item
             name="contact"
             label="Contato"
-            rules={[{ required: true, message: 'Por favor, insira o contato!' }]}
+            rules={[
+              { required: true, message: 'Por favor, insira o contato!' },
+              { min: 8, message: 'O contato deve ter pelo menos 8 caracteres!' },
+              { max: 50, message: 'O contato deve ter no máximo 50 caracteres!' }
+            ]}
           >
-            <Input placeholder="Digite o contato" />
+            <Input 
+              placeholder="Digite o contato (telefone, email, etc.)" 
+              maxLength={50}
+              showCount
+            />
           </Form.Item>
 
           <Form.Item
             name="location"
             label="Localização"
-            rules={[{ required: true, message: 'Por favor, insira a localização!' }]}
+            rules={[
+              { required: true, message: 'Por favor, insira a localização!' },
+              { min: 5, message: 'A localização deve ter pelo menos 5 caracteres!' },
+              { max: 200, message: 'A localização deve ter no máximo 200 caracteres!' }
+            ]}
           >
-            <Input placeholder="Digite a localização" />
+            <Input 
+              placeholder="Digite a localização completa" 
+              maxLength={200}
+              showCount
+            />
           </Form.Item>
 
           <Form.Item
             name="segment"
             label="Segmento"
-            rules={[{ required: true, message: 'Por favor, insira o segmento!' }]}
+            rules={[
+              { required: true, message: 'Por favor, insira o segmento!' },
+              { min: 2, message: 'O segmento deve ter pelo menos 2 caracteres!' },
+              { max: 50, message: 'O segmento deve ter no máximo 50 caracteres!' }
+            ]}
           >
-            <Input placeholder="Ex: Eletrônicos, Têxtil, Brinquedos, etc." />
+            <Input 
+              placeholder="Ex: Eletrônicos, Têxtil, Brinquedos, etc." 
+              maxLength={50}
+              showCount
+            />
           </Form.Item>
 
           <Form.Item
             name="observations"
             label="Observações"
+            rules={[
+              { max: 500, message: 'As observações devem ter no máximo 500 caracteres!' }
+            ]}
           >
             <TextArea
               rows={4}
               placeholder="Digite observações adicionais"
+              maxLength={500}
+              showCount
             />
           </Form.Item>
 
           <Form.Item>
             <div className="mobile-buttons">
-              <Button type="primary" htmlType="submit" size="large">
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                size="large"
+                loading={submitting}
+                disabled={submitting}
+              >
                 {editingFactory ? 'Atualizar' : 'Criar'}
               </Button>
-              <Button onClick={() => setModalVisible(false)} size="large">
+              <Button 
+                onClick={() => setModalVisible(false)} 
+                size="large"
+                disabled={submitting}
+              >
                 Cancelar
               </Button>
             </div>
