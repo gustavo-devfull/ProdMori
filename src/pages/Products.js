@@ -7,8 +7,7 @@ import {
   Row,
   Col,
   Alert,
-  Spinner,
-  Badge
+  Spinner
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
 import productService from '../services/productService';
@@ -272,7 +271,7 @@ const Products = () => {
                     }}>{product.name}</h5>
                     
                     {product.factory && (
-                      <div className="mb-2">
+                      <div className="mb-3">
                         {(() => {
                           const factoryColor = getFactoryColor(product.factory.name);
                           console.log(`Aplicando cor ${factoryColor} para fábrica: ${product.factory.name}`);
@@ -296,7 +295,7 @@ const Products = () => {
                       </div>
                     )}
                     
-                    <div className="fs-5 fw-bold text-primary mb-3" style={{ fontSize: isMobile ? '18px' : '16px' }}>
+                    <div className="fs-5 fw-bold text-primary mb-4" style={{ fontSize: isMobile ? '18px' : '16px' }}>
                       {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
                     </div>
                   </div>
