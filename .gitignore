@@ -4,7 +4,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Production build
+# Production builds
 build/
 dist/
 
@@ -15,12 +15,27 @@ dist/
 .env.test.local
 .env.production.local
 
+# Firebase credentials
+*-firebase-adminsdk-*.json
+firebase-adminsdk-*.json
+service-account-*.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
 # Logs
-logs
+logs/
 *.log
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
@@ -29,7 +44,7 @@ pids
 coverage/
 
 # nyc test coverage
-.nyc_output
+.nyc_output/
 
 # Dependency directories
 jspm_packages/
@@ -73,36 +88,3 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# Temporary files
-temp/
-uploads/
-*.tmp
-*.temp
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Firebase
-.firebase/
-firebase-debug.log
-firebase-debug.*.log
-
-# Vercel
-.vercel

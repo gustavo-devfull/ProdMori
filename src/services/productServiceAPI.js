@@ -5,7 +5,9 @@ class ProductServiceAPI {
     // Detectar se está rodando no Vercel ou localmente
     this.isVercel = typeof window !== 'undefined' && 
       (window.location.hostname.includes('vercel.app') || 
-       window.location.hostname.includes('vercel.com'));
+       window.location.hostname.includes('vercel.com') ||
+       window.location.hostname.includes('gpreto.space') ||
+       window.location.hostname !== 'localhost');
     
     // URL base da API
     this.apiUrl = this.isVercel 

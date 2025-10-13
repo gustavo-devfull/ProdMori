@@ -1,0 +1,7 @@
+# Firebase Admin SDK Configuration
+FB_PROJECT_ID=loja-13939
+FB_CLIENT_EMAIL=firebase-adminsdk-xxxxx@loja-13939.iam.gserviceaccount.com
+FB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n"
+
+# API Configuration
+REACT_APP_API_URL=http://localhost:3001
