@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Button,
@@ -30,7 +30,7 @@ const Products = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [productsData, factoriesData] = await Promise.all([
@@ -47,7 +47,7 @@ const Products = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     loadData();
@@ -56,7 +56,7 @@ const Products = () => {
     };
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, [t]);
+  }, [loadData]);
 
   const handleImageUpload = async (file) => {
     try {

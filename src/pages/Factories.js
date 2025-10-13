@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Button,
@@ -26,7 +26,7 @@ const Factories = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState(new Set());
 
-  const loadFactories = async (showRefresh = false) => {
+  const loadFactories = useCallback(async (showRefresh = false) => {
     try {
       setLoading(true);
       if (showRefresh) setRefreshing(true);
@@ -41,11 +41,11 @@ const Factories = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     loadFactories();
-  }, [t]);
+  }, [loadFactories]);
 
   const handleSubmit = async (values) => {
     try {
