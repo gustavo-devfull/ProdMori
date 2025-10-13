@@ -433,6 +433,56 @@ const Products = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
+              <Form.Label>Medidas | 尺寸</Form.Label>
+              <Form.Control
+                type="text"
+                name="dimensions"
+                defaultValue={editingProduct?.dimensions || ''}
+                placeholder="Digite as medidas (ex: 10x20x30cm) | 输入尺寸（例：10x20x30cm）"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Material | 材料</Form.Label>
+              <Form.Control
+                type="text"
+                name="material"
+                defaultValue={editingProduct?.material || ''}
+                placeholder="Digite o material | 输入材料"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Capacidade | 容量</Form.Label>
+              <Form.Control
+                type="text"
+                name="capacity"
+                defaultValue={editingProduct?.capacity || ''}
+                placeholder="Digite a capacidade | 输入容量"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Cores | 颜色</Form.Label>
+              <Form.Control
+                type="text"
+                name="colors"
+                defaultValue={editingProduct?.colors || ''}
+                placeholder="Digite as cores disponíveis | 输入可用颜色"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>MOQ | 最小订购量</Form.Label>
+              <Form.Control
+                type="text"
+                name="moq"
+                defaultValue={editingProduct?.moq || ''}
+                placeholder="Digite o MOQ (Minimum Order Quantity) | 输入最小订购量"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
               <Form.Label>Descrição | 描述</Form.Label>
               <Form.Control
                 as="textarea"
