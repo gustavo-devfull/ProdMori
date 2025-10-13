@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Row, 
@@ -27,68 +27,68 @@ const Dashboard = () => {
   });
   const [error, setError] = useState(null);
 
-  const loadStats = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [factories, products] = await Promise.all([
-        factoryServiceAPI.getAllFactories(),
-        productServiceAPI.getAllProducts()
-      ]);
-      
-      // Verificar se os dados são arrays válidos
-      const validFactories = Array.isArray(factories) ? factories : [];
-      const validProducts = Array.isArray(products) ? products : [];
-      
-      // Ordenar por data de criação (mais recentes primeiro) e pegar os 5 últimos
-      const recentFactories = validFactories
-        .filter(factory => factory && typeof factory === 'object')
-        .sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.id || 0);
-          const dateB = new Date(b.createdAt || b.id || 0);
-          return dateB - dateA;
-        })
-        .slice(0, 5);
-      
-      const recentProducts = validProducts
-        .filter(product => product && typeof product === 'object')
-        .sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.id || 0);
-          const dateB = new Date(b.createdAt || b.id || 0);
-          return dateB - dateA;
-        })
-        .slice(0, 5);
-      
-      setStats({
-        factories: validFactories.length,
-        products: validProducts.length
-      });
-      
-      setRecentItems({
-        factories: recentFactories,
-        products: recentProducts
-      });
-    } catch (err) {
-      setError(t('Erro ao carregar estatísticas', '加载统计信息时出错'));
-      console.error(err);
-      
-      // Definir valores padrão em caso de erro
-      setStats({
-        factories: 0,
-        products: 0
-      });
-      
-      setRecentItems({
-        factories: [],
-        products: []
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
   useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        const [factories, products] = await Promise.all([
+          factoryServiceAPI.getAllFactories(),
+          productServiceAPI.getAllProducts()
+        ]);
+        
+        // Verificar se os dados são arrays válidos
+        const validFactories = Array.isArray(factories) ? factories : [];
+        const validProducts = Array.isArray(products) ? products : [];
+        
+        // Ordenar por data de criação (mais recentes primeiro) e pegar os 5 últimos
+        const recentFactories = validFactories
+          .filter(factory => factory && typeof factory === 'object')
+          .sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.id || 0);
+            const dateB = new Date(b.createdAt || b.id || 0);
+            return dateB - dateA;
+          })
+          .slice(0, 5);
+        
+        const recentProducts = validProducts
+          .filter(product => product && typeof product === 'object')
+          .sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.id || 0);
+            const dateB = new Date(b.createdAt || b.id || 0);
+            return dateB - dateA;
+          })
+          .slice(0, 5);
+        
+        setStats({
+          factories: validFactories.length,
+          products: validProducts.length
+        });
+        
+        setRecentItems({
+          factories: recentFactories,
+          products: recentProducts
+        });
+      } catch (err) {
+        setError(t('Erro ao carregar estatísticas', '加载统计信息时出错'));
+        console.error(err);
+        
+        // Definir valores padrão em caso de erro
+        setStats({
+          factories: 0,
+          products: 0
+        });
+        
+        setRecentItems({
+          factories: [],
+          products: []
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadStats();
-  }, [loadStats]);
+  }, [t]);
 
   if (loading) {
     return (
