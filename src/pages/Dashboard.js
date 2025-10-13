@@ -70,7 +70,7 @@ const Dashboard = () => {
         products: recentProducts
       });
     } catch (err) {
-      setError('Erro ao carregar estatísticas');
+      setError('Erro ao carregar estatísticas | 加载统计信息时出错');
       console.error(err);
       
       // Definir valores padrão em caso de erro
@@ -99,12 +99,12 @@ const Dashboard = () => {
   return (
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
-        <h2 className="mb-0 fs-5 fw-semibold">ProductMobile Ravi</h2>
+        <h2 className="mb-0 fs-5 fw-semibold">ProductMobile Ravi | 产品移动端拉维</h2>
       </div>
       
       {error && (
         <Alert variant="danger" className="mb-3">
-          <Alert.Heading>Erro</Alert.Heading>
+          <Alert.Heading>Erro | 错误</Alert.Heading>
           {error}
         </Alert>
       )}
@@ -120,7 +120,7 @@ const Dashboard = () => {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div className="d-flex align-items-center">
                   <i className="bi bi-shop me-2 text-success fs-5"></i>
-                  <span className="fw-medium">Total de Fábricas/Lojas</span>
+                  <span className="fw-medium">Total de Fábricas/Lojas | 工厂/商店总数</span>
                 </div>
                 <div className="fs-3 fw-bold text-success">
                   {stats.factories}
@@ -131,17 +131,17 @@ const Dashboard = () => {
               <div className="mb-3">
                 <div className="d-flex align-items-center mb-2 text-muted small">
                   <i className="bi bi-calendar me-1"></i>
-                  Últimos 5 cadastrados:
+                  Últimos 5 cadastrados: | 最近5个注册:
                 </div>
                 <ListGroup variant="flush">
                   {recentItems.factories.map((factory, index) => (
                     <ListGroup.Item key={index} className="px-0 py-1 border-0">
                       <div className="d-flex justify-content-between align-items-center">
                         <span className="text-truncate me-2 flex-grow-1">
-                          {factory?.name || 'Nome não disponível'}
+                          {factory?.name || 'Nome não disponível | 名称不可用'}
                         </span>
                         <small className="text-muted">
-                          {factory?.segment || 'Sem segmento'}
+                          {factory?.segment || 'Sem segmento | 无行业'}
                         </small>
                       </div>
                     </ListGroup.Item>
@@ -159,7 +159,7 @@ const Dashboard = () => {
                 size="lg"
               >
                 <i className="bi bi-plus-circle me-2"></i>
-                Cadastrar Fábrica
+                Cadastrar Fábrica | 注册工厂
               </Button>
             </Card.Body>
           </Card>
@@ -174,7 +174,7 @@ const Dashboard = () => {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div className="d-flex align-items-center">
                   <i className="bi bi-bag me-2 text-primary fs-5"></i>
-                  <span className="fw-medium">Total de Produtos</span>
+                  <span className="fw-medium">Total de Produtos | 产品总数</span>
                 </div>
                 <div className="fs-3 fw-bold text-primary">
                   {stats.products}
@@ -185,17 +185,17 @@ const Dashboard = () => {
               <div className="mb-3">
                 <div className="d-flex align-items-center mb-2 text-muted small">
                   <i className="bi bi-calendar me-1"></i>
-                  Últimos 5 cadastrados:
+                  Últimos 5 cadastrados: | 最近5个注册:
                 </div>
                 <ListGroup variant="flush">
                   {recentItems.products.map((product, index) => (
                     <ListGroup.Item key={index} className="px-0 py-1 border-0">
                       <div className="d-flex justify-content-between align-items-center">
                         <span className="text-truncate me-2 flex-grow-1">
-                          {product?.name || 'Nome não disponível'}
+                          {product?.name || 'Nome não disponível | 名称不可用'}
                         </span>
                         <small className="text-muted">
-                          {product?.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                          {product?.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta | 咨询价格'}
                         </small>
                       </div>
                     </ListGroup.Item>
@@ -213,7 +213,7 @@ const Dashboard = () => {
                 size="lg"
               >
                 <i className="bi bi-plus-circle me-2"></i>
-                Cadastrar Produto
+                Cadastrar Produto | 注册产品
               </Button>
             </Card.Body>
           </Card>

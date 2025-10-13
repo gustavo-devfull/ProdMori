@@ -103,7 +103,7 @@ const Products = () => {
   };
 
   const handleDelete = async (productId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
+    if (!window.confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita. | 确定要删除这个产品吗？此操作无法撤销。')) {
       return;
     }
 
@@ -115,7 +115,7 @@ const Products = () => {
       await loadData();
       setError(null);
     } catch (err) {
-      setError('Erro ao excluir produto');
+      setError('Erro ao excluir produto | 删除产品时出错');
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -193,7 +193,7 @@ const Products = () => {
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
         <div className="d-flex justify-content-between align-items-center">
-          <h2 className="mb-0 fs-5 fw-semibold">Produtos</h2>
+          <h2 className="mb-0 fs-5 fw-semibold">Produtos | 产品</h2>
           <Button 
             variant="light"
             className="text-primary fw-semibold"
@@ -205,14 +205,14 @@ const Products = () => {
             }}
           >
             <i className="bi bi-plus-circle me-2"></i>
-            Novo Produto
+            Novo Produto | 新产品
           </Button>
         </div>
       </div>
       
       {error && (
         <Alert variant="danger" className="mb-3">
-          <Alert.Heading>Erro</Alert.Heading>
+          <Alert.Heading>Erro | 错误</Alert.Heading>
           {error}
         </Alert>
       )}
@@ -225,7 +225,7 @@ const Products = () => {
                 value={selectedFactory || ''}
                 onChange={(e) => handleFactoryFilter(e.target.value || null)}
               >
-                <option value="">Todas as fábricas</option>
+                <option value="">Todas as fábricas | 所有工厂</option>
                 {factories.map(factory => (
                   <option key={factory.id} value={factory.id}>
                     {factory.name}
@@ -239,7 +239,7 @@ const Products = () => {
                 value={selectedSegment || ''}
                 onChange={(e) => handleSegmentFilter(e.target.value || null)}
               >
-                <option value="">Todos os segmentos</option>
+                <option value="">Todos os segmentos | 所有行业</option>
                 {uniqueSegments.map(segment => (
                   <option key={segment} value={segment}>
                     {segment}
@@ -332,7 +332,7 @@ const Products = () => {
                     }}>{product.name}</h5>
                     
                     <div className="fs-5 fw-bold text-primary" style={{ fontSize: isMobile ? '18px' : '16px' }}>
-                      {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                      {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta | 咨询价格'}
                     </div>
                   </div>
                   
@@ -344,7 +344,7 @@ const Products = () => {
                       style={{ fontSize: isMobile ? '16px' : '14px' }}
                       onClick={() => handleEdit(product)}
                     >
-                      Ver Detalhes
+                      Ver Detalhes | 查看详情
                     </Button>
                   </div>
                 </Card.Body>
@@ -357,13 +357,13 @@ const Products = () => {
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+            {editingProduct ? 'Editar Produto | 编辑产品' : 'Novo Produto | 新产品'}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Imagem do Produto</Form.Label>
+              <Form.Label>Imagem do Produto | 产品图片</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -387,43 +387,43 @@ const Products = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Nome do Produto</Form.Label>
+              <Form.Label>Nome do Produto | 产品名称</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
                 defaultValue={editingProduct?.name || ''}
-                placeholder="Digite o nome do produto"
+                placeholder="Digite o nome do produto | 输入产品名称"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Segmento</Form.Label>
+              <Form.Label>Segmento | 行业</Form.Label>
               <Form.Control
                 type="text"
                 name="segment"
                 defaultValue={editingProduct?.segment || ''}
-                placeholder="Digite o segmento"
+                placeholder="Digite o segmento | 输入行业"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Preço</Form.Label>
+              <Form.Label>Preço | 价格</Form.Label>
               <Form.Control
                 type="number"
                 name="price"
                 step="0.01"
                 defaultValue={editingProduct?.price || ''}
-                placeholder="Digite o preço"
+                placeholder="Digite o preço | 输入价格"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Fábrica</Form.Label>
+              <Form.Label>Fábrica | 工厂</Form.Label>
               <Form.Select
                 name="factoryId"
                 defaultValue={editingProduct?.factory?.id || ''}
               >
-                <option value="">Selecione uma fábrica</option>
+                <option value="">Selecione uma fábrica | 选择工厂</option>
                 {factories.map(factory => (
                   <option key={factory.id} value={factory.id}>
                     {factory.name}
@@ -433,19 +433,19 @@ const Products = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Descrição</Form.Label>
+              <Form.Label>Descrição | 描述</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 name="description"
                 defaultValue={editingProduct?.description || ''}
-                placeholder="Digite uma descrição"
+                placeholder="Digite uma descrição | 输入描述"
               />
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleModalClose}>
-              Cancelar
+              Cancelar | 取消
             </Button>
             {editingProduct && (
               <Button 
@@ -457,10 +457,10 @@ const Products = () => {
                 {submitting ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
-                    Excluindo...
+                    Excluindo... | 删除中...
                   </>
                 ) : (
-                  'Excluir Produto'
+                  'Excluir Produto | 删除产品'
                 )}
               </Button>
             )}
@@ -468,10 +468,10 @@ const Products = () => {
               {submitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Salvando...
+                  Salvando... | 保存中...
                 </>
               ) : (
-                editingProduct ? 'Atualizar' : 'Criar'
+                editingProduct ? 'Atualizar | 更新' : 'Criar | 创建'
               )}
             </Button>
           </Modal.Footer>
@@ -480,7 +480,7 @@ const Products = () => {
 
       <Modal show={previewVisible} onHide={() => setPreviewVisible(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Visualizar Imagem</Modal.Title>
+          <Modal.Title>Visualizar Imagem | 查看图片</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
           <img
