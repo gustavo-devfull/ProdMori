@@ -135,14 +135,9 @@ const Factories = () => {
           Nova Fábrica/Loja | 新建工厂/商店
         </Button>
         
-        <Button 
-          variant="outline-secondary"
-          onClick={() => loadFactories(true)}
-          disabled={refreshing}
-        >
-          <i className={`bi bi-arrow-clockwise me-2 ${refreshing ? 'spinning' : ''}`}></i>
-          Atualizar | 刷新
-        </Button>
+        <div className="text-muted small">
+          Choose the language
+        </div>
       </div>
 
       {factories.length === 0 ? (
