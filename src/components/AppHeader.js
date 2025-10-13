@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, Nav, Button, Form } from 'react-bootstrap';
+import { Navbar, Nav, Button } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { language, toggleLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {

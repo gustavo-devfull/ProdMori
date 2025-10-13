@@ -30,15 +30,6 @@ const Products = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  useEffect(() => {
-    loadData();
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -57,6 +48,15 @@ const Products = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [t]);
 
   const handleImageUpload = async (file) => {
     try {

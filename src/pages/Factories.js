@@ -26,10 +26,6 @@ const Factories = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState(new Set());
 
-  useEffect(() => {
-    loadFactories();
-  }, []);
-
   const loadFactories = async (showRefresh = false) => {
     try {
       setLoading(true);
@@ -46,6 +42,10 @@ const Factories = () => {
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    loadFactories();
+  }, [t]);
 
   const handleSubmit = async (values) => {
     try {
