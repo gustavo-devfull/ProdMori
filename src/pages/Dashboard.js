@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, 
   Row, 
@@ -29,9 +29,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [loadStats]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(true);
       const [factories, products] = await Promise.all([
@@ -88,7 +88,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   if (loading) {
     return (
