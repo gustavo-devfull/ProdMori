@@ -150,20 +150,44 @@ const Factories = () => {
             <Col xs={12} md={6} lg={4} key={factory.id}>
               <Card className="h-100 shadow-lg">
                 <Card.Body>
-                  {/* Segmento, Localização e Contato na mesma linha */}
+                  {/* Segmento, Localização e Contatos */}
                   <div className="d-flex flex-wrap gap-3 mb-3">
                     <div className="d-flex align-items-center text-muted small">
                       <i className="bi bi-tag-fill text-primary me-1"></i>
-                      <span>{factory.segment || 'Sem segmento'}</span>
+                      <span>{factory.segment || 'Sem segmento | 无行业'}</span>
                     </div>
                     <div className="d-flex align-items-center text-muted small">
                       <i className="bi bi-geo-alt me-1"></i>
-                      <span>{factory.location || 'Localização não informada'}</span>
+                      <span>{factory.location || 'Localização não informada | 位置未提供'}</span>
                     </div>
-                    <div className="d-flex align-items-center text-muted small">
-                      <i className="bi bi-telephone me-1"></i>
-                      <span>{factory.contact || 'Contato não informado'}</span>
-                    </div>
+                  </div>
+
+                  {/* Informações de contato */}
+                  <div className="mb-3">
+                    {factory.contactName && (
+                      <div className="d-flex align-items-center text-muted small mb-1">
+                        <i className="bi bi-person me-1"></i>
+                        <span>{factory.contactName}</span>
+                      </div>
+                    )}
+                    {factory.phone && (
+                      <div className="d-flex align-items-center text-muted small mb-1">
+                        <i className="bi bi-telephone me-1"></i>
+                        <span>{factory.phone}</span>
+                      </div>
+                    )}
+                    {factory.wechat && (
+                      <div className="d-flex align-items-center text-muted small mb-1">
+                        <i className="bi bi-chat-dots me-1"></i>
+                        <span>{factory.wechat}</span>
+                      </div>
+                    )}
+                    {factory.email && (
+                      <div className="d-flex align-items-center text-muted small mb-1">
+                        <i className="bi bi-envelope me-1"></i>
+                        <span>{factory.email}</span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Nome da fábrica/loja */}
@@ -290,12 +314,42 @@ const Factories = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Contato | 联系方式</Form.Label>
+              <Form.Label>Nome do Contato | 联系人姓名</Form.Label>
               <Form.Control
                 type="text"
-                name="contact"
-                defaultValue={editingFactory?.contact || ''}
-                placeholder="Digite o contato (telefone, email, etc.) | 输入联系方式（电话、邮箱等）"
+                name="contactName"
+                defaultValue={editingFactory?.contactName || ''}
+                placeholder="Digite o nome do contato | 输入联系人姓名"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Telefone | 电话</Form.Label>
+              <Form.Control
+                type="tel"
+                name="phone"
+                defaultValue={editingFactory?.phone || ''}
+                placeholder="Digite o telefone | 输入电话号码"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>WeChat | 微信</Form.Label>
+              <Form.Control
+                type="text"
+                name="wechat"
+                defaultValue={editingFactory?.wechat || ''}
+                placeholder="Digite o WeChat | 输入微信号"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>E-mail | 邮箱</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                defaultValue={editingFactory?.email || ''}
+                placeholder="Digite o e-mail | 输入邮箱地址"
               />
             </Form.Group>
 
