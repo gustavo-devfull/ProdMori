@@ -25,6 +25,8 @@ const Factories = () => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState(new Set());
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
 
   const loadFactories = useCallback(async (showRefresh = false) => {
     try {
@@ -96,6 +98,11 @@ const Factories = () => {
       newExpanded.add(factoryId);
     }
     setExpandedProducts(newExpanded);
+  };
+
+  const handlePreview = (imageUrl) => {
+    setPreviewImage(imageUrl);
+    setPreviewVisible(true);
   };
 
   if (loading && !refreshing) {
@@ -206,6 +213,8 @@ const Factories = () => {
                               alt={`${factory.name} - Imagem 1`}
                               className="img-fluid rounded"
                               style={{ height: '120px', objectFit: 'cover', width: '100%' }}
+                              showPreview={true}
+                              onPreview={handlePreview}
                             />
                           </div>
                         )}
@@ -216,6 +225,8 @@ const Factories = () => {
                               alt={`${factory.name} - Imagem 2`}
                               className="img-fluid rounded"
                               style={{ height: '120px', objectFit: 'cover', width: '100%' }}
+                              showPreview={true}
+                              onPreview={handlePreview}
                             />
                           </div>
                         )}
@@ -478,6 +489,20 @@ const Factories = () => {
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      <Modal show={previewVisible} onHide={() => setPreviewVisible(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Visualizar Imagem | 查看图片</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="img-fluid rounded"
+            style={{ maxHeight: '70vh' }}
+          />
+        </Modal.Body>
       </Modal>
     </div>
   );
