@@ -15,7 +15,7 @@ class FactoryServiceAPI {
 
   async createFactory(factoryData) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/create/factories`, {
+      const response = await fetch(`${this.apiUrl}/firestore/create?collection=factories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ class FactoryServiceAPI {
 
   async updateFactory(id, factoryData) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/update/factories/${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/update?collection=factories&id=${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ class FactoryServiceAPI {
 
   async deleteFactory(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/delete/factories/${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/delete?collection=factories&id=${id}`, {
         method: 'DELETE',
       });
 
@@ -91,7 +91,7 @@ class FactoryServiceAPI {
 
   async getFactoryById(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/get/factories/${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/get?collection=factories&id=${id}`, {
         cache: 'no-store'
       });
 
@@ -115,7 +115,7 @@ class FactoryServiceAPI {
 
   async getProductsByFactory(factoryId) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/products-by-factory/${factoryId}?limit=100`, {
+      const response = await fetch(`${this.apiUrl}/firestore/products-by-factory?factoryId=${factoryId}&limit=100`, {
         cache: 'no-store'
       });
 

@@ -22,7 +22,7 @@ class ProductServiceAPI {
         )
       );
 
-      const response = await fetch(`${this.apiUrl}/firestore/create/products`, {
+      const response = await fetch(`${this.apiUrl}/firestore/create?collection=products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ class ProductServiceAPI {
         )
       );
 
-      const response = await fetch(`${this.apiUrl}/firestore/update/products/${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/update?collection=products&id=${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ class ProductServiceAPI {
 
   async deleteProduct(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/delete/products/${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/delete?collection=products&id=${id}`, {
         method: 'DELETE',
       });
 
@@ -114,7 +114,7 @@ class ProductServiceAPI {
 
   async getProductById(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/get/products/${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/get?collection=products&id=${id}`, {
         cache: 'no-store'
       });
 
@@ -189,7 +189,7 @@ class ProductServiceAPI {
 
   async getFactoryById(factoryId) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/get/factories/${factoryId}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/get?collection=factories&id=${factoryId}`, {
         cache: 'no-store'
       });
 
