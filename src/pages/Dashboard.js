@@ -27,10 +27,6 @@ const Dashboard = () => {
   });
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
   const loadStats = useCallback(async () => {
     try {
       setLoading(true);
@@ -89,6 +85,10 @@ const Dashboard = () => {
       setLoading(false);
     }
   }, [t]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   if (loading) {
     return (
