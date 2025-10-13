@@ -1,4 +1,4 @@
-const { getCollection } = require('./firestore-utils');
+const { getCollection } = require('../firestore-utils');
 
 module.exports = async (req, res) => {
   // Configurar CORS

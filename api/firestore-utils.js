@@ -2,20 +2,38 @@ const admin = require('firebase-admin');
 
 // Inicializar Firebase Admin SDK
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FB_PROJECT_ID || "loja-13939",
-      clientEmail: process.env.FB_CLIENT_EMAIL,
-      privateKey: process.env.FB_PRIVATE_KEY ? process.env.FB_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-    }),
-  });
+  try {
+    // Verificar se as credenciais estão disponíveis
+    if (process.env.FB_CLIENT_EMAIL && process.env.FB_PRIVATE_KEY) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FB_PROJECT_ID || "loja-13939",
+          clientEmail: process.env.FB_CLIENT_EMAIL,
+          privateKey: process.env.FB_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }),
+      });
+      console.log('Firebase Admin SDK inicializado com credenciais');
+    } else {
+      console.log('Firebase Admin SDK não inicializado - credenciais não encontradas');
+      console.log('Configure as variáveis FB_CLIENT_EMAIL e FB_PRIVATE_KEY para usar o Firestore');
+    }
+  } catch (error) {
+    console.error('Erro ao inicializar Firebase Admin SDK:', error.message);
+    console.log('Continuando sem Firebase Admin SDK...');
+  }
 }
 
-const db = admin.firestore();
+const db = admin.apps.length > 0 ? admin.firestore() : null;
 
 // Função para buscar dados de uma coleção
 async function getCollection(req, res) {
   try {
+    if (!db) {
+      return res.status(503).json({ 
+        ok: false, 
+        error: 'Firebase Admin SDK não configurado. Configure as variáveis FB_CLIENT_EMAIL e FB_PRIVATE_KEY.' 
+      });
+    }
     const { col = 'products', limit = '20', orderBy: orderField = 'createdAt', orderDirection = 'desc' } = req.query;
     
     let query = db.collection(String(col));
@@ -165,6 +183,12 @@ async function deleteDocument(req, res) {
 // Função para buscar produtos com informações da fábrica
 async function getProductsWithFactory(req, res) {
   try {
+    if (!db) {
+      return res.status(503).json({ 
+        ok: false, 
+        error: 'Firebase Admin SDK não configurado. Configure as variáveis FB_CLIENT_EMAIL e FB_PRIVATE_KEY.' 
+      });
+    }
     const { limit = '20' } = req.query;
     
     // Buscar produtos
