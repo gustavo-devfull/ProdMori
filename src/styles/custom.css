@@ -1,0 +1,37 @@
+/* Placeholder styling with 30% black opacity */
+.form-control::placeholder {
+  color: rgba(0, 0, 0, 0.3) !important;
+  opacity: 1;
+}
+
+.form-control:focus::placeholder {
+  color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Language toggle styling */
+#language-switch {
+  color: white !important;
+}
+
+#language-switch .form-check-label {
+  color: white !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+#language-switch .form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+#language-switch .form-check-input {
+  background-color: transparent;
+  border-color: white;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+  #language-switch .form-check-label {
+    font-size: 0.8rem;
+  }
+}

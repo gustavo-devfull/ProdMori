@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, Nav, Button } from 'react-bootstrap';
+import { Navbar, Nav, Button, Form } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { language, toggleLanguage, t } = useLanguage();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ const AppHeader = () => {
             color: 'white'
           }}
         >
-          Dashboard
+          {t('Dashboard', '仪表板')}
         </Button>
         <Button
           variant={location.pathname === '/factories' ? 'primary' : 'outline-light'}
@@ -67,7 +69,7 @@ const AppHeader = () => {
             color: 'white'
           }}
         >
-          Fábricas
+          {t('Fábricas', '工厂')}
         </Button>
         <Button
           variant={location.pathname === '/products' ? 'primary' : 'outline-light'}
@@ -84,8 +86,19 @@ const AppHeader = () => {
             color: 'white'
           }}
         >
-          Produtos
+          {t('Produtos', '产品')}
         </Button>
+        
+        {/* Language Toggle */}
+        <Form.Check
+          type="switch"
+          id="language-switch"
+          label={t('PT', '中文')}
+          checked={language === 'zh'}
+          onChange={toggleLanguage}
+          className="ms-2"
+          style={{ color: 'white' }}
+        />
       </Nav>
     </Navbar>
   );
