@@ -1,3 +1,5 @@
+import { apiFetch } from '../utils/apiUtils';
+
 class ProductServiceAPI {
   constructor() {
     // Detectar se está rodando no Vercel ou localmente
@@ -43,20 +45,9 @@ class ProductServiceAPI {
 
   async getAllProducts() {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/products-with-factory?limit=100`, {
+      const result = await apiFetch(`${this.apiUrl}/firestore/products-with-factory?limit=100`, {
         cache: 'no-store' // Sempre buscar dados frescos
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar produtos');
-      }
-
-      const result = await response.json();
-      
-      if (!result.ok) {
-        throw new Error(result.error || 'Erro na resposta da API');
-      }
 
       const products = result.data.map(product => {
         // Converter preço para número se existir

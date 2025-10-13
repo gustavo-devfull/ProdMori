@@ -1,3 +1,5 @@
+import { apiFetch } from '../utils/apiUtils';
+
 class FactoryServiceAPI {
   constructor() {
     // Detectar se está rodando no Vercel ou localmente
@@ -36,20 +38,9 @@ class FactoryServiceAPI {
 
   async getAllFactories() {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/get?col=factories&limit=100&orderBy=createdAt&orderDirection=desc`, {
+      const result = await apiFetch(`${this.apiUrl}/firestore/get?col=factories&limit=100&orderBy=createdAt&orderDirection=desc`, {
         cache: 'no-store'
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar fábricas');
-      }
-
-      const result = await response.json();
-      
-      if (!result.ok) {
-        throw new Error(result.error || 'Erro na resposta da API');
-      }
 
       return result.data;
     } catch (error) {
