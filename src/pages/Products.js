@@ -393,7 +393,6 @@ const Products = () => {
                 name="name"
                 defaultValue={editingProduct?.name || ''}
                 placeholder="Digite o nome do produto"
-                required
               />
             </Form.Group>
 
@@ -404,7 +403,6 @@ const Products = () => {
                 name="segment"
                 defaultValue={editingProduct?.segment || ''}
                 placeholder="Digite o segmento"
-                required
               />
             </Form.Group>
 
@@ -424,7 +422,6 @@ const Products = () => {
               <Form.Select
                 name="factoryId"
                 defaultValue={editingProduct?.factory?.id || ''}
-                required
               >
                 <option value="">Selecione uma fábrica</option>
                 {factories.map(factory => (

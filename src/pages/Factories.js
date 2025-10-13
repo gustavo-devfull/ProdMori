@@ -256,7 +256,6 @@ const Factories = () => {
                 name="name"
                 defaultValue={editingFactory?.name || ''}
                 placeholder="Digite o nome da fábrica/loja"
-                required
               />
             </Form.Group>
 
@@ -267,7 +266,6 @@ const Factories = () => {
                 name="contact"
                 defaultValue={editingFactory?.contact || ''}
                 placeholder="Digite o contato (telefone, email, etc.)"
-                required
               />
             </Form.Group>
 
@@ -278,7 +276,6 @@ const Factories = () => {
                 name="location"
                 defaultValue={editingFactory?.location || ''}
                 placeholder="Digite a localização"
-                required
               />
             </Form.Group>
 
@@ -289,7 +286,6 @@ const Factories = () => {
                 name="segment"
                 defaultValue={editingFactory?.segment || ''}
                 placeholder="Digite o segmento de atuação"
-                required
               />
             </Form.Group>
 
