@@ -67,3 +67,4 @@ const q = query(
 - ✅ **Performance**: Para pequenas quantidades de dados, a ordenação local é eficiente
 
 
+

@@ -9,8 +9,8 @@ import {
   ListGroup
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import factoryService from '../services/factoryService';
-import productService from '../services/productService';
+import factoryServiceAPI from '../services/factoryServiceAPI';
+import productServiceAPI from '../services/productServiceAPI';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -33,8 +33,8 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const [factories, products] = await Promise.all([
-        factoryService.getAllFactories(),
-        productService.getAllProducts()
+        factoryServiceAPI.getAllFactories(),
+        productServiceAPI.getAllProducts()
       ]);
       
       // Verificar se os dados são arrays válidos

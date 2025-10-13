@@ -1,203 +1,195 @@
-# Sistema de Produtos China
+# ProdMori - Sistema de Gestão de Produtos para China
 
-Sistema de gerenciamento de produtos e fábricas desenvolvido com React, Ant Design, Firebase e FTP.
+Sistema completo de gestão de produtos e fábricas otimizado para funcionar na China, com backend que faz ponte entre frontend e Firestore usando Firebase Admin SDK.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gustavo-devfull/ProductMR)
+## 🌟 Características
 
-## 🚀 Deploy no Vercel
+- ✅ **Compatível com China**: Sem chamadas diretas ao Firebase Web SDK
+- ✅ **Backend Otimizado**: Firebase Admin SDK com cache agressivo
+- ✅ **Frontend Moderno**: React com Bootstrap
+- ✅ **Upload de Imagens**: Sistema FTP integrado
+- ✅ **Deploy Vercel**: Pronto para produção
+- ✅ **Cache Inteligente**: Otimizado para performance na China
 
-### Configuração Automática
-1. Acesse [Vercel](https://vercel.com)
-2. Conecte sua conta GitHub
-3. Importe o repositório `gustavo-devfull/ProductMR`
-4. Configure as variáveis de ambiente:
-   - `REACT_APP_API_URL`: `https://ideolog.ia.br`
-5. Deploy automático! ✨
+## 🚀 Funcionalidades
 
-### Configuração Manual
-```bash
-# Clone o repositório
-git clone https://github.com/gustavo-devfull/ProductMR.git
+### Dashboard
+- Estatísticas em tempo real
+- Visão geral de fábricas e produtos
+- Acesso rápido às funcionalidades
 
-# Instale o Vercel CLI
-npm i -g vercel
+### Gestão de Fábricas
+- Cadastro completo de fábricas
+- Informações de contato e segmento
+- Listagem com filtros
 
-# Deploy
-vercel --prod
-```
+### Gestão de Produtos
+- Cadastro de produtos com imagens
+- Associação com fábricas
+- Preços e descrições detalhadas
 
-## 🛠 Tecnologias Utilizadas
+### Sistema de Imagens
+- Upload via FTP
+- Cache inteligente
+- Proxy para otimização
 
-- **React** - Framework frontend
-- **Ant Design** - Biblioteca de componentes UI
-- **Firebase Firestore** - Banco de dados NoSQL
-- **FTP** - Armazenamento de imagens
-- **Express.js** - Backend para proxy de imagens
-- **React Router** - Roteamento
-- **Vercel** - Deploy e hospedagem
-- **JavaScript/JSX** - Linguagem de programação
+## 🛠️ Tecnologias
 
-## ✨ Funcionalidades
+- **Frontend**: React 18, Bootstrap 5, React Router
+- **Backend**: Node.js, Express, Firebase Admin SDK
+- **Banco**: Firebase Firestore
+- **Upload**: FTP + Proxy
+- **Deploy**: Vercel Functions
+- **Cache**: CDN + Headers otimizados
 
-### 🏭 Fábricas/Lojas
-- Cadastro de fábricas com nome, contato, localização e observações
-- Campo de segmento para categorização
-- Listagem em cards com informações detalhadas
-- Edição e exclusão de fábricas
-- Exibição dos produtos associados a cada fábrica
-
-### 📦 Produtos
-- Cadastro de produtos com foto, nome, segmento, medidas, preço, MOQ e observações
-- Upload de imagens via FTP
-- Listagem em cards com foto, nome, preço e fábrica associada
-- Filtro por fábrica
-- Edição e exclusão de produtos
-- Imagens responsivas (100% largura do card)
-
-### 📊 Dashboard
-- Estatísticas de fábricas e produtos
-- Navegação rápida para cadastros
-- Cards clicáveis para navegação
-- Layout responsivo
-
-## 🚀 Instalação Local
+## 📦 Instalação
 
 ### Pré-requisitos
-- Node.js (versão 14 ou superior)
-- npm ou yarn
-- Acesso ao Firebase
-- Credenciais FTP
+- Node.js 18+
+- Conta Firebase
+- Conta Vercel (para deploy)
 
-### Instalação
+### Desenvolvimento Local
+
 ```bash
 # Clone o repositório
-git clone https://github.com/gustavo-devfull/ProductMR.git
+git clone https://github.com/gustavo-devfull/ProdMori.git
+cd ProdMori
 
 # Instale as dependências
 npm install
 
-# Instale as dependências do servidor
-npm install --prefix server
-```
+# Configure as variáveis de ambiente (opcional para desenvolvimento)
+# Crie um arquivo .env com:
+# FB_PROJECT_ID=loja-13939
+# FB_CLIENT_EMAIL=your-service-account@loja-13939.iam.gserviceaccount.com
+# FB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_KEY\n-----END PRIVATE KEY-----\n"
 
-### Execução
-```bash
-# Desenvolvimento (frontend + backend)
+# Execute em modo desenvolvimento
 npm run dev
-
-# Apenas frontend
-npm start
-
-# Apenas backend
-npm run server
-
-# Build para produção
-npm run build
 ```
 
-## ⚙️ Configuração
+### Deploy no Vercel
 
-### Firebase
-Configure as credenciais do Firebase em `src/config/firebase.js`:
+1. **Configure as variáveis de ambiente no Vercel:**
+   - `FB_PROJECT_ID=loja-13939`
+   - `FB_CLIENT_EMAIL=your-service-account@loja-13939.iam.gserviceaccount.com`
+   - `FB_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_KEY\n-----END PRIVATE KEY-----\n"`
 
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSyCsgETTEl2bWeCAaAosdwAT5FfUvnWJydY",
-  authDomain: "loja-13939.firebaseapp.com",
-  projectId: "loja-13939",
-  storageBucket: "loja-13939.firebasestorage.app",
-  messagingSenderId: "803150163726",
-  appId: "1:803150163726:web:86d7d8049f74d6bf94b15f"
-};
+2. **Deploy:**
+```bash
+vercel --prod
 ```
 
-### FTP
-Configure as credenciais FTP em `server.js`:
+## 🔧 Configuração Firebase
 
-```javascript
-const ftpConfig = {
-  host: '46.202.90.62',
-  port: 21,
-  user: 'u715606397.ideolog.ia.br',
-  password: ']X9CC>t~ihWhdzNq'
-};
-```
+### 1. Criar Service Account
+1. Acesse [Firebase Console](https://console.firebase.google.com/)
+2. Selecione seu projeto
+3. Vá em "Project Settings" > "Service accounts"
+4. Clique em "Generate new private key"
+5. Baixe o arquivo JSON
+
+### 2. Extrair Credenciais
+Do arquivo JSON baixado, extraia:
+- `project_id` → `FB_PROJECT_ID`
+- `client_email` → `FB_CLIENT_EMAIL`
+- `private_key` → `FB_PRIVATE_KEY` (substitua `\n` por `\\n`)
+
+## 🌏 Otimizações para China
+
+### Cache Agressivo
+- **API**: 60s com stale-while-revalidate 600s
+- **Imagens**: 300s com stale-while-revalidate 600s
+- **Assets**: Cache longo (1 ano)
+
+### CDN Próximo
+- Região: Hong Kong/Singapore
+- Headers otimizados
+- Compressão automática
+
+### Sem Bloqueios
+- Frontend só acessa próprio domínio
+- Backend faz ponte com Firestore
+- Nenhuma chamada direta ao Google
 
 ## 📁 Estrutura do Projeto
 
 ```
-src/
-├── components/          # Componentes reutilizáveis
-│   ├── AppHeader.js     # Cabeçalho da aplicação
-│   ├── AppSidebar.js    # Barra lateral de navegação
-│   └── ErrorBoundary.js # Captura de erros
-├── pages/              # Páginas da aplicação
-│   ├── Dashboard.js    # Página inicial
-│   ├── Factories.js    # Gerenciamento de fábricas
-│   └── Products.js     # Gerenciamento de produtos
-├── services/           # Serviços de API
-│   ├── factoryService.js
-│   ├── productService.js
-│   ├── imageService.js
-│   └── ftpService.js
-├── config/             # Configurações
-│   └── firebase.js
-├── App.js              # Componente principal
-├── index.js            # Ponto de entrada
-└── index.css           # Estilos globais
-
-server.js               # Servidor Express para proxy FTP
-vercel.json             # Configuração do Vercel
-config-overrides.js     # Configurações do webpack
-package.json            # Dependências do projeto
+ProdMori/
+├── src/
+│   ├── components/          # Componentes React
+│   ├── pages/              # Páginas da aplicação
+│   ├── services/           # Serviços de API
+│   └── config/             # Configurações
+├── api/                    # Vercel Functions
+│   └── firestore/         # APIs do Firestore
+├── server.js              # Servidor Express
+├── vercel.json            # Configuração Vercel
+└── package.json           # Dependências
 ```
 
-## 🌐 Deploy
+## 🔌 APIs Disponíveis
 
-### Vercel (Recomendado)
-- ✅ Deploy automático via GitHub
-- ✅ CDN global
-- ✅ SSL automático
-- ✅ Preview de branches
-- ✅ Configuração em `vercel.json`
+### Produtos
+- `GET /api/firestore/products-with-factory` - Produtos com fábrica
+- `GET /api/firestore/products-by-factory/:id` - Produtos por fábrica
+- `POST /api/firestore/create/products` - Criar produto
+- `PUT /api/firestore/update/products/:id` - Atualizar produto
+- `DELETE /api/firestore/delete/products/:id` - Deletar produto
 
-### Outras Plataformas
-- **Netlify**: Compatível com React
-- **Heroku**: Requer configuração adicional
-- **AWS S3 + CloudFront**: Para usuários avançados
+### Fábricas
+- `GET /api/firestore/get?col=factories` - Listar fábricas
+- `GET /api/firestore/get/factories/:id` - Fábrica específica
+- `POST /api/firestore/create/factories` - Criar fábrica
+- `PUT /api/firestore/update/factories/:id` - Atualizar fábrica
+- `DELETE /api/firestore/delete/factories/:id` - Deletar fábrica
 
-## 📱 Responsividade
+### Imagens
+- `POST /api/upload-image` - Upload de imagem
+- `GET /api/image/:filename` - Servir imagem
+- `DELETE /api/delete-image/:filename` - Deletar imagem
 
-- **Mobile**: Drawer para navegação, cards otimizados
-- **Tablet**: Layout adaptativo
-- **Desktop**: Sidebar fixa, layout completo
+## 🧪 Testes
 
-## 🔧 Melhorias Implementadas
+```bash
+# Testar servidor local
+npm run server:dev
 
-- ✅ Imagens responsivas (100% largura do card)
-- ✅ Layout responsivo completo
-- ✅ Error Boundary para captura de erros
-- ✅ Configurações otimizadas do webpack
-- ✅ Meta tag anti-tradução para estabilidade
-- ✅ Botões com padding aumentado (16px 32px)
-- ✅ Filtro por fábrica na página de produtos
-- ✅ Cards com informações detalhadas
-- ✅ Navegação otimizada para mobile
-- ✅ Deploy configurado para Vercel
+# Testar APIs
+curl http://localhost:3001/api/test
+curl http://localhost:3001/api/firestore/get?col=products
+```
 
-## 📄 Licença
+## 📝 Scripts Disponíveis
 
-Este projeto é privado e destinado ao uso interno.
+- `npm start` - Inicia React em desenvolvimento
+- `npm run build` - Build para produção
+- `npm run server` - Inicia servidor Express
+- `npm run server:dev` - Servidor com nodemon
+- `npm run dev` - Executa frontend e backend juntos
 
 ## 🤝 Contribuição
 
-Para contribuir com o projeto:
-1. Fork o repositório
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📞 Suporte
+## 📄 Licença
 
-Para suporte técnico, entre em contato através do GitHub Issues.
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 👨‍💻 Autor
+
+**Gustavo DevFull**
+- GitHub: [@gustavo-devfull](https://github.com/gustavo-devfull)
+- Projeto: [ProdMori](https://github.com/gustavo-devfull/ProdMori)
+
+## 🙏 Agradecimentos
+
+- Firebase pela plataforma
+- Vercel pelo deploy
+- React e Bootstrap pelas bibliotecas
+- Comunidade open source

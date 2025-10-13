@@ -10,7 +10,7 @@ import {
   Spinner,
   ListGroup
 } from 'react-bootstrap';
-import factoryService from '../services/factoryService';
+import factoryServiceAPI from '../services/factoryServiceAPI';
 
 const Factories = () => {
   const [factories, setFactories] = useState([]);
@@ -31,7 +31,7 @@ const Factories = () => {
       setLoading(true);
       if (showRefresh) setRefreshing(true);
       
-      const data = await factoryService.getAllFactories();
+      const data = await factoryServiceAPI.getAllFactories();
       setFactories(data);
       setError(null);
     } catch (err) {
@@ -48,9 +48,9 @@ const Factories = () => {
       setSubmitting(true);
       
       if (editingFactory) {
-        await factoryService.updateFactory(editingFactory.id, values);
+        await factoryServiceAPI.updateFactory(editingFactory.id, values);
       } else {
-        await factoryService.createFactory(values);
+        await factoryServiceAPI.createFactory(values);
       }
       
       setModalVisible(false);
@@ -71,7 +71,7 @@ const Factories = () => {
 
   const handleDelete = async (id) => {
     try {
-      await factoryService.deleteFactory(id);
+      await factoryServiceAPI.deleteFactory(id);
       await loadFactories();
     } catch (err) {
       setError('Erro ao excluir fábrica');

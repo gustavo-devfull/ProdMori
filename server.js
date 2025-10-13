@@ -4,9 +4,35 @@ const ftp = require('basic-ftp');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const admin = require('firebase-admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Inicializar Firebase Admin SDK
+if (!admin.apps.length) {
+  try {
+    // Verificar se as credenciais estão disponíveis
+    if (process.env.FB_CLIENT_EMAIL && process.env.FB_PRIVATE_KEY) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FB_PROJECT_ID || "loja-13939",
+          clientEmail: process.env.FB_CLIENT_EMAIL,
+          privateKey: process.env.FB_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        }),
+      });
+      console.log('Firebase Admin SDK inicializado com credenciais');
+    } else {
+      console.log('Firebase Admin SDK não inicializado - credenciais não encontradas');
+      console.log('Configure as variáveis FB_CLIENT_EMAIL e FB_PRIVATE_KEY para usar o Firestore');
+    }
+  } catch (error) {
+    console.error('Erro ao inicializar Firebase Admin SDK:', error.message);
+    console.log('Continuando sem Firebase Admin SDK...');
+  }
+}
+
+const db = admin.apps.length > 0 ? admin.firestore() : null;
 
 // Middleware
 app.use(cors());
@@ -214,6 +240,257 @@ app.delete('/api/delete-image/:filename', async (req, res) => {
     res.status(500).json({ 
       error: 'Erro ao deletar imagem',
       details: error.message 
+    });
+  }
+});
+
+// ===== ROTAS DE API PARA FIRESTORE =====
+
+// Rota para buscar dados de uma coleção
+app.get('/api/firestore/get', async (req, res) => {
+  try {
+    if (!db) {
+      return res.status(503).json({ 
+        ok: false, 
+        error: 'Firebase Admin SDK não configurado. Configure as variáveis FB_CLIENT_EMAIL e FB_PRIVATE_KEY.' 
+      });
+    }
+    const { col = 'products', limit = '20', orderBy: orderField = 'createdAt', orderDirection = 'desc' } = req.query;
+    
+    let query = db.collection(String(col));
+    
+    // Aplicar ordenação
+    if (orderField) {
+      query = query.orderBy(orderField, orderDirection);
+    }
+    
+    // Aplicar limite
+    if (limit) {
+      query = query.limit(Number(limit));
+    }
+    
+    const snapshot = await query.get();
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Cache agressivo para China (ajuste conforme necessidade)
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+    
+    res.status(200).json({ 
+      ok: true, 
+      count: data.length, 
+      data,
+      collection: col 
+    });
+  } catch (error) {
+    console.error('Erro ao buscar dados do Firestore:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message || 'Erro interno do servidor' 
+    });
+  }
+});
+
+// Rota para buscar um documento específico
+app.get('/api/firestore/get/:collection/:id', async (req, res) => {
+  try {
+    const { collection, id } = req.params;
+    const docRef = db.collection(collection).doc(id);
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+      return res.status(404).json({ 
+        ok: false, 
+        error: 'Documento não encontrado' 
+      });
+    }
+    
+    const data = { id: doc.id, ...doc.data() };
+    
+    // Cache moderado para documentos individuais
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
+    
+    res.status(200).json({ 
+      ok: true, 
+      data 
+    });
+  } catch (error) {
+    console.error('Erro ao buscar documento:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message || 'Erro interno do servidor' 
+    });
+  }
+});
+
+// Rota para criar um documento
+app.post('/api/firestore/create/:collection', async (req, res) => {
+  try {
+    const { collection } = req.params;
+    const data = req.body;
+    
+    // Adicionar timestamps
+    const docData = {
+      ...data,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const docRef = await db.collection(collection).add(docData);
+    
+    res.status(201).json({ 
+      ok: true, 
+      id: docRef.id,
+      message: 'Documento criado com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao criar documento:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message || 'Erro interno do servidor' 
+    });
+  }
+});
+
+// Rota para atualizar um documento
+app.put('/api/firestore/update/:collection/:id', async (req, res) => {
+  try {
+    const { collection, id } = req.params;
+    const data = req.body;
+    
+    // Adicionar timestamp de atualização
+    const updateData = {
+      ...data,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const docRef = db.collection(collection).doc(id);
+    await docRef.update(updateData);
+    
+    res.status(200).json({ 
+      ok: true, 
+      message: 'Documento atualizado com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar documento:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message || 'Erro interno do servidor' 
+    });
+  }
+});
+
+// Rota para deletar um documento
+app.delete('/api/firestore/delete/:collection/:id', async (req, res) => {
+  try {
+    const { collection, id } = req.params;
+    await db.collection(collection).doc(id).delete();
+    
+    res.status(200).json({ 
+      ok: true, 
+      message: 'Documento deletado com sucesso' 
+    });
+  } catch (error) {
+    console.error('Erro ao deletar documento:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message || 'Erro interno do servidor' 
+    });
+  }
+});
+
+// Rota para buscar produtos com informações da fábrica
+app.get('/api/firestore/products-with-factory', async (req, res) => {
+  try {
+    if (!db) {
+      return res.status(503).json({ 
+        ok: false, 
+        error: 'Firebase Admin SDK não configurado. Configure as variáveis FB_CLIENT_EMAIL e FB_PRIVATE_KEY.' 
+      });
+    }
+    const { limit = '20' } = req.query;
+    
+    // Buscar produtos
+    const productsSnapshot = await db.collection('products')
+      .orderBy('createdAt', 'desc')
+      .limit(Number(limit))
+      .get();
+    
+    const products = productsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Carregar informações da fábrica para cada produto
+    const productsWithFactory = await Promise.all(
+      products.map(async (product) => {
+        if (product.factoryId) {
+          try {
+            const factoryDoc = await db.collection('factories').doc(product.factoryId).get();
+            if (factoryDoc.exists) {
+              return { 
+                ...product, 
+                factory: { id: factoryDoc.id, ...factoryDoc.data() } 
+              };
+            }
+          } catch (err) {
+            console.error(`Erro ao carregar fábrica para produto ${product.name}:`, err);
+          }
+        }
+        return { ...product, factory: null };
+      })
+    );
+    
+    // Cache agressivo para China
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+    
+    res.status(200).json({ 
+      ok: true, 
+      count: productsWithFactory.length, 
+      data: productsWithFactory 
+    });
+  } catch (error) {
+    console.error('Erro ao buscar produtos com fábrica:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message || 'Erro interno do servidor' 
+    });
+  }
+});
+
+// Rota para buscar produtos de uma fábrica específica
+app.get('/api/firestore/products-by-factory/:factoryId', async (req, res) => {
+  try {
+    const { factoryId } = req.params;
+    const { limit = '20' } = req.query;
+    
+    const productsSnapshot = await db.collection('products')
+      .where('factoryId', '==', factoryId)
+      .orderBy('createdAt', 'desc')
+      .limit(Number(limit))
+      .get();
+    
+    const products = productsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Cache moderado
+    res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
+    
+    res.status(200).json({ 
+      ok: true, 
+      count: products.length, 
+      data: products,
+      factoryId 
+    });
+  } catch (error) {
+    console.error('Erro ao buscar produtos da fábrica:', error);
+    res.status(500).json({ 
+      ok: false, 
+      error: error.message || 'Erro interno do servidor' 
     });
   }
 });

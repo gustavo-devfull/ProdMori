@@ -198,3 +198,4 @@ Se problemas persistirem:
 4. **Revisar componentes**: Simplificar ainda mais se necessário
 
 
+

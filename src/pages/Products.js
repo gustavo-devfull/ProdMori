@@ -10,8 +10,8 @@ import {
   Spinner
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
-import productService from '../services/productService';
-import factoryService from '../services/factoryService';
+import productServiceAPI from '../services/productServiceAPI';
+import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
 
 const Products = () => {
@@ -41,8 +41,8 @@ const Products = () => {
     try {
       setLoading(true);
       const [productsData, factoriesData] = await Promise.all([
-        productService.getAllProducts(),
-        factoryService.getAllFactories()
+        productServiceAPI.getAllProducts(),
+        factoryServiceAPI.getAllFactories()
       ]);
       
       setProducts(productsData);
@@ -81,9 +81,9 @@ const Products = () => {
       setSubmitting(true);
       
       if (editingProduct) {
-        await productService.updateProduct(editingProduct.id, values);
+        await productServiceAPI.updateProduct(editingProduct.id, values);
       } else {
-        await productService.createProduct(values);
+        await productServiceAPI.createProduct(values);
       }
       
       setModalVisible(false);
