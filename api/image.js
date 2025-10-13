@@ -41,12 +41,15 @@ export default async function handler(req, res) {
     
     if (!fileExists) {
       await client.close();
+      console.log(`Arquivo não encontrado no FTP: ${filename}`);
       return res.status(404).json({ error: 'Arquivo não encontrado' });
     }
 
     // Baixar arquivo do FTP
     const fileBuffer = await client.downloadToBuffer(filename);
     await client.close();
+    
+    console.log(`Imagem servida com sucesso: ${filename} (${fileBuffer.length} bytes)`);
 
     // Determinar tipo de conteúdo baseado na extensão
     const extension = filename.split('.').pop().toLowerCase();
@@ -69,7 +72,24 @@ export default async function handler(req, res) {
     res.status(200).send(fileBuffer);
 
   } catch (error) {
-    console.error('Erro ao servir imagem:', error);
+    console.error(`Erro ao servir imagem ${filename}:`, error.message);
+    
+    // Se for erro de conexão FTP, retornar erro específico
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      return res.status(503).json({ 
+        error: 'Servidor FTP indisponível',
+        details: 'Não foi possível conectar ao servidor de imagens'
+      });
+    }
+    
+    // Se for erro de arquivo não encontrado
+    if (error.code === 'ENOENT' || error.message.includes('not found')) {
+      return res.status(404).json({ 
+        error: 'Imagem não encontrada',
+        details: `Arquivo ${filename} não existe no servidor`
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Erro interno do servidor',
       details: error.message 

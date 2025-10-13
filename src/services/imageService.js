@@ -176,14 +176,14 @@ class ImageService {
       // Se é um nome de arquivo, construir URL
       let constructedUrl;
       if (this.isVercel) {
-        // Se já contém /api/image/, usar diretamente
+        // Para Vercel, usar URL relativa para a própria API
         if (imageUrl.startsWith('/api/image/')) {
-          constructedUrl = `https://ideolog.ia.br${imageUrl}`;
+          constructedUrl = imageUrl; // Usar URL relativa
         } else {
-          constructedUrl = `https://ideolog.ia.br/api/image/${imageUrl}`;
+          constructedUrl = `/api/image/${imageUrl}`; // URL relativa
         }
       } else {
-        // Se já contém /api/image/, usar diretamente
+        // Para desenvolvimento local, usar URL completa
         if (imageUrl.startsWith('/api/image/')) {
           constructedUrl = `${this.apiUrl}${imageUrl}`;
         } else {
