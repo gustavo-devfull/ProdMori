@@ -102,6 +102,26 @@ const Products = () => {
     setModalVisible(true);
   };
 
+  const handleDelete = async (productId) => {
+    if (!window.confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await productServiceAPI.deleteProduct(productId);
+      setModalVisible(false);
+      setEditingProduct(null);
+      await loadData();
+      setError(null);
+    } catch (err) {
+      setError('Erro ao excluir produto');
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
 
   const handleModalClose = () => {
     setModalVisible(false);
@@ -430,6 +450,23 @@ const Products = () => {
             <Button variant="secondary" onClick={handleModalClose}>
               Cancelar
             </Button>
+            {editingProduct && (
+              <Button 
+                variant="danger" 
+                onClick={() => handleDelete(editingProduct.id)}
+                disabled={submitting}
+                style={{ marginRight: 'auto' }}
+              >
+                {submitting ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Excluindo...
+                  </>
+                ) : (
+                  'Excluir Produto'
+                )}
+              </Button>
+            )}
             <Button variant="primary" type="submit" disabled={submitting}>
               {submitting ? (
                 <>
