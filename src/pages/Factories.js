@@ -11,6 +11,7 @@ import {
   ListGroup
 } from 'react-bootstrap';
 import factoryServiceAPI from '../services/factoryServiceAPI';
+import imageService from '../services/imageService';
 
 const Factories = () => {
   const [factories, setFactories] = useState([]);
@@ -297,6 +298,82 @@ const Factories = () => {
                 name="description"
                 defaultValue={editingFactory?.description || ''}
                 placeholder="Digite uma descrição"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Imagem Principal</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                name="image1"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    try {
+                      const imageUrl = await imageService.uploadFile(file);
+                      // Armazenar URL da imagem em um campo hidden
+                      const hiddenInput = document.querySelector('input[name="imageUrl1"]');
+                      if (hiddenInput) {
+                        hiddenInput.value = imageUrl;
+                      } else {
+                        // Criar campo hidden se não existir
+                        const form = e.target.closest('form');
+                        const hiddenField = document.createElement('input');
+                        hiddenField.type = 'hidden';
+                        hiddenField.name = 'imageUrl1';
+                        hiddenField.value = imageUrl;
+                        form.appendChild(hiddenField);
+                      }
+                    } catch (error) {
+                      console.error('Erro no upload da imagem:', error);
+                      setError('Erro no upload da imagem');
+                    }
+                  }
+                }}
+              />
+              <Form.Control
+                type="hidden"
+                name="imageUrl1"
+                defaultValue={editingFactory?.imageUrl1 || ''}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Imagem Secundária</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                name="image2"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    try {
+                      const imageUrl = await imageService.uploadFile(file);
+                      // Armazenar URL da imagem em um campo hidden
+                      const hiddenInput = document.querySelector('input[name="imageUrl2"]');
+                      if (hiddenInput) {
+                        hiddenInput.value = imageUrl;
+                      } else {
+                        // Criar campo hidden se não existir
+                        const form = e.target.closest('form');
+                        const hiddenField = document.createElement('input');
+                        hiddenField.type = 'hidden';
+                        hiddenField.name = 'imageUrl2';
+                        hiddenField.value = imageUrl;
+                        form.appendChild(hiddenField);
+                      }
+                    } catch (error) {
+                      console.error('Erro no upload da imagem:', error);
+                      setError('Erro no upload da imagem');
+                    }
+                  }
+                }}
+              />
+              <Form.Control
+                type="hidden"
+                name="imageUrl2"
+                defaultValue={editingFactory?.imageUrl2 || ''}
               />
             </Form.Group>
           </Modal.Body>
