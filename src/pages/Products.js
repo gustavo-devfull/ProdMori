@@ -512,7 +512,7 @@ const Products = () => {
                     {t('Excluindo...', '删除中...')}
                   </>
                 ) : (
-                  {t('Excluir Produto', '删除产品')}
+                  t('Excluir Produto', '删除产品')
                 )}
               </Button>
             )}
