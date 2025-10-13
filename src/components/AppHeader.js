@@ -88,18 +88,6 @@ const AppHeader = () => {
         >
           {t('Produtos', '产品')}
         </Button>
-        
-        {/* Language Toggle */}
-        <div className="language-toggle-container">
-          <Form.Check
-            type="switch"
-            id="language-switch"
-            label={language === 'pt' ? 'PT' : '中文'}
-            checked={language === 'zh'}
-            onChange={toggleLanguage}
-            style={{ color: 'white' }}
-          />
-        </div>
       </Nav>
     </Navbar>
   );

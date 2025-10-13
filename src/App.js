@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Container } from 'react-bootstrap';
 import AppHeader from './components/AppHeader';
+import LanguageToggle from './components/LanguageToggle';
 import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Factories from './pages/Factories';
@@ -13,6 +14,7 @@ function App() {
     <LanguageProvider>
       <div className="min-vh-100 d-flex flex-column">
         <AppHeader />
+        <LanguageToggle />
         <Container fluid className="flex-grow-1 py-3">
           <ErrorBoundary>
             <Routes>
