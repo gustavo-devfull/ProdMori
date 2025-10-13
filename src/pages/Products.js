@@ -13,8 +13,10 @@ import CustomImage from '../components/CustomImage';
 import productServiceAPI from '../services/productServiceAPI';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Products = () => {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ const Products = () => {
       setFactories(factoriesData);
       setError(null);
     } catch (err) {
-      setError('Erro ao carregar dados');
+      setError(t('Erro ao carregar dados', '加载数据时出错'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -61,7 +63,7 @@ const Products = () => {
       const imageUrl = await imageService.uploadFile(file);
       return imageUrl;
     } catch (err) {
-      setError('Erro ao fazer upload da imagem');
+      setError(t('Erro ao fazer upload da imagem', '图片上传时出错'));
       console.error(err);
       throw err;
     }
@@ -90,7 +92,7 @@ const Products = () => {
       setEditingProduct(null);
       await loadData();
     } catch (err) {
-      setError('Erro ao salvar produto');
+      setError(t('Erro ao salvar produto', '保存产品时出错'));
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -115,7 +117,7 @@ const Products = () => {
       await loadData();
       setError(null);
     } catch (err) {
-      setError('Erro ao excluir produto | 删除产品时出错');
+      setError(t('Erro ao excluir produto', '删除产品时出错'));
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -193,7 +195,7 @@ const Products = () => {
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
         <div className="d-flex justify-content-between align-items-center">
-          <h2 className="mb-0 fs-5 fw-semibold">Produtos | 产品</h2>
+          <h2 className="mb-0 fs-5 fw-semibold">{t('Produtos', '产品')}</h2>
           <Button 
             variant="light"
             className="text-primary fw-semibold"
@@ -357,7 +359,7 @@ const Products = () => {
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingProduct ? 'Editar Produto | 编辑产品' : 'Novo Produto | 新产品'}
+            {editingProduct ? t('Editar Produto', '编辑产品') : t('Novo Produto', '新产品')}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
@@ -387,43 +389,43 @@ const Products = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Nome do Produto | 产品名称</Form.Label>
+              <Form.Label>{t('Nome do Produto', '产品名称')}</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
                 defaultValue={editingProduct?.name || ''}
-                placeholder="Digite o nome do produto | 输入产品名称"
+                placeholder={t('Digite o nome do produto', '输入产品名称')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Segmento | 行业</Form.Label>
+              <Form.Label>{t('Segmento', '行业')}</Form.Label>
               <Form.Control
                 type="text"
                 name="segment"
                 defaultValue={editingProduct?.segment || ''}
-                placeholder="Digite o segmento | 输入行业"
+                placeholder={t('Digite o segmento', '输入行业')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Preço | 价格</Form.Label>
+              <Form.Label>{t('Preço', '价格')}</Form.Label>
               <Form.Control
                 type="number"
                 name="price"
                 step="0.01"
                 defaultValue={editingProduct?.price || ''}
-                placeholder="Digite o preço | 输入价格"
+                placeholder={t('Digite o preço', '输入价格')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Fábrica | 工厂</Form.Label>
+              <Form.Label>{t('Fábrica', '工厂')}</Form.Label>
               <Form.Select
                 name="factoryId"
                 defaultValue={editingProduct?.factory?.id || ''}
               >
-                <option value="">Selecione uma fábrica | 选择工厂</option>
+                <option value="">{t('Selecione uma fábrica', '选择工厂')}</option>
                 {factories.map(factory => (
                   <option key={factory.id} value={factory.id}>
                     {factory.name}
@@ -433,57 +435,57 @@ const Products = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Medidas | 尺寸</Form.Label>
+              <Form.Label>{t('Medidas', '尺寸')}</Form.Label>
               <Form.Control
                 type="text"
                 name="dimensions"
                 defaultValue={editingProduct?.dimensions || ''}
-                placeholder="Digite as medidas (ex: 10x20x30cm) | 输入尺寸（例：10x20x30cm）"
+                placeholder={t('Digite as medidas (ex: 10x20x30cm)', '输入尺寸（例：10x20x30cm）')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Material | 材料</Form.Label>
+              <Form.Label>{t('Material', '材料')}</Form.Label>
               <Form.Control
                 type="text"
                 name="material"
                 defaultValue={editingProduct?.material || ''}
-                placeholder="Digite o material | 输入材料"
+                placeholder={t('Digite o material', '输入材料')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Capacidade | 容量</Form.Label>
+              <Form.Label>{t('Capacidade', '容量')}</Form.Label>
               <Form.Control
                 type="text"
                 name="capacity"
                 defaultValue={editingProduct?.capacity || ''}
-                placeholder="Digite a capacidade | 输入容量"
+                placeholder={t('Digite a capacidade', '输入容量')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Cores | 颜色</Form.Label>
+              <Form.Label>{t('Cores', '颜色')}</Form.Label>
               <Form.Control
                 type="text"
                 name="colors"
                 defaultValue={editingProduct?.colors || ''}
-                placeholder="Digite as cores disponíveis | 输入可用颜色"
+                placeholder={t('Digite as cores disponíveis', '输入可用颜色')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>MOQ | 最小订购量</Form.Label>
+              <Form.Label>{t('MOQ', '最小订购量')}</Form.Label>
               <Form.Control
                 type="text"
                 name="moq"
                 defaultValue={editingProduct?.moq || ''}
-                placeholder="Digite o MOQ (Minimum Order Quantity) | 输入最小订购量"
+                placeholder={t('Digite o MOQ (Minimum Order Quantity)', '输入最小订购量')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Descrição | 描述</Form.Label>
+              <Form.Label>{t('Descrição', '描述')}</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -495,7 +497,7 @@ const Products = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleModalClose}>
-              Cancelar | 取消
+              {t('Cancelar', '取消')}
             </Button>
             {editingProduct && (
               <Button 
@@ -507,10 +509,10 @@ const Products = () => {
                 {submitting ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
-                    Excluindo... | 删除中...
+                    {t('Excluindo...', '删除中...')}
                   </>
                 ) : (
-                  'Excluir Produto | 删除产品'
+                  {t('Excluir Produto', '删除产品')}
                 )}
               </Button>
             )}
@@ -518,10 +520,10 @@ const Products = () => {
               {submitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Salvando... | 保存中...
+                  {t('Salvando...', '保存中...')}
                 </>
               ) : (
-                editingProduct ? 'Atualizar | 更新' : 'Criar | 创建'
+                editingProduct ? t('Atualizar', '更新') : t('Criar', '创建')
               )}
             </Button>
           </Modal.Footer>

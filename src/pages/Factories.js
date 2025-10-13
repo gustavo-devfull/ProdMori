@@ -13,8 +13,10 @@ import {
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
 import CustomImage from '../components/CustomImage';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Factories = () => {
+  const { t } = useLanguage();
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +39,7 @@ const Factories = () => {
       setFactories(data);
       setError(null);
     } catch (err) {
-      setError('Erro ao carregar fábricas');
+      setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -59,7 +61,7 @@ const Factories = () => {
       setEditingFactory(null);
       await loadFactories();
     } catch (err) {
-      setError('Erro ao salvar fábrica');
+      setError(t('Erro ao salvar fábrica', '保存工厂时出错'));
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -76,7 +78,7 @@ const Factories = () => {
       await factoryServiceAPI.deleteFactory(id);
       await loadFactories();
     } catch (err) {
-      setError('Erro ao excluir fábrica');
+      setError(t('Erro ao excluir fábrica', '删除工厂时出错'));
       console.error(err);
     }
   };
@@ -107,7 +109,7 @@ const Factories = () => {
   return (
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
-        <h2 className="mb-0 fs-5 fw-semibold">Fábricas/Lojas | 工厂/商店</h2>
+        <h2 className="mb-0 fs-5 fw-semibold">{t('Fábricas/Lojas', '工厂/商店')}</h2>
       </div>
       
       {error && (
@@ -154,11 +156,11 @@ const Factories = () => {
                   <div className="d-flex flex-wrap gap-3 mb-3">
                     <div className="d-flex align-items-center text-muted small">
                       <i className="bi bi-tag-fill text-primary me-1"></i>
-                      <span>{factory.segment || 'Sem segmento | 无行业'}</span>
+                      <span>{factory.segment || t('Sem segmento', '无行业')}</span>
                     </div>
                     <div className="d-flex align-items-center text-muted small">
                       <i className="bi bi-geo-alt me-1"></i>
-                      <span>{factory.location || 'Localização não informada | 位置未提供'}</span>
+                      <span>{factory.location || t('Localização não informada', '位置未提供')}</span>
                     </div>
                   </div>
 
@@ -267,7 +269,7 @@ const Factories = () => {
                       onClick={() => handleEdit(factory)}
                     >
                       <i className="bi bi-pencil me-1"></i>
-                      Editar | 编辑
+                      {t('Editar', '编辑')}
                     </Button>
                     <Button 
                       variant="danger"
@@ -280,7 +282,7 @@ const Factories = () => {
                       }}
                     >
                       <i className="bi bi-trash me-1"></i>
-                      Excluir | 删除
+                      {t('Excluir', '删除')}
                     </Button>
                   </div>
                 </Card.Body>
@@ -293,7 +295,7 @@ const Factories = () => {
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingFactory ? 'Editar Fábrica/Loja | 编辑工厂/商店' : 'Nova Fábrica/Loja | 新建工厂/商店'}
+            {editingFactory ? t('Editar Fábrica/Loja', '编辑工厂/商店') : t('Nova Fábrica/Loja', '新建工厂/商店')}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={(e) => {
@@ -304,88 +306,88 @@ const Factories = () => {
         }}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Nome da Fábrica/Loja | 工厂/商店名称</Form.Label>
+              <Form.Label>{t('Nome da Fábrica/Loja', '工厂/商店名称')}</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
                 defaultValue={editingFactory?.name || ''}
-                placeholder="Digite o nome da fábrica/loja | 输入工厂/商店名称"
+                placeholder={t('Digite o nome da fábrica/loja', '输入工厂/商店名称')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Nome do Contato | 联系人姓名</Form.Label>
+              <Form.Label>{t('Nome do Contato', '联系人姓名')}</Form.Label>
               <Form.Control
                 type="text"
                 name="contactName"
                 defaultValue={editingFactory?.contactName || ''}
-                placeholder="Digite o nome do contato | 输入联系人姓名"
+                placeholder={t('Digite o nome do contato', '输入联系人姓名')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Telefone | 电话</Form.Label>
+              <Form.Label>{t('Telefone', '电话')}</Form.Label>
               <Form.Control
                 type="tel"
                 name="phone"
                 defaultValue={editingFactory?.phone || ''}
-                placeholder="Digite o telefone | 输入电话号码"
+                placeholder={t('Digite o telefone', '输入电话号码')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>WeChat | 微信</Form.Label>
+              <Form.Label>{t('WeChat', '微信')}</Form.Label>
               <Form.Control
                 type="text"
                 name="wechat"
                 defaultValue={editingFactory?.wechat || ''}
-                placeholder="Digite o WeChat | 输入微信号"
+                placeholder={t('Digite o WeChat', '输入微信号')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>E-mail | 邮箱</Form.Label>
+              <Form.Label>{t('E-mail', '邮箱')}</Form.Label>
               <Form.Control
                 type="email"
                 name="email"
                 defaultValue={editingFactory?.email || ''}
-                placeholder="Digite o e-mail | 输入邮箱地址"
+                placeholder={t('Digite o e-mail', '输入邮箱地址')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Localização | 位置</Form.Label>
+              <Form.Label>{t('Localização', '位置')}</Form.Label>
               <Form.Control
                 type="text"
                 name="location"
                 defaultValue={editingFactory?.location || ''}
-                placeholder="Digite a localização | 输入位置"
+                placeholder={t('Digite a localização', '输入位置')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Segmento | 行业</Form.Label>
+              <Form.Label>{t('Segmento', '行业')}</Form.Label>
               <Form.Control
                 type="text"
                 name="segment"
                 defaultValue={editingFactory?.segment || ''}
-                placeholder="Digite o segmento de atuação | 输入行业领域"
+                placeholder={t('Digite o segmento de atuação', '输入行业领域')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Descrição | 描述</Form.Label>
+              <Form.Label>{t('Descrição', '描述')}</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 name="description"
                 defaultValue={editingFactory?.description || ''}
-                placeholder="Digite uma descrição | 输入描述"
+                placeholder={t('Digite uma descrição', '输入描述')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Imagem Principal | 主图片</Form.Label>
+              <Form.Label>{t('Imagem Principal', '主图片')}</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -410,7 +412,7 @@ const Factories = () => {
                       }
                     } catch (error) {
                       console.error('Erro no upload da imagem:', error);
-                      setError('Erro no upload da imagem');
+                      setError(t('Erro no upload da imagem', '图片上传时出错'));
                     }
                   }
                 }}
@@ -423,7 +425,7 @@ const Factories = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Imagem Secundária | 副图片</Form.Label>
+              <Form.Label>{t('Imagem Secundária', '副图片')}</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -448,7 +450,7 @@ const Factories = () => {
                       }
                     } catch (error) {
                       console.error('Erro no upload da imagem:', error);
-                      setError('Erro no upload da imagem');
+                      setError(t('Erro no upload da imagem', '图片上传时出错'));
                     }
                   }
                 }}
@@ -462,16 +464,16 @@ const Factories = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleModalClose}>
-              Cancelar | 取消
+              {t('Cancelar', '取消')}
             </Button>
             <Button variant="primary" type="submit" disabled={submitting}>
               {submitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Salvando... | 保存中...
+                  {t('Salvando...', '保存中...')}
                 </>
               ) : (
-                editingFactory ? 'Atualizar | 更新' : 'Criar | 创建'
+                editingFactory ? t('Atualizar', '更新') : t('Criar', '创建')
               )}
             </Button>
           </Modal.Footer>
