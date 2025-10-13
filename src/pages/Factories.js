@@ -12,6 +12,7 @@ import {
 } from 'react-bootstrap';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
+import CustomImage from '../components/CustomImage';
 
 const Factories = () => {
   const [factories, setFactories] = useState([]);
@@ -106,7 +107,7 @@ const Factories = () => {
   return (
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
-        <h2 className="mb-0 fs-5 fw-semibold">Fábricas/Lojas</h2>
+        <h2 className="mb-0 fs-5 fw-semibold">Fábricas/Lojas | 工厂/商店</h2>
       </div>
       
       {error && (
@@ -122,7 +123,7 @@ const Factories = () => {
           onClick={() => setModalVisible(true)}
         >
           <i className="bi bi-plus-circle me-2"></i>
-          Nova Fábrica/Loja
+          Nova Fábrica/Loja | 新建工厂/商店
         </Button>
         
         <Button 
@@ -131,7 +132,7 @@ const Factories = () => {
           disabled={refreshing}
         >
           <i className={`bi bi-arrow-clockwise me-2 ${refreshing ? 'spinning' : ''}`}></i>
-          Atualizar
+          Atualizar | 刷新
         </Button>
       </div>
 
@@ -139,8 +140,8 @@ const Factories = () => {
         <Card>
           <Card.Body className="text-center py-5">
             <i className="bi bi-shop text-muted fs-1"></i>
-            <h5 className="mt-3 text-muted">Nenhuma fábrica cadastrada</h5>
-            <p className="text-muted">Clique em "Nova Fábrica/Loja" para começar</p>
+            <h5 className="mt-3 text-muted">Nenhuma fábrica cadastrada | 没有注册的工厂</h5>
+            <p className="text-muted">Clique em "Nova Fábrica/Loja" para começar | 点击"新建工厂/商店"开始</p>
           </Card.Body>
         </Card>
       ) : (
@@ -168,6 +169,34 @@ const Factories = () => {
                   {/* Nome da fábrica/loja */}
                   <h5 className="card-title mb-3">{factory.name}</h5>
 
+                  {/* Imagens da fábrica */}
+                  {(factory.imageUrl1 || factory.imageUrl2) && (
+                    <div className="mb-3">
+                      <div className="row g-2">
+                        {factory.imageUrl1 && (
+                          <div className="col-6">
+                            <CustomImage
+                              src={factory.imageUrl1}
+                              alt={`${factory.name} - Imagem 1`}
+                              className="img-fluid rounded"
+                              style={{ height: '120px', objectFit: 'cover', width: '100%' }}
+                            />
+                          </div>
+                        )}
+                        {factory.imageUrl2 && (
+                          <div className="col-6">
+                            <CustomImage
+                              src={factory.imageUrl2}
+                              alt={`${factory.name} - Imagem 2`}
+                              className="img-fluid rounded"
+                              style={{ height: '120px', objectFit: 'cover', width: '100%' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {factory.products && factory.products.length > 0 && (
                     <div className="mt-3">
                       <div 
@@ -176,7 +205,7 @@ const Factories = () => {
                         style={{ cursor: 'pointer' }}
                       >
                         <span className="fw-medium small">
-                          Produtos ({factory.products.length})
+                          Produtos | 产品 ({factory.products.length})
                         </span>
                         <i 
                           className={`bi bi-chevron-down transition-transform ${
@@ -214,20 +243,20 @@ const Factories = () => {
                       onClick={() => handleEdit(factory)}
                     >
                       <i className="bi bi-pencil me-1"></i>
-                      Editar
+                      Editar | 编辑
                     </Button>
                     <Button 
                       variant="danger"
                       size="sm"
                       className="flex-fill fw-semibold"
                       onClick={() => {
-                        if (window.confirm('Tem certeza que deseja excluir esta fábrica?')) {
+                        if (window.confirm('Tem certeza que deseja excluir esta fábrica? | 确定要删除这个工厂吗？')) {
                           handleDelete(factory.id);
                         }
                       }}
                     >
                       <i className="bi bi-trash me-1"></i>
-                      Excluir
+                      Excluir | 删除
                     </Button>
                   </div>
                 </Card.Body>
@@ -240,7 +269,7 @@ const Factories = () => {
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingFactory ? 'Editar Fábrica/Loja' : 'Nova Fábrica/Loja'}
+            {editingFactory ? 'Editar Fábrica/Loja | 编辑工厂/商店' : 'Nova Fábrica/Loja | 新建工厂/商店'}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={(e) => {
@@ -251,58 +280,58 @@ const Factories = () => {
         }}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Nome da Fábrica/Loja</Form.Label>
+              <Form.Label>Nome da Fábrica/Loja | 工厂/商店名称</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
                 defaultValue={editingFactory?.name || ''}
-                placeholder="Digite o nome da fábrica/loja"
+                placeholder="Digite o nome da fábrica/loja | 输入工厂/商店名称"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Contato</Form.Label>
+              <Form.Label>Contato | 联系方式</Form.Label>
               <Form.Control
                 type="text"
                 name="contact"
                 defaultValue={editingFactory?.contact || ''}
-                placeholder="Digite o contato (telefone, email, etc.)"
+                placeholder="Digite o contato (telefone, email, etc.) | 输入联系方式（电话、邮箱等）"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Localização</Form.Label>
+              <Form.Label>Localização | 位置</Form.Label>
               <Form.Control
                 type="text"
                 name="location"
                 defaultValue={editingFactory?.location || ''}
-                placeholder="Digite a localização"
+                placeholder="Digite a localização | 输入位置"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Segmento</Form.Label>
+              <Form.Label>Segmento | 行业</Form.Label>
               <Form.Control
                 type="text"
                 name="segment"
                 defaultValue={editingFactory?.segment || ''}
-                placeholder="Digite o segmento de atuação"
+                placeholder="Digite o segmento de atuação | 输入行业领域"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Descrição</Form.Label>
+              <Form.Label>Descrição | 描述</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 name="description"
                 defaultValue={editingFactory?.description || ''}
-                placeholder="Digite uma descrição"
+                placeholder="Digite uma descrição | 输入描述"
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Imagem Principal</Form.Label>
+              <Form.Label>Imagem Principal | 主图片</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -340,7 +369,7 @@ const Factories = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Imagem Secundária</Form.Label>
+              <Form.Label>Imagem Secundária | 副图片</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -379,16 +408,16 @@ const Factories = () => {
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleModalClose}>
-              Cancelar
+              Cancelar | 取消
             </Button>
             <Button variant="primary" type="submit" disabled={submitting}>
               {submitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  Salvando...
+                  Salvando... | 保存中...
                 </>
               ) : (
-                editingFactory ? 'Atualizar' : 'Criar'
+                editingFactory ? 'Atualizar | 更新' : 'Criar | 创建'
               )}
             </Button>
           </Modal.Footer>
