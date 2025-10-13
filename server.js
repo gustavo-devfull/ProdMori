@@ -83,7 +83,7 @@ async function uploadToFTP(localPath, remotePath) {
   try {
     await client.access(ftpConfig);
     await client.uploadFrom(localPath, remotePath);
-    return `http://ideolog.ia.br/${remotePath}`;
+    return `https://ideolog.ia.br/${remotePath}`;
   } catch (error) {
     console.error('Erro no upload FTP:', error);
     throw error;
