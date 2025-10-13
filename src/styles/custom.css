@@ -17,6 +17,7 @@
   color: white !important;
   font-size: 0.9rem;
   font-weight: 500;
+  margin-left: 8px;
 }
 
 #language-switch .form-check-input:checked {
@@ -27,11 +28,36 @@
 #language-switch .form-check-input {
   background-color: transparent;
   border-color: white;
+  width: 2.5rem;
+  height: 1.25rem;
+}
+
+#language-switch .form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Language toggle container */
+.language-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.language-toggle-container:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* Responsive adjustments for mobile */
 @media (max-width: 768px) {
   #language-switch .form-check-label {
     font-size: 0.8rem;
+  }
+  
+  .language-toggle-container {
+    padding: 2px 6px;
   }
 }

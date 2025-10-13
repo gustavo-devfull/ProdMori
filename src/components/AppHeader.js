@@ -90,15 +90,16 @@ const AppHeader = () => {
         </Button>
         
         {/* Language Toggle */}
-        <Form.Check
-          type="switch"
-          id="language-switch"
-          label={t('PT', '中文')}
-          checked={language === 'zh'}
-          onChange={toggleLanguage}
-          className="ms-2"
-          style={{ color: 'white' }}
-        />
+        <div className="language-toggle-container">
+          <Form.Check
+            type="switch"
+            id="language-switch"
+            label={language === 'pt' ? 'PT' : '中文'}
+            checked={language === 'zh'}
+            onChange={toggleLanguage}
+            style={{ color: 'white' }}
+          />
+        </div>
       </Nav>
     </Navbar>
   );
