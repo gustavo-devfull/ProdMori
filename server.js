@@ -790,6 +790,16 @@ app.get('/api/test-products', async (req, res) => {
   }
 });
 
+// Servir arquivos estáticos do React (para produção no Vercel)
+if (process.env.NODE_ENV === 'production') {
+  // Servir arquivos estáticos da pasta build
+  app.use(express.static(path.join(__dirname, 'build')));
+  
+  // Para todas as rotas que não são API, servir o index.html do React
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
