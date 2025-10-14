@@ -67,6 +67,11 @@ const Factories = () => {
     try {
       setSubmitting(true);
       
+      // Debug: verificar se as URLs das imagens estão sendo enviadas
+      console.log('Dados do formulário:', values);
+      console.log('imageUrl1:', values.imageUrl1);
+      console.log('imageUrl2:', values.imageUrl2);
+      
       if (editingFactory) {
         await factoryServiceAPI.updateFactory(editingFactory.id, values);
       } else {
