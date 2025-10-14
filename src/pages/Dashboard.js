@@ -70,6 +70,17 @@ const Dashboard = () => {
     }
   };
 
+  const handleCardClick = (e) => {
+    // Não navegar se o clique foi em um elemento interativo
+    if (e.target.tagName === 'SELECT' || 
+        e.target.tagName === 'BUTTON' || 
+        e.target.closest('select') || 
+        e.target.closest('button')) {
+      return;
+    }
+    navigate('/factories');
+  };
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -95,7 +106,7 @@ const Dashboard = () => {
         <Col xs={12} md={6}>
           <Card 
             className="h-100"
-            onClick={() => navigate('/factories')}
+            onClick={handleCardClick}
             style={{ cursor: 'pointer' }}
           >
             <Card.Body>
@@ -118,8 +129,10 @@ const Dashboard = () => {
                 <Form.Select
                   value={selectedFactory}
                   onChange={(e) => {
+                    e.stopPropagation();
                     setSelectedFactory(e.target.value);
                   }}
+                  onClick={(e) => e.stopPropagation()}
                   size="sm"
                 >
                   <option value="">{t('Escolha uma fábrica...', '选择工厂...')}</option>
