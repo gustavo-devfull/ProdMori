@@ -169,11 +169,26 @@ class ImageService {
       // Se já é uma URL completa e válida, retornar diretamente
       if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
         try {
-          new URL(imageUrl);
+          // Tentar construir URL para validar
+          const url = new URL(imageUrl);
           console.log('ImageService.getImageUrl - Using complete URL:', imageUrl);
           return imageUrl;
         } catch (urlError) {
           console.error('URL completa inválida:', imageUrl, urlError);
+          // Se a URL é inválida mas parece ser uma URL de imagem, tentar corrigir
+          if (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || imageUrl.includes('.png') || imageUrl.includes('.gif')) {
+            console.log('ImageService.getImageUrl - Attempting to fix URL:', imageUrl);
+            // Tentar usar encodeURI para corrigir caracteres especiais
+            try {
+              const fixedUrl = encodeURI(imageUrl);
+              new URL(fixedUrl);
+              console.log('ImageService.getImageUrl - Fixed URL:', fixedUrl);
+              return fixedUrl;
+            } catch (fixError) {
+              console.error('Não foi possível corrigir a URL:', imageUrl, fixError);
+              return null;
+            }
+          }
           return null;
         }
       }

@@ -75,7 +75,9 @@ async function getCollection(req, res) {
 // Função para buscar um documento específico
 async function getDocument(req, res) {
   try {
-    const { collection, id } = req.query;
+    // Suportar tanto query parameters quanto path parameters
+    const collection = req.query.collection || req.params?.collection;
+    const id = req.query.id || req.params?.id;
     const docRef = db.collection(collection).doc(id);
     const doc = await docRef.get();
     
@@ -136,7 +138,9 @@ async function createDocument(req, res) {
 // Função para atualizar um documento
 async function updateDocument(req, res) {
   try {
-    const { collection, id } = req.query;
+    // Suportar tanto query parameters quanto path parameters
+    const collection = req.query.collection || req.params?.collection;
+    const id = req.query.id || req.params?.id;
     const data = req.body;
     
     // Adicionar timestamp de atualização
@@ -164,7 +168,9 @@ async function updateDocument(req, res) {
 // Função para deletar um documento
 async function deleteDocument(req, res) {
   try {
-    const { collection, id } = req.query;
+    // Suportar tanto query parameters quanto path parameters
+    const collection = req.query.collection || req.params?.collection;
+    const id = req.query.id || req.params?.id;
     await db.collection(collection).doc(id).delete();
     
     res.status(200).json({ 
