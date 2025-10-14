@@ -34,7 +34,21 @@ const Factories = () => {
       if (showRefresh) setRefreshing(true);
       
       const data = await factoryServiceAPI.getAllFactories();
-      setFactories(data);
+      
+      // Carregar produtos para cada fábrica
+      const factoriesWithProducts = await Promise.all(
+        data.map(async (factory) => {
+          try {
+            const products = await factoryServiceAPI.getProductsByFactory(factory.id);
+            return { ...factory, products };
+          } catch (error) {
+            console.error(`Erro ao carregar produtos da fábrica ${factory.id}:`, error);
+            return { ...factory, products: [] };
+          }
+        })
+      );
+      
+      setFactories(factoriesWithProducts);
       setError(null);
     } catch (err) {
       setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
@@ -234,22 +248,6 @@ const Factories = () => {
                     </div>
                   )}
 
-                  {/* Botão de excluir */}
-                  <div className="mt-3">
-                    <Button 
-                      variant="danger"
-                      size="sm"
-                      className="w-100 fw-semibold"
-                      onClick={() => {
-                        if (window.confirm(t('Tem certeza que deseja excluir esta fábrica?', '确定要删除这个工厂吗？'))) {
-                          handleDelete(factory.id);
-                        }
-                      }}
-                    >
-                      <i className="bi bi-trash me-1"></i>
-                      {t('Excluir', '删除')}
-                    </Button>
-                  </div>
                 </Card.Body>
               </Card>
             </Col>
@@ -428,19 +426,40 @@ const Factories = () => {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleModalClose}>
-              {t('Cancelar', '取消')}
-            </Button>
-            <Button variant="primary" type="submit" disabled={submitting}>
-              {submitting ? (
-                <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  {t('Salvando...', '保存中...')}
-                </>
-              ) : (
-                editingFactory ? t('Atualizar', '更新') : t('Criar', '创建')
-              )}
-            </Button>
+            <div className="d-flex justify-content-between w-100">
+              <div>
+                {editingFactory && (
+                  <Button 
+                    variant="danger" 
+                    onClick={() => {
+                      if (window.confirm(t('Tem certeza que deseja excluir esta fábrica?', '确定要删除这个工厂吗？'))) {
+                        handleDelete(editingFactory.id);
+                        handleModalClose();
+                      }
+                    }}
+                    disabled={submitting}
+                  >
+                    <i className="bi bi-trash me-1"></i>
+                    {t('Excluir', '删除')}
+                  </Button>
+                )}
+              </div>
+              <div>
+                <Button variant="secondary" onClick={handleModalClose} className="me-2">
+                  {t('Cancelar', '取消')}
+                </Button>
+                <Button variant="primary" type="submit" disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      {t('Salvando...', '保存中...')}
+                    </>
+                  ) : (
+                    editingFactory ? t('Atualizar', '更新') : t('Criar', '创建')
+                  )}
+                </Button>
+              </div>
+            </div>
           </Modal.Footer>
         </Form>
       </Modal>
