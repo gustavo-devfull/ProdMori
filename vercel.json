@@ -16,14 +16,12 @@
       "dest": "/build/$1"
     }
   ],
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 60
-    }
-  },
   "env": {
     "REACT_APP_API_URL": "https://ideolog.ia.br"
   },
+  "ignore": [
+    "api/**/*"
+  ],
   "headers": [
     {
       "source": "/api/firestore/(.*)",
