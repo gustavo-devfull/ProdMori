@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Spinner, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Spinner } from 'react-bootstrap';
 import imageService from '../services/imageService';
 
 const CustomImage = ({ 
@@ -185,24 +185,10 @@ const CustomImage = ({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={showPreview ? handlePreview : undefined}
+      title={showPreview ? 'Clique para visualizar' : undefined}
       {...props}
     />
   );
-
-  if (showPreview) {
-    return (
-      <OverlayTrigger
-        placement="top"
-        overlay={
-          <Tooltip>
-            Clique para visualizar
-          </Tooltip>
-        }
-      >
-        {imageElement}
-      </OverlayTrigger>
-    );
-  }
 
   return imageElement;
 };
