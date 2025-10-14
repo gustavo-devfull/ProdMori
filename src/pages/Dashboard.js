@@ -6,7 +6,6 @@ import {
   Spinner,
   Alert,
   Button,
-  ListGroup,
   Form
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
@@ -21,10 +20,6 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     factories: 0,
     products: 0
-  });
-  const [recentItems, setRecentItems] = useState({
-    factories: [],
-    products: []
   });
   const [allFactories, setAllFactories] = useState([]);
   const [selectedFactory, setSelectedFactory] = useState('');
@@ -43,33 +38,9 @@ const Dashboard = () => {
         const validFactories = Array.isArray(factories) ? factories : [];
         const validProducts = Array.isArray(products) ? products : [];
         
-        // Ordenar por data de criação (mais recentes primeiro) e pegar os 5 últimos
-        const recentFactories = validFactories
-          .filter(factory => factory && typeof factory === 'object')
-          .sort((a, b) => {
-            const dateA = new Date(a.createdAt || a.id || 0);
-            const dateB = new Date(b.createdAt || b.id || 0);
-            return dateB - dateA;
-          })
-          .slice(0, 5);
-        
-        const recentProducts = validProducts
-          .filter(product => product && typeof product === 'object')
-          .sort((a, b) => {
-            const dateA = new Date(a.createdAt || a.id || 0);
-            const dateB = new Date(b.createdAt || b.id || 0);
-            return dateB - dateA;
-          })
-          .slice(0, 5);
-        
         setStats({
           factories: validFactories.length,
           products: validProducts.length
-        });
-        
-        setRecentItems({
-          factories: recentFactories,
-          products: recentProducts
         });
         
         setAllFactories(validFactories);
@@ -83,10 +54,7 @@ const Dashboard = () => {
           products: 0
         });
         
-        setRecentItems({
-          factories: [],
-          products: []
-        });
+        setAllFactories([]);
       } finally {
         setLoading(false);
       }
@@ -164,27 +132,6 @@ const Dashboard = () => {
                 </Form.Select>
               </div>
 
-              {/* Lista dos 5 últimos cadastrados */}
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2 text-muted small">
-                  <i className="bi bi-calendar me-1"></i>
-                  {t('Últimos 5 cadastrados:', '最近5个注册:')}
-                </div>
-                <ListGroup variant="flush">
-                  {recentItems.factories.map((factory, index) => (
-                    <ListGroup.Item key={index} className="px-0 py-1 border-0">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="text-truncate me-2 flex-grow-1">
-                          {factory?.name || t('Nome não disponível', '名称不可用')}
-                        </span>
-                        <small className="text-muted">
-                          {factory?.segment || t('Sem segmento', '无行业')}
-                        </small>
-                      </div>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              </div>
               
               <Button 
                 variant="primary"
@@ -218,27 +165,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Lista dos 5 últimos cadastrados */}
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2 text-muted small">
-                  <i className="bi bi-calendar me-1"></i>
-                  {t('Últimos 5 cadastrados:', '最近5个注册:')}
-                </div>
-                <ListGroup variant="flush">
-                  {recentItems.products.map((product, index) => (
-                    <ListGroup.Item key={index} className="px-0 py-1 border-0">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span className="text-truncate me-2 flex-grow-1">
-                          {product?.name || t('Nome não disponível', '名称不可用')}
-                        </span>
-                        <small className="text-muted">
-                          {product?.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : t('Sob consulta', '咨询价格')}
-                        </small>
-                      </div>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              </div>
               
               <Button 
                 variant="primary"
