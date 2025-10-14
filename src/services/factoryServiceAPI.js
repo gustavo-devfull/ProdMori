@@ -18,7 +18,7 @@ class FactoryServiceAPI {
 
   async createFactory(factoryData) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/create?collection=factories`, {
+      const response = await fetch(`${this.apiUrl}/firestore/create/factories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
