@@ -132,7 +132,7 @@ const Factories = () => {
           onClick={() => setModalVisible(true)}
         >
           <i className="bi bi-plus-circle me-2"></i>
-          Nova Fábrica/Loja | 新建工厂/商店
+{t('Nova Fábrica/Loja', '新建工厂/商店')}
         </Button>
       </div>
 
@@ -140,8 +140,8 @@ const Factories = () => {
         <Card>
           <Card.Body className="text-center py-5">
             <i className="bi bi-shop text-muted fs-1"></i>
-            <h5 className="mt-3 text-muted">Nenhuma fábrica cadastrada | 没有注册的工厂</h5>
-            <p className="text-muted">Clique em "Nova Fábrica/Loja" para começar | 点击"新建工厂/商店"开始</p>
+            <h5 className="mt-3 text-muted">{t('Nenhuma fábrica cadastrada', '没有注册的工厂')}</h5>
+            <p className="text-muted">{t('Clique em "Nova Fábrica/Loja" para começar', '点击"新建工厂/商店"开始')}</p>
           </Card.Body>
         </Card>
       ) : (
@@ -233,7 +233,7 @@ const Factories = () => {
                         style={{ cursor: 'pointer' }}
                       >
                         <span className="fw-medium small">
-                          Produtos | 产品 ({factory.products.length})
+                          {t('Produtos', '产品')} ({factory.products.length})
                         </span>
                         <i 
                           className={`bi bi-chevron-down transition-transform ${
@@ -278,7 +278,7 @@ const Factories = () => {
                       size="sm"
                       className="flex-fill fw-semibold"
                       onClick={() => {
-                        if (window.confirm('Tem certeza que deseja excluir esta fábrica? | 确定要删除这个工厂吗？')) {
+                        if (window.confirm(t('Tem certeza que deseja excluir esta fábrica?', '确定要删除这个工厂吗？'))) {
                           handleDelete(factory.id);
                         }
                       }}
@@ -484,7 +484,7 @@ const Factories = () => {
 
       <Modal show={previewVisible} onHide={() => setPreviewVisible(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Visualizar Imagem | 查看图片</Modal.Title>
+          <Modal.Title>{t('Visualizar Imagem', '查看图片')}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
           <img

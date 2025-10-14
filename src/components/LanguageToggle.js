@@ -12,7 +12,7 @@ const LanguageToggle = () => {
   return (
     <div className="d-flex justify-content-center align-items-center py-2 bg-light border-bottom">
       <div className="language-toggle-container d-flex align-items-center gap-3">
-        <span className="text-muted small">Choose the language</span>
+        <span className="text-muted small">{t('Choose the language', '选择语言')}</span>
         <div className="d-flex align-items-center gap-2">
           <span className="small text-muted">{currentLanguage}</span>
           <Form.Check

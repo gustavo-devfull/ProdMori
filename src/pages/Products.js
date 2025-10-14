@@ -106,7 +106,7 @@ const Products = () => {
   };
 
   const handleDelete = async (productId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita. | 确定要删除这个产品吗？此操作无法撤销。')) {
+    if (!window.confirm(t('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.', '确定要删除这个产品吗？此操作无法撤销。'))) {
       return;
     }
 
@@ -211,14 +211,14 @@ const Products = () => {
             }}
           >
             <i className="bi bi-plus-circle me-2"></i>
-            Novo Produto | 新产品
+{t('Novo Produto', '新产品')}
           </Button>
         </div>
       </div>
       
       {error && (
         <Alert variant="danger" className="mb-3">
-          <Alert.Heading>Erro | 错误</Alert.Heading>
+          <Alert.Heading>{t('Erro', '错误')}</Alert.Heading>
           {error}
         </Alert>
       )}
@@ -229,7 +229,7 @@ const Products = () => {
             <div className="flex-grow-1" style={{ minWidth: '200px' }}>
               <Form.Control
                 type="text"
-                placeholder="Buscar em todos os campos | 搜索所有字段"
+                placeholder={t('Buscar em todos os campos', '搜索所有字段')}
                 value={searchTerm}
                 onChange={handleSearchChange}
               />
@@ -240,7 +240,7 @@ const Products = () => {
                 value={selectedFactory || ''}
                 onChange={(e) => handleFactoryFilter(e.target.value || null)}
               >
-                <option value="">Todas as fábricas | 所有工厂</option>
+                <option value="">{t('Todas as fábricas', '所有工厂')}</option>
                 {factories.map(factory => (
                   <option key={factory.id} value={factory.id}>
                     {factory.name}
@@ -254,7 +254,7 @@ const Products = () => {
                 value={selectedSegment || ''}
                 onChange={(e) => handleSegmentFilter(e.target.value || null)}
               >
-                <option value="">Todos os segmentos | 所有行业</option>
+                <option value="">{t('Todos os segmentos', '所有行业')}</option>
                 {uniqueSegments.map(segment => (
                   <option key={segment} value={segment}>
                     {segment}
@@ -265,7 +265,7 @@ const Products = () => {
             
             {(selectedFactory || selectedSegment || searchTerm) && (
               <small className="text-muted">
-                {filteredProducts.length} produto(s) encontrado(s)
+                {filteredProducts.length} {t('produto(s) encontrado(s)', '找到的产品')}
               </small>
             )}
           </div>
@@ -276,8 +276,8 @@ const Products = () => {
         <Card>
           <Card.Body className="text-center py-5">
             <i className="bi bi-bag text-muted fs-1"></i>
-            <h5 className="mt-3 text-muted">Nenhum produto encontrado</h5>
-            <p className="text-muted">Clique em "Novo Produto" para começar</p>
+            <h5 className="mt-3 text-muted">{t('Nenhum produto encontrado', '没有找到产品')}</h5>
+            <p className="text-muted">{t('Clique em "Novo Produto" para começar', '点击"新产品"开始')}</p>
           </Card.Body>
         </Card>
       ) : (
@@ -286,7 +286,7 @@ const Products = () => {
             <div key={factoryName} className="mb-4">
               <h4 className="mb-3 text-primary border-bottom pb-2">
                 <i className="bi bi-building me-2"></i>
-                {factoryName} ({factoryProducts.length} produtos)
+                {factoryName} ({factoryProducts.length} {t('produtos', '产品')})
               </h4>
               <Row className="justify-content-center" style={{ gap: '48px' }}>
                 {factoryProducts.map(product => (
@@ -325,7 +325,7 @@ const Products = () => {
                             }}>{product.name}</h5>
                             
                             <div className="fs-5 fw-bold text-primary" style={{ fontSize: isMobile ? '18px' : '16px' }}>
-                              {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta | 咨询价格'}
+                              {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : t('Sob consulta', '咨询价格')}
                             </div>
                           </div>
                           
@@ -361,7 +361,7 @@ const Products = () => {
                             style={{ fontSize: isMobile ? '16px' : '14px' }}
                             onClick={() => handleEdit(product)}
                           >
-                            Ver Detalhes | 查看详情
+{t('Ver Detalhes', '查看详情')}
                           </Button>
                         </div>
                       </Card.Body>
@@ -383,7 +383,7 @@ const Products = () => {
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             <Form.Group className="mb-3">
-              <Form.Label>Imagem do Produto | 产品图片</Form.Label>
+              <Form.Label>{t('Imagem do Produto', '产品图片')}</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -509,7 +509,7 @@ const Products = () => {
                 rows={3}
                 name="description"
                 defaultValue={editingProduct?.description || ''}
-                placeholder="Digite uma descrição | 输入描述"
+                placeholder={t('Digite uma descrição', '输入描述')}
               />
             </Form.Group>
 
@@ -732,7 +732,7 @@ const Products = () => {
 
       <Modal show={previewVisible} onHide={() => setPreviewVisible(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Visualizar Imagem | 查看图片</Modal.Title>
+          <Modal.Title>{t('Visualizar Imagem', '查看图片')}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
           <img
