@@ -23,6 +23,11 @@
       "dest": "/build/index.html"
     }
   ],
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  },
   "env": {
     "REACT_APP_API_URL": "https://ideolog.ia.br"
   }
