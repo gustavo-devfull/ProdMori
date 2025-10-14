@@ -41,7 +41,7 @@ const AppHeader = () => {
           variant={location.pathname === '/' ? 'primary' : 'outline-light'}
           onClick={() => handleNavigation('/')}
           size={isMobile ? 'sm' : 'md'}
-          className="px-3 fw-semibold"
+          className="px-2 fw-semibold"
           style={location.pathname === '/' ? {
             backgroundColor: '#0d6efd',
             borderColor: '#0d6efd',
@@ -51,8 +51,9 @@ const AppHeader = () => {
             borderColor: 'white',
             color: 'white'
           }}
+          title={t('Dashboard', '仪表板')}
         >
-          {t('Dashboard', '仪表板')}
+          <i className="bi bi-speedometer2"></i>
         </Button>
         <Button
           variant={location.pathname === '/factories' ? 'primary' : 'outline-light'}
