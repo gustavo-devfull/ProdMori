@@ -65,8 +65,33 @@ const CustomImage = ({
       img.onerror = (e) => {
         if (isMounted) {
           console.log('CustomImage - Erro no pré-carregamento:', imageUrl, e);
-          setLoading(false);
-          setError(true);
+          // Tentar novamente após um pequeno delay se for uma URL local
+          if (imageUrl.includes('localhost:3001') && retryCount < 2) {
+            console.log('CustomImage - Tentando novamente após erro...');
+            setTimeout(() => {
+              if (isMounted) {
+                const retryImg = new Image();
+                retryImg.onload = () => {
+                  if (isMounted) {
+                    console.log('CustomImage - Retry bem-sucedido:', imageUrl);
+                    setLoading(false);
+                    setError(false);
+                  }
+                };
+                retryImg.onerror = () => {
+                  if (isMounted) {
+                    console.log('CustomImage - Retry falhou:', imageUrl);
+                    setLoading(false);
+                    setError(true);
+                  }
+                };
+                retryImg.src = imageUrl;
+              }
+            }, 500);
+          } else {
+            setLoading(false);
+            setError(true);
+          }
         }
       };
       img.src = imageUrl;
@@ -75,7 +100,7 @@ const CustomImage = ({
         isMounted = false;
       };
     }
-  }, [imageUrl]);
+  }, [imageUrl, retryCount]);
 
 
   const handleRetry = async () => {

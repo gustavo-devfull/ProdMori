@@ -170,7 +170,7 @@ class ImageService {
       if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
         try {
           // Tentar construir URL para validar
-          const url = new URL(imageUrl);
+          new URL(imageUrl);
           console.log('ImageService.getImageUrl - Using complete URL:', imageUrl);
           return imageUrl;
         } catch (urlError) {

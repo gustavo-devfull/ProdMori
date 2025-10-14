@@ -28,7 +28,7 @@ const Factories = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
-  const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
+  const [imageUrls] = useState({ image1: '', image2: '' });
 
   const loadFactories = useCallback(async (showRefresh = false) => {
     try {
