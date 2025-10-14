@@ -331,25 +331,25 @@ const Products = () => {
                           
                           {/* Novos campos */}
                           <div className="small text-muted">
-                            {product.ref && <div><strong>REF:</strong> {product.ref}</div>}
-                            {product.description && <div><strong>DESCRIPTION:</strong> {product.description}</div>}
-                            {product.remark && <div><strong>REMARK:</strong> {product.remark}</div>}
-                            {product.obs && <div><strong>OBS:</strong> {product.obs}</div>}
-                            {product.ncm && <div><strong>NCM:</strong> {product.ncm}</div>}
-                            {product.englishDescription && <div><strong>English Description:</strong> {product.englishDescription}</div>}
-                            {product.ctns && <div><strong>CTNS:</strong> {product.ctns}</div>}
-                            {product.unitCtn && <div><strong>UNIT/CTN:</strong> {product.unitCtn}</div>}
-                            {product.qty && <div><strong>QTY:</strong> {product.qty}</div>}
-                            {product.uPrice && <div><strong>U.PRICE:</strong> {product.uPrice}</div>}
-                            {product.unit && <div><strong>UNIT:</strong> {product.unit}</div>}
-                            {product.amount && <div><strong>AMOUNT:</strong> {product.amount}</div>}
-                            {product.l && <div><strong>L:</strong> {product.l}</div>}
-                            {product.w && <div><strong>W:</strong> {product.w}</div>}
-                            {product.h && <div><strong>H:</strong> {product.h}</div>}
-                            {product.cbm && <div><strong>CBM:</strong> {product.cbm}</div>}
-                            {product.gW && <div><strong>G.W:</strong> {product.gW}</div>}
-                            {product.nW && <div><strong>N.W:</strong> {product.nW}</div>}
-                            {product.pesoUnitario && <div><strong>Peso Unitário(g):</strong> {product.pesoUnitario}</div>}
+                            {product.ref && <div><strong>{t('REF', '参考号')}:</strong> {product.ref}</div>}
+                            {product.description && <div><strong>{t('DESCRIPTION', '描述')}:</strong> {product.description}</div>}
+                            {product.remark && <div><strong>{t('REMARK', '备注')}:</strong> {product.remark}</div>}
+                            {product.obs && <div><strong>{t('OBS', '观察')}:</strong> {product.obs}</div>}
+                            {product.ncm && <div><strong>{t('NCM', 'NCM代码')}:</strong> {product.ncm}</div>}
+                            {product.englishDescription && <div><strong>{t('English Description', '英文描述')}:</strong> {product.englishDescription}</div>}
+                            {product.ctns && <div><strong>{t('CTNS', '箱数')}:</strong> {product.ctns}</div>}
+                            {product.unitCtn && <div><strong>{t('UNIT/CTN', '每箱单位')}:</strong> {product.unitCtn}</div>}
+                            {product.qty && <div><strong>{t('QTY', '数量')}:</strong> {product.qty}</div>}
+                            {product.uPrice && <div><strong>{t('U.PRICE', '单价')}:</strong> {product.uPrice}</div>}
+                            {product.unit && <div><strong>{t('UNIT', '单位')}:</strong> {product.unit}</div>}
+                            {product.amount && <div><strong>{t('AMOUNT', '金额')}:</strong> {product.amount}</div>}
+                            {product.l && <div><strong>{t('L', 'L')}:</strong> {product.l}</div>}
+                            {product.w && <div><strong>{t('W', 'W')}:</strong> {product.w}</div>}
+                            {product.h && <div><strong>{t('H', 'H')}:</strong> {product.h}</div>}
+                            {product.cbm && <div><strong>{t('CBM', '立方米')}:</strong> {product.cbm}</div>}
+                            {product.gW && <div><strong>{t('G.W', 'G.W')}:</strong> {product.gW}</div>}
+                            {product.nW && <div><strong>{t('N.W', 'N.W')}:</strong> {product.nW}</div>}
+                            {product.pesoUnitario && <div><strong>{t('Peso Unitário(g)', '单位重量(克)')}:</strong> {product.pesoUnitario}</div>}
                           </div>
                         </div>
                         
@@ -515,183 +515,183 @@ const Products = () => {
 
             {/* Novos campos */}
             <Form.Group className="mb-3">
-              <Form.Label>REF</Form.Label>
+              <Form.Label>{t('REF', '参考号')}</Form.Label>
               <Form.Control
                 type="text"
                 name="ref"
                 defaultValue={editingProduct?.ref || ''}
-                placeholder="Digite a referência"
+                placeholder={t('Digite a referência', '输入参考号')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>REMARK</Form.Label>
+              <Form.Label>{t('REMARK', '备注')}</Form.Label>
               <Form.Control
                 type="text"
                 name="remark"
                 defaultValue={editingProduct?.remark || ''}
-                placeholder="Digite observações"
+                placeholder={t('Digite observações', '输入备注')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>OBS</Form.Label>
+              <Form.Label>{t('OBS', '观察')}</Form.Label>
               <Form.Control
                 type="text"
                 name="obs"
                 defaultValue={editingProduct?.obs || ''}
-                placeholder="Digite observações adicionais"
+                placeholder={t('Digite observações adicionais', '输入额外观察')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>NCM</Form.Label>
+              <Form.Label>{t('NCM', 'NCM代码')}</Form.Label>
               <Form.Control
                 type="text"
                 name="ncm"
                 defaultValue={editingProduct?.ncm || ''}
-                placeholder="Digite o código NCM"
+                placeholder={t('Digite o código NCM', '输入NCM代码')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>English Description</Form.Label>
+              <Form.Label>{t('English Description', '英文描述')}</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
                 name="englishDescription"
                 defaultValue={editingProduct?.englishDescription || ''}
-                placeholder="Digite a descrição em inglês"
+                placeholder={t('Digite a descrição em inglês', '输入英文描述')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>CTNS</Form.Label>
+              <Form.Label>{t('CTNS', '箱数')}</Form.Label>
               <Form.Control
                 type="text"
                 name="ctns"
                 defaultValue={editingProduct?.ctns || ''}
-                placeholder="Digite quantidade de caixas"
+                placeholder={t('Digite quantidade de caixas', '输入箱数')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>UNIT/CTN</Form.Label>
+              <Form.Label>{t('UNIT/CTN', '每箱单位')}</Form.Label>
               <Form.Control
                 type="text"
                 name="unitCtn"
                 defaultValue={editingProduct?.unitCtn || ''}
-                placeholder="Digite unidades por caixa"
+                placeholder={t('Digite unidades por caixa', '输入每箱单位数')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>QTY</Form.Label>
+              <Form.Label>{t('QTY', '数量')}</Form.Label>
               <Form.Control
                 type="text"
                 name="qty"
                 defaultValue={editingProduct?.qty || ''}
-                placeholder="Digite a quantidade"
+                placeholder={t('Digite a quantidade', '输入数量')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>U.PRICE</Form.Label>
+              <Form.Label>{t('U.PRICE', '单价')}</Form.Label>
               <Form.Control
                 type="text"
                 name="uPrice"
                 defaultValue={editingProduct?.uPrice || ''}
-                placeholder="Digite o preço unitário"
+                placeholder={t('Digite o preço unitário', '输入单价')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>UNIT</Form.Label>
+              <Form.Label>{t('UNIT', '单位')}</Form.Label>
               <Form.Control
                 type="text"
                 name="unit"
                 defaultValue={editingProduct?.unit || ''}
-                placeholder="Digite a unidade"
+                placeholder={t('Digite a unidade', '输入单位')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>AMOUNT</Form.Label>
+              <Form.Label>{t('AMOUNT', '金额')}</Form.Label>
               <Form.Control
                 type="text"
                 name="amount"
                 defaultValue={editingProduct?.amount || ''}
-                placeholder="Digite o valor total"
+                placeholder={t('Digite o valor total', '输入总金额')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>L (Length)</Form.Label>
+              <Form.Label>{t('L (Length)', 'L (长度)')}</Form.Label>
               <Form.Control
                 type="text"
                 name="l"
                 defaultValue={editingProduct?.l || ''}
-                placeholder="Digite o comprimento"
+                placeholder={t('Digite o comprimento', '输入长度')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>W (Width)</Form.Label>
+              <Form.Label>{t('W (Width)', 'W (宽度)')}</Form.Label>
               <Form.Control
                 type="text"
                 name="w"
                 defaultValue={editingProduct?.w || ''}
-                placeholder="Digite a largura"
+                placeholder={t('Digite a largura', '输入宽度')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>H (Height)</Form.Label>
+              <Form.Label>{t('H (Height)', 'H (高度)')}</Form.Label>
               <Form.Control
                 type="text"
                 name="h"
                 defaultValue={editingProduct?.h || ''}
-                placeholder="Digite a altura"
+                placeholder={t('Digite a altura', '输入高度')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>CBM</Form.Label>
+              <Form.Label>{t('CBM', '立方米')}</Form.Label>
               <Form.Control
                 type="text"
                 name="cbm"
                 defaultValue={editingProduct?.cbm || ''}
-                placeholder="Digite o volume em CBM"
+                placeholder={t('Digite o volume em CBM', '输入立方米体积')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>G.W (Gross Weight)</Form.Label>
+              <Form.Label>{t('G.W (Gross Weight)', 'G.W (毛重)')}</Form.Label>
               <Form.Control
                 type="text"
                 name="gW"
                 defaultValue={editingProduct?.gW || ''}
-                placeholder="Digite o peso bruto"
+                placeholder={t('Digite o peso bruto', '输入毛重')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>N.W (Net Weight)</Form.Label>
+              <Form.Label>{t('N.W (Net Weight)', 'N.W (净重)')}</Form.Label>
               <Form.Control
                 type="text"
                 name="nW"
                 defaultValue={editingProduct?.nW || ''}
-                placeholder="Digite o peso líquido"
+                placeholder={t('Digite o peso líquido', '输入净重')}
               />
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Peso Unitário(g)</Form.Label>
+              <Form.Label>{t('Peso Unitário(g)', '单位重量(克)')}</Form.Label>
               <Form.Control
                 type="text"
                 name="pesoUnitario"
                 defaultValue={editingProduct?.pesoUnitario || ''}
-                placeholder="Digite o peso unitário em gramas"
+                placeholder={t('Digite o peso unitário em gramas', '输入单位重量(克)')}
               />
             </Form.Group>
           </Modal.Body>
