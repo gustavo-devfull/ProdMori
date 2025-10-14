@@ -28,6 +28,7 @@ const Factories = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
+  const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
 
   const loadFactories = useCallback(async (showRefresh = false) => {
     try {
@@ -75,24 +76,31 @@ const Factories = () => {
         return;
       }
       
+      // Usar as URLs das imagens do estado do React
+      const finalValues = {
+        ...values,
+        imageUrl1: imageUrls.image1 || values.imageUrl1,
+        imageUrl2: imageUrls.image2 || values.imageUrl2
+      };
+      
       // Debug: verificar se as URLs das imagens estão sendo enviadas
-      console.log('Dados do formulário:', values);
-      console.log('imageUrl1:', values.imageUrl1);
-      console.log('imageUrl2:', values.imageUrl2);
+      console.log('Dados do formulário:', finalValues);
+      console.log('imageUrl1:', finalValues.imageUrl1);
+      console.log('imageUrl2:', finalValues.imageUrl2);
       
       // Verificar se ambas as imagens estão presentes
-      if (!values.imageUrl1 && !values.imageUrl2) {
+      if (!finalValues.imageUrl1 && !finalValues.imageUrl2) {
         console.warn('Nenhuma imagem foi enviada');
-      } else if (!values.imageUrl1) {
+      } else if (!finalValues.imageUrl1) {
         console.warn('Imagem principal (imageUrl1) não foi enviada');
-      } else if (!values.imageUrl2) {
+      } else if (!finalValues.imageUrl2) {
         console.warn('Imagem secundária (imageUrl2) não foi enviada');
       }
       
       if (editingFactory) {
-        await factoryServiceAPI.updateFactory(editingFactory.id, values);
+        await factoryServiceAPI.updateFactory(editingFactory.id, finalValues);
       } else {
-        await factoryServiceAPI.createFactory(values);
+        await factoryServiceAPI.createFactory(finalValues);
       }
       
       setModalVisible(false);
@@ -109,6 +117,11 @@ const Factories = () => {
   const handleEdit = (factory) => {
     setEditingFactory(factory);
     setModalVisible(true);
+    // Inicializar URLs das imagens para edição
+    setImageUrls({
+      image1: factory.imageUrl1 || '',
+      image2: factory.imageUrl2 || ''
+    });
   };
 
   const handleDelete = async (id) => {
@@ -124,6 +137,10 @@ const Factories = () => {
   const handleModalClose = () => {
     setModalVisible(false);
     setEditingFactory(null);
+    setError(null);
+    // Limpar estado das imagens
+    setImageUrls({ image1: '', image2: '' });
+    setUploadingImages({ image1: false, image2: false });
   };
 
   const toggleProductsExpansion = (factoryId) => {
@@ -384,21 +401,9 @@ const Factories = () => {
                       setUploadingImages(prev => ({ ...prev, image1: true }));
                       const imageUrl = await imageService.uploadFile(file);
                       console.log('Imagem principal enviada:', imageUrl);
-                      // Armazenar URL da imagem em um campo hidden
-                      const hiddenInput = document.querySelector('input[name="imageUrl1"]');
-                      if (hiddenInput) {
-                        hiddenInput.value = imageUrl;
-                        console.log('Campo hidden imageUrl1 atualizado:', hiddenInput.value);
-                      } else {
-                        // Criar campo hidden se não existir
-                        const form = e.target.closest('form');
-                        const hiddenField = document.createElement('input');
-                        hiddenField.type = 'hidden';
-                        hiddenField.name = 'imageUrl1';
-                        hiddenField.value = imageUrl;
-                        form.appendChild(hiddenField);
-                        console.log('Campo hidden imageUrl1 criado:', imageUrl);
-                      }
+                      // Armazenar URL da imagem no estado do React
+                      setImageUrls(prev => ({ ...prev, image1: imageUrl }));
+                      console.log('Estado imageUrl1 atualizado:', imageUrl);
                     } catch (error) {
                       console.error('Erro no upload da imagem:', error);
                       setError(t('Erro no upload da imagem', '图片上传时出错'));
@@ -432,22 +437,9 @@ const Factories = () => {
                       console.log('Iniciando upload da imagem secundária...');
                       const imageUrl = await imageService.uploadFile(file);
                       console.log('Imagem secundária enviada:', imageUrl);
-                      // Armazenar URL da imagem em um campo hidden
-                      const hiddenInput = document.querySelector('input[name="imageUrl2"]');
-                      console.log('Campo hidden imageUrl2 encontrado:', hiddenInput);
-                      if (hiddenInput) {
-                        hiddenInput.value = imageUrl;
-                        console.log('Campo hidden imageUrl2 atualizado:', hiddenInput.value);
-                      } else {
-                        // Criar campo hidden se não existir
-                        const form = e.target.closest('form');
-                        const hiddenField = document.createElement('input');
-                        hiddenField.type = 'hidden';
-                        hiddenField.name = 'imageUrl2';
-                        hiddenField.value = imageUrl;
-                        form.appendChild(hiddenField);
-                        console.log('Campo hidden imageUrl2 criado:', imageUrl);
-                      }
+                      // Armazenar URL da imagem no estado do React
+                      setImageUrls(prev => ({ ...prev, image2: imageUrl }));
+                      console.log('Estado imageUrl2 atualizado:', imageUrl);
                     } catch (error) {
                       console.error('Erro no upload da imagem secundária:', error);
                       setError(t('Erro no upload da imagem', '图片上传时出错'));
