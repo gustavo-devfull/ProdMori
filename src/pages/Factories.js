@@ -389,6 +389,7 @@ const Factories = () => {
                 type="hidden"
                 name="imageUrl1"
                 defaultValue={editingFactory?.imageUrl1 || ''}
+                key={`imageUrl1-${editingFactory?.id || 'new'}`}
               />
             </Form.Group>
 
@@ -427,6 +428,7 @@ const Factories = () => {
                 type="hidden"
                 name="imageUrl2"
                 defaultValue={editingFactory?.imageUrl2 || ''}
+                key={`imageUrl2-${editingFactory?.id || 'new'}`}
               />
             </Form.Group>
           </Modal.Body>
