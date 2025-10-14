@@ -130,24 +130,18 @@ const Factories = () => {
   return (
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
-        <h2 className="mb-0 fs-5 fw-semibold">{t('Fábricas/Lojas', '工厂/商店')}</h2>
-      </div>
-      
-      {error && (
-        <Alert variant="danger" className="mb-3">
-          <Alert.Heading>Erro</Alert.Heading>
-          {error}
-        </Alert>
-      )}
-
-      <div className="d-flex justify-content-start align-items-center mb-3">
-        <Button 
-          variant="primary"
-          onClick={() => setModalVisible(true)}
-        >
-          <i className="bi bi-plus-circle me-2"></i>
-{t('Nova Fábrica/Loja', '新建工厂/商店')}
-        </Button>
+        <div className="d-flex justify-content-between align-items-center">
+          <h2 className="mb-0 fs-5 fw-semibold">{t('Fábricas/Lojas', '工厂/商店')}</h2>
+          <Button 
+            variant="light"
+            size="sm"
+            onClick={() => setModalVisible(true)}
+            className="d-flex align-items-center"
+          >
+            <i className="bi bi-plus-circle me-1"></i>
+            {t('Nova', '新建')}
+          </Button>
+        </div>
       </div>
 
       {factories.length === 0 ? (
