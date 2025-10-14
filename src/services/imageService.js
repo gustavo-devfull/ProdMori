@@ -160,32 +160,40 @@ class ImageService {
   getImageUrl(imageUrl) {
     console.log('ImageService.getImageUrl - Input:', imageUrl);
     
+    // Validar entrada mais rigorosamente
     if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
       console.log('ImageService.getImageUrl - Returning null (empty/invalid input)');
       return null;
     }
     
+    // Limpar a URL de espaços e caracteres inválidos
+    const cleanUrl = imageUrl.trim();
+    if (cleanUrl === '') {
+      console.log('ImageService.getImageUrl - Returning null (empty after trim)');
+      return null;
+    }
+    
     try {
       // Se já é uma URL completa e válida, retornar diretamente
-      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
         try {
           // Tentar construir URL para validar
-          new URL(imageUrl);
-          console.log('ImageService.getImageUrl - Using complete URL:', imageUrl);
-          return imageUrl;
+          new URL(cleanUrl);
+          console.log('ImageService.getImageUrl - Using complete URL:', cleanUrl);
+          return cleanUrl;
         } catch (urlError) {
-          console.error('URL completa inválida:', imageUrl, urlError);
+          console.error('URL completa inválida:', cleanUrl, urlError);
           // Se a URL é inválida mas parece ser uma URL de imagem, tentar corrigir
-          if (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || imageUrl.includes('.png') || imageUrl.includes('.gif')) {
-            console.log('ImageService.getImageUrl - Attempting to fix URL:', imageUrl);
+          if (cleanUrl.includes('.jpg') || cleanUrl.includes('.jpeg') || cleanUrl.includes('.png') || cleanUrl.includes('.gif')) {
+            console.log('ImageService.getImageUrl - Attempting to fix URL:', cleanUrl);
             // Tentar usar encodeURI para corrigir caracteres especiais
             try {
-              const fixedUrl = encodeURI(imageUrl);
+              const fixedUrl = encodeURI(cleanUrl);
               new URL(fixedUrl);
               console.log('ImageService.getImageUrl - Fixed URL:', fixedUrl);
               return fixedUrl;
             } catch (fixError) {
-              console.error('Não foi possível corrigir a URL:', imageUrl, fixError);
+              console.error('Não foi possível corrigir a URL:', cleanUrl, fixError);
               return null;
             }
           }
@@ -194,19 +202,19 @@ class ImageService {
       }
       
       // Se já é uma URL relativa válida, retornar diretamente
-      if (imageUrl.startsWith('/api/image/') || imageUrl.startsWith('/api/image?')) {
-        console.log('ImageService.getImageUrl - Using relative URL:', imageUrl);
-        return imageUrl;
+      if (cleanUrl.startsWith('/api/image/') || cleanUrl.startsWith('/api/image?')) {
+        console.log('ImageService.getImageUrl - Using relative URL:', cleanUrl);
+        return cleanUrl;
       }
       
       // Se é um nome de arquivo, construir URL
       let constructedUrl;
       if (this.isVercel) {
         // Para Vercel, usar URL relativa para a própria API
-        constructedUrl = `/api/image/${imageUrl}`;
+        constructedUrl = `/api/image/${cleanUrl}`;
       } else {
         // Para desenvolvimento local, usar URL completa
-        constructedUrl = `${this.apiUrl}/image/${imageUrl}`;
+        constructedUrl = `${this.apiUrl}/image/${cleanUrl}`;
       }
       
       // Validar se a URL construída é válida
@@ -230,7 +238,7 @@ class ImageService {
         return null;
       }
     } catch (error) {
-      console.error('Erro ao construir URL da imagem:', error, 'imageUrl:', imageUrl);
+      console.error('Erro ao construir URL da imagem:', error, 'imageUrl:', cleanUrl);
       return null;
     }
   }
