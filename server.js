@@ -128,25 +128,21 @@ app.post('/api/upload-image', upload.single('image'), async (req, res) => {
     const localPath = req.file.path;
     const remotePath = req.file.filename;
 
-    console.log('Starting FTP upload...');
-    // Upload para FTP
-    const imageUrl = await uploadToFTP(localPath, remotePath);
-    console.log('FTP upload successful:', imageUrl);
-
-    // Remover arquivo local após upload
-    if (fs.existsSync(localPath)) {
-      fs.unlinkSync(localPath);
-      console.log('Local file cleaned up');
-    }
-
+    // Retornar resposta imediata com URL temporária
+    const tempImageUrl = `/api/image?filename=${remotePath}`;
+    
     const response = { 
       success: true, 
-      imageUrl: imageUrl,
-      message: 'Imagem enviada com sucesso!' 
+      imageUrl: tempImageUrl,
+      message: 'Imagem enviada com sucesso!',
+      temp: true // Indicar que é temporária
     };
     
-    console.log('Sending response:', response);
+    console.log('Sending immediate response:', response);
     res.json(response);
+
+    // Fazer upload FTP em background (não bloquear a resposta)
+    uploadToFTPInBackground(localPath, remotePath);
 
   } catch (error) {
     console.error('Erro no upload:', error);
@@ -170,6 +166,35 @@ app.post('/api/upload-image', upload.single('image'), async (req, res) => {
     res.status(500).json(errorResponse);
   }
 });
+
+// Função para upload FTP em background
+async function uploadToFTPInBackground(localPath, remotePath) {
+  try {
+    console.log('Starting background FTP upload...');
+    const imageUrl = await uploadToFTP(localPath, remotePath);
+    console.log('Background FTP upload successful:', imageUrl);
+    
+    // Remover arquivo local após upload bem-sucedido
+    if (fs.existsSync(localPath)) {
+      fs.unlinkSync(localPath);
+      console.log('Local file cleaned up after successful FTP upload');
+    }
+  } catch (error) {
+    console.error('Background FTP upload failed:', error);
+    
+    // Remover arquivo local mesmo em caso de erro após um tempo
+    setTimeout(() => {
+      if (fs.existsSync(localPath)) {
+        try {
+          fs.unlinkSync(localPath);
+          console.log('Local file cleaned up after FTP upload timeout');
+        } catch (cleanupError) {
+          console.error('Error cleaning up file after timeout:', cleanupError);
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+  }
+}
 
 // Cache de imagens em memória
 const imageCache = new Map();
