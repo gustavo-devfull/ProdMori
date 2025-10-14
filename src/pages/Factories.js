@@ -27,6 +27,7 @@ const Factories = () => {
   const [expandedProducts, setExpandedProducts] = useState(new Set());
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
+  const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
 
   const loadFactories = useCallback(async (showRefresh = false) => {
     try {
@@ -66,6 +67,13 @@ const Factories = () => {
   const handleSubmit = async (values) => {
     try {
       setSubmitting(true);
+      
+      // Verificar se há uploads em andamento
+      if (uploadingImages.image1 || uploadingImages.image2) {
+        console.log('Aguardando upload das imagens...');
+        setError(t('Aguarde o upload das imagens terminar', '等待图片上传完成'));
+        return;
+      }
       
       // Debug: verificar se as URLs das imagens estão sendo enviadas
       console.log('Dados do formulário:', values);
@@ -373,6 +381,7 @@ const Factories = () => {
                   const file = e.target.files[0];
                   if (file) {
                     try {
+                      setUploadingImages(prev => ({ ...prev, image1: true }));
                       const imageUrl = await imageService.uploadFile(file);
                       console.log('Imagem principal enviada:', imageUrl);
                       // Armazenar URL da imagem em um campo hidden
@@ -393,6 +402,8 @@ const Factories = () => {
                     } catch (error) {
                       console.error('Erro no upload da imagem:', error);
                       setError(t('Erro no upload da imagem', '图片上传时出错'));
+                    } finally {
+                      setUploadingImages(prev => ({ ...prev, image1: false }));
                     }
                   }
                 }}
@@ -417,6 +428,7 @@ const Factories = () => {
                   console.log('Arquivo selecionado para imagem secundária:', file);
                   if (file) {
                     try {
+                      setUploadingImages(prev => ({ ...prev, image2: true }));
                       console.log('Iniciando upload da imagem secundária...');
                       const imageUrl = await imageService.uploadFile(file);
                       console.log('Imagem secundária enviada:', imageUrl);
@@ -439,6 +451,8 @@ const Factories = () => {
                     } catch (error) {
                       console.error('Erro no upload da imagem secundária:', error);
                       setError(t('Erro no upload da imagem', '图片上传时出错'));
+                    } finally {
+                      setUploadingImages(prev => ({ ...prev, image2: false }));
                     }
                   } else {
                     console.log('Nenhum arquivo selecionado para imagem secundária');
@@ -476,11 +490,20 @@ const Factories = () => {
                 <Button variant="secondary" onClick={handleModalClose} className="me-2">
                   {t('Cancelar', '取消')}
                 </Button>
-                <Button variant="primary" type="submit" disabled={submitting}>
+                <Button 
+                  variant="primary" 
+                  type="submit" 
+                  disabled={submitting || uploadingImages.image1 || uploadingImages.image2}
+                >
                   {submitting ? (
                     <>
                       <Spinner animation="border" size="sm" className="me-2" />
                       {t('Salvando...', '保存中...')}
+                    </>
+                  ) : uploadingImages.image1 || uploadingImages.image2 ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      {t('Enviando imagens...', '上传图片中...')}
                     </>
                   ) : (
                     editingFactory ? t('Atualizar', '更新') : t('Criar', '创建')
