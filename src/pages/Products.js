@@ -29,6 +29,7 @@ const Products = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -175,11 +176,46 @@ const Products = () => {
     setSelectedSegment(segment);
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesFactory = !selectedFactory || product.factory?.id === selectedFactory;
     const matchesSegment = !selectedSegment || product.segment === selectedSegment;
-    return matchesFactory && matchesSegment;
+    
+    // Busca em todos os campos do produto
+    const searchFields = [
+      product.name,
+      product.segment,
+      product.description,
+      product.material,
+      product.capacity,
+      product.colors,
+      product.moq,
+      product.dimensions,
+      product.factory?.name,
+      product.ref,
+      product.englishDescription,
+      product.remark,
+      product.obs,
+      product.ncm
+    ].filter(Boolean).join(' ').toLowerCase();
+    
+    const matchesSearch = !searchTerm || searchFields.includes(searchTerm.toLowerCase());
+    
+    return matchesFactory && matchesSegment && matchesSearch;
   });
+
+  // Agrupar produtos por fábrica
+  const groupedProducts = filteredProducts.reduce((groups, product) => {
+    const factoryName = product.factory?.name || 'Sem Fábrica';
+    if (!groups[factoryName]) {
+      groups[factoryName] = [];
+    }
+    groups[factoryName].push(product);
+    return groups;
+  }, {});
 
   const uniqueSegments = [...new Set(products.map(p => p.segment).filter(Boolean))];
 
@@ -223,6 +259,15 @@ const Products = () => {
         <Card.Body>
           <div className="d-flex flex-wrap gap-3 align-items-center">
             <div className="flex-grow-1" style={{ minWidth: '200px' }}>
+              <Form.Control
+                type="text"
+                placeholder="Buscar em todos os campos | 搜索所有字段"
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+            </div>
+            
+            <div className="flex-grow-1" style={{ minWidth: '200px' }}>
               <Form.Select
                 value={selectedFactory || ''}
                 onChange={(e) => handleFactoryFilter(e.target.value || null)}
@@ -250,7 +295,7 @@ const Products = () => {
               </Form.Select>
             </div>
             
-            {(selectedFactory || selectedSegment) && (
+            {(selectedFactory || selectedSegment || searchTerm) && (
               <small className="text-muted">
                 {filteredProducts.length} produto(s) encontrado(s)
               </small>
@@ -268,92 +313,97 @@ const Products = () => {
           </Card.Body>
         </Card>
       ) : (
-        <Row className="justify-content-center" style={{ gap: '48px' }}>
-          {filteredProducts.map(product => (
-            <Col xs={12} sm={6} md={4} lg={3} xl={2} key={product.id}>
-              <Card className="h-100">
-                <div className="position-relative">
-                  <CustomImage
-                    src={(() => {
-                      const imageUrl = imageService.getImageUrl(product.imageUrl);
-                      console.log(`Product ${product.name} - imageUrl:`, product.imageUrl, 'processed:', imageUrl);
-                      return imageUrl;
-                    })()}
-                    alt={product.name}
-                    style={{ 
-                      height: '250px',
-                      width: '100%',
-                      objectFit: 'cover'
-                    }}
-                    showPreview={true}
-                    onPreview={handlePreview}
-                  />
-                  
-                  {/* Tag da fábrica sobreposta à imagem */}
-                  {product.factory && (
-                    <div className="position-absolute" style={{ 
-                      top: '-18px', 
-                      right: '6px',
-                      padding: '4px'
-                    }}>
-                      {(() => {
-                        const factoryColor = getFactoryColor(product.factory.name);
-                        console.log(`Aplicando cor ${factoryColor} para fábrica: ${product.factory.name}`);
-                        return (
-                          <span 
-                            style={{ 
-                              backgroundColor: factoryColor,
-                              color: 'white',
-                              fontSize: isMobile ? '12px' : '14px',
-                              padding: isMobile ? '4px 8px' : '6px 12px',
-                              border: 'none',
-                              fontWeight: '500',
-                              borderRadius: '4px',
-                              display: 'inline-block'
-                            }}
+        <div>
+          {Object.entries(groupedProducts).map(([factoryName, factoryProducts]) => (
+            <div key={factoryName} className="mb-4">
+              <h4 className="mb-3 text-primary border-bottom pb-2">
+                <i className="bi bi-building me-2"></i>
+                {factoryName} ({factoryProducts.length} produtos)
+              </h4>
+              <Row className="justify-content-center" style={{ gap: '48px' }}>
+                {factoryProducts.map(product => (
+                  <Col xs={12} sm={6} md={4} lg={3} xl={2} key={product.id}>
+                    <Card className="h-100">
+                      <div className="position-relative">
+                        <CustomImage
+                          src={(() => {
+                            const imageUrl = imageService.getImageUrl(product.imageUrl);
+                            console.log(`Product ${product.name} - imageUrl:`, product.imageUrl, 'processed:', imageUrl);
+                            return imageUrl;
+                          })()}
+                          alt={product.name}
+                          style={{ 
+                            height: '250px',
+                            width: '100%',
+                            objectFit: 'cover'
+                          }}
+                          showPreview={true}
+                          onPreview={handlePreview}
+                        />
+                      </div>
+                      
+                      <Card.Body className="d-flex flex-column p-3">
+                        {/* Campos do produto */}
+                        <div className="mb-3">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h5 className="card-title mb-0" style={{ 
+                              fontSize: isMobile ? '16px' : '15px',
+                              lineHeight: '1.2',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              flex: '1',
+                              marginRight: '10px'
+                            }}>{product.name}</h5>
+                            
+                            <div className="fs-5 fw-bold text-primary" style={{ fontSize: isMobile ? '18px' : '16px' }}>
+                              {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta | 咨询价格'}
+                            </div>
+                          </div>
+                          
+                          {/* Novos campos */}
+                          <div className="small text-muted">
+                            {product.ref && <div><strong>REF:</strong> {product.ref}</div>}
+                            {product.description && <div><strong>DESCRIPTION:</strong> {product.description}</div>}
+                            {product.remark && <div><strong>REMARK:</strong> {product.remark}</div>}
+                            {product.obs && <div><strong>OBS:</strong> {product.obs}</div>}
+                            {product.ncm && <div><strong>NCM:</strong> {product.ncm}</div>}
+                            {product.englishDescription && <div><strong>English Description:</strong> {product.englishDescription}</div>}
+                            {product.ctns && <div><strong>CTNS:</strong> {product.ctns}</div>}
+                            {product.unitCtn && <div><strong>UNIT/CTN:</strong> {product.unitCtn}</div>}
+                            {product.qty && <div><strong>QTY:</strong> {product.qty}</div>}
+                            {product.uPrice && <div><strong>U.PRICE:</strong> {product.uPrice}</div>}
+                            {product.unit && <div><strong>UNIT:</strong> {product.unit}</div>}
+                            {product.amount && <div><strong>AMOUNT:</strong> {product.amount}</div>}
+                            {product.l && <div><strong>L:</strong> {product.l}</div>}
+                            {product.w && <div><strong>W:</strong> {product.w}</div>}
+                            {product.h && <div><strong>H:</strong> {product.h}</div>}
+                            {product.cbm && <div><strong>CBM:</strong> {product.cbm}</div>}
+                            {product.gW && <div><strong>G.W:</strong> {product.gW}</div>}
+                            {product.nW && <div><strong>N.W:</strong> {product.nW}</div>}
+                            {product.pesoUnitario && <div><strong>Peso Unitário(g):</strong> {product.pesoUnitario}</div>}
+                          </div>
+                        </div>
+                        
+                        <div className="mt-auto">
+                          <Button 
+                            variant="primary" 
+                            className="w-100"
+                            size={isMobile ? 'lg' : 'md'}
+                            style={{ fontSize: isMobile ? '16px' : '14px' }}
+                            onClick={() => handleEdit(product)}
                           >
-                            {product.factory.name}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-                
-                <Card.Body className="d-flex flex-column p-3">
-                  {/* Nome e preço na mesma linha */}
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="card-title mb-0" style={{ 
-                      fontSize: isMobile ? '16px' : '15px',
-                      lineHeight: '1.2',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      flex: '1',
-                      marginRight: '10px'
-                    }}>{product.name}</h5>
-                    
-                    <div className="fs-5 fw-bold text-primary" style={{ fontSize: isMobile ? '18px' : '16px' }}>
-                      {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta | 咨询价格'}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-auto">
-                    <Button 
-                      variant="primary" 
-                      className="w-100"
-                      size={isMobile ? 'lg' : 'md'}
-                      style={{ fontSize: isMobile ? '16px' : '14px' }}
-                      onClick={() => handleEdit(product)}
-                    >
-                      Ver Detalhes | 查看详情
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
+                            Ver Detalhes | 查看详情
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            </div>
           ))}
-        </Row>
+        </div>
       )}
 
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
@@ -492,6 +542,188 @@ const Products = () => {
                 name="description"
                 defaultValue={editingProduct?.description || ''}
                 placeholder="Digite uma descrição | 输入描述"
+              />
+            </Form.Group>
+
+            {/* Novos campos */}
+            <Form.Group className="mb-3">
+              <Form.Label>REF</Form.Label>
+              <Form.Control
+                type="text"
+                name="ref"
+                defaultValue={editingProduct?.ref || ''}
+                placeholder="Digite a referência"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>REMARK</Form.Label>
+              <Form.Control
+                type="text"
+                name="remark"
+                defaultValue={editingProduct?.remark || ''}
+                placeholder="Digite observações"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>OBS</Form.Label>
+              <Form.Control
+                type="text"
+                name="obs"
+                defaultValue={editingProduct?.obs || ''}
+                placeholder="Digite observações adicionais"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>NCM</Form.Label>
+              <Form.Control
+                type="text"
+                name="ncm"
+                defaultValue={editingProduct?.ncm || ''}
+                placeholder="Digite o código NCM"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>English Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                name="englishDescription"
+                defaultValue={editingProduct?.englishDescription || ''}
+                placeholder="Digite a descrição em inglês"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>CTNS</Form.Label>
+              <Form.Control
+                type="text"
+                name="ctns"
+                defaultValue={editingProduct?.ctns || ''}
+                placeholder="Digite quantidade de caixas"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>UNIT/CTN</Form.Label>
+              <Form.Control
+                type="text"
+                name="unitCtn"
+                defaultValue={editingProduct?.unitCtn || ''}
+                placeholder="Digite unidades por caixa"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>QTY</Form.Label>
+              <Form.Control
+                type="text"
+                name="qty"
+                defaultValue={editingProduct?.qty || ''}
+                placeholder="Digite a quantidade"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>U.PRICE</Form.Label>
+              <Form.Control
+                type="text"
+                name="uPrice"
+                defaultValue={editingProduct?.uPrice || ''}
+                placeholder="Digite o preço unitário"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>UNIT</Form.Label>
+              <Form.Control
+                type="text"
+                name="unit"
+                defaultValue={editingProduct?.unit || ''}
+                placeholder="Digite a unidade"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>AMOUNT</Form.Label>
+              <Form.Control
+                type="text"
+                name="amount"
+                defaultValue={editingProduct?.amount || ''}
+                placeholder="Digite o valor total"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>L (Length)</Form.Label>
+              <Form.Control
+                type="text"
+                name="l"
+                defaultValue={editingProduct?.l || ''}
+                placeholder="Digite o comprimento"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>W (Width)</Form.Label>
+              <Form.Control
+                type="text"
+                name="w"
+                defaultValue={editingProduct?.w || ''}
+                placeholder="Digite a largura"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>H (Height)</Form.Label>
+              <Form.Control
+                type="text"
+                name="h"
+                defaultValue={editingProduct?.h || ''}
+                placeholder="Digite a altura"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>CBM</Form.Label>
+              <Form.Control
+                type="text"
+                name="cbm"
+                defaultValue={editingProduct?.cbm || ''}
+                placeholder="Digite o volume em CBM"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>G.W (Gross Weight)</Form.Label>
+              <Form.Control
+                type="text"
+                name="gW"
+                defaultValue={editingProduct?.gW || ''}
+                placeholder="Digite o peso bruto"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>N.W (Net Weight)</Form.Label>
+              <Form.Control
+                type="text"
+                name="nW"
+                defaultValue={editingProduct?.nW || ''}
+                placeholder="Digite o peso líquido"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Peso Unitário(g)</Form.Label>
+              <Form.Control
+                type="text"
+                name="pesoUnitario"
+                defaultValue={editingProduct?.pesoUnitario || ''}
+                placeholder="Digite o peso unitário em gramas"
               />
             </Form.Group>
           </Modal.Body>
