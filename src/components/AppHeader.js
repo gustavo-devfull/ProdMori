@@ -28,7 +28,7 @@ const AppHeader = () => {
     <Navbar bg="dark" variant="dark" className="px-3">
       <Navbar.Brand className="d-flex align-items-center">
         <img 
-          src="/RAVI-LOGO-BRANCO.svg" 
+          src="/RAVI-LOGO-COLOR.svg" 
           alt="RAVI Logo" 
           style={{ 
             height: isMobile ? '32px' : '40px'
