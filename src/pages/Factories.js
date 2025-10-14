@@ -72,6 +72,15 @@ const Factories = () => {
       console.log('imageUrl1:', values.imageUrl1);
       console.log('imageUrl2:', values.imageUrl2);
       
+      // Verificar se ambas as imagens estão presentes
+      if (!values.imageUrl1 && !values.imageUrl2) {
+        console.warn('Nenhuma imagem foi enviada');
+      } else if (!values.imageUrl1) {
+        console.warn('Imagem principal (imageUrl1) não foi enviada');
+      } else if (!values.imageUrl2) {
+        console.warn('Imagem secundária (imageUrl2) não foi enviada');
+      }
+      
       if (editingFactory) {
         await factoryServiceAPI.updateFactory(editingFactory.id, values);
       } else {
@@ -365,10 +374,12 @@ const Factories = () => {
                   if (file) {
                     try {
                       const imageUrl = await imageService.uploadFile(file);
+                      console.log('Imagem principal enviada:', imageUrl);
                       // Armazenar URL da imagem em um campo hidden
                       const hiddenInput = document.querySelector('input[name="imageUrl1"]');
                       if (hiddenInput) {
                         hiddenInput.value = imageUrl;
+                        console.log('Campo hidden imageUrl1 atualizado:', hiddenInput.value);
                       } else {
                         // Criar campo hidden se não existir
                         const form = e.target.closest('form');
@@ -377,6 +388,7 @@ const Factories = () => {
                         hiddenField.name = 'imageUrl1';
                         hiddenField.value = imageUrl;
                         form.appendChild(hiddenField);
+                        console.log('Campo hidden imageUrl1 criado:', imageUrl);
                       }
                     } catch (error) {
                       console.error('Erro no upload da imagem:', error);
@@ -404,10 +416,12 @@ const Factories = () => {
                   if (file) {
                     try {
                       const imageUrl = await imageService.uploadFile(file);
+                      console.log('Imagem secundária enviada:', imageUrl);
                       // Armazenar URL da imagem em um campo hidden
                       const hiddenInput = document.querySelector('input[name="imageUrl2"]');
                       if (hiddenInput) {
                         hiddenInput.value = imageUrl;
+                        console.log('Campo hidden imageUrl2 atualizado:', hiddenInput.value);
                       } else {
                         // Criar campo hidden se não existir
                         const form = e.target.closest('form');
@@ -416,6 +430,7 @@ const Factories = () => {
                         hiddenField.name = 'imageUrl2';
                         hiddenField.value = imageUrl;
                         form.appendChild(hiddenField);
+                        console.log('Campo hidden imageUrl2 criado:', imageUrl);
                       }
                     } catch (error) {
                       console.error('Erro no upload da imagem:', error);
