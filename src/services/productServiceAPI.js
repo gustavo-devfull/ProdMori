@@ -25,7 +25,7 @@ class ProductServiceAPI {
         )
       );
 
-      const response = await fetch(`${this.apiUrl}/firestore/create?collection=products`, {
+      const response = await fetch(`${this.apiUrl}/firestore/create/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ class ProductServiceAPI {
 
   async getFactoryById(factoryId) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/get?collection=factories&id=${factoryId}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/get/factories/${factoryId}`, {
         cache: 'no-store'
       });
 
