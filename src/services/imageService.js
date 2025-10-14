@@ -158,7 +158,7 @@ class ImageService {
 
   // Método para obter URL de imagem otimizada
   getImageUrl(imageUrl) {
-    console.log('ImageService.getImageUrl - Input:', imageUrl);
+    console.log('ImageService.getImageUrl - Input:', imageUrl, 'Type:', typeof imageUrl);
     
     // Validar entrada mais rigorosamente
     if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
@@ -170,6 +170,12 @@ class ImageService {
     const cleanUrl = imageUrl.trim();
     if (cleanUrl === '') {
       console.log('ImageService.getImageUrl - Returning null (empty after trim)');
+      return null;
+    }
+    
+    // Verificar se contém caracteres perigosos que podem quebrar o construtor URL
+    if (cleanUrl.includes('\n') || cleanUrl.includes('\r') || cleanUrl.includes('\t')) {
+      console.log('ImageService.getImageUrl - Returning null (contains dangerous characters)');
       return null;
     }
     

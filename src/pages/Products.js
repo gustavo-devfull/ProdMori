@@ -304,11 +304,7 @@ const Products = () => {
                     <Card className="h-100">
                       <div className="position-relative">
                         <CustomImage
-                          src={(() => {
-                            const imageUrl = imageService.getImageUrl(product.imageUrl);
-                            console.log(`Product ${product.name} - imageUrl:`, product.imageUrl, 'processed:', imageUrl);
-                            return imageUrl;
-                          })()}
+                          src={product.imageUrl}
                           alt={product.name}
                           style={{ 
                             height: '250px',
@@ -391,7 +387,7 @@ const Products = () => {
             {editingProduct && editingProduct.imageUrl && (
               <div className="mb-4 text-center">
                 <CustomImage
-                  src={imageService.getImageUrl(editingProduct.imageUrl)}
+                  src={editingProduct.imageUrl}
                   alt={editingProduct.name}
                   className="img-fluid rounded"
                   style={{ maxHeight: '200px', maxWidth: '100%' }}
