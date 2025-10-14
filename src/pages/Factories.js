@@ -180,9 +180,9 @@ const Factories = () => {
                   {/* Imagens da fábrica */}
                   {(factory.imageUrl1 || factory.imageUrl2) && (
                     <div className="mb-3">
-                      <div className="row g-2">
+                      <Row className="g-2">
                         {factory.imageUrl1 && (
-                          <div className="col-6">
+                          <Col xs={6}>
                             <CustomImage
                               src={factory.imageUrl1}
                               alt={`${factory.name} - Imagem 1`}
@@ -191,10 +191,10 @@ const Factories = () => {
                               showPreview={true}
                               onPreview={handlePreview}
                             />
-                          </div>
+                          </Col>
                         )}
                         {factory.imageUrl2 && (
-                          <div className="col-6">
+                          <Col xs={6}>
                             <CustomImage
                               src={factory.imageUrl2}
                               alt={`${factory.name} - Imagem 2`}
@@ -203,9 +203,9 @@ const Factories = () => {
                               showPreview={true}
                               onPreview={handlePreview}
                             />
-                          </div>
+                          </Col>
                         )}
-                      </div>
+                      </Row>
                     </div>
                   )}
 
