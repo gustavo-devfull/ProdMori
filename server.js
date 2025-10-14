@@ -603,15 +603,6 @@ app.get('/api/test-products', async (req, res) => {
   }
 });
 
-// Handler para rotas não encontradas (404)
-app.use((req, res) => {
-  res.status(404).json({
-    ok: false,
-    error: 'Rota não encontrada',
-    path: req.originalUrl,
-    method: req.method
-  });
-});
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
