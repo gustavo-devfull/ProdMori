@@ -182,6 +182,23 @@ const Factories = () => {
           </Button>
         </div>
       </div>
+      
+      <div className="d-flex justify-content-end mb-3">
+        <Button 
+          variant="outline-primary"
+          size="sm"
+          onClick={() => loadFactories(true)}
+          disabled={refreshing}
+          className="d-flex align-items-center"
+        >
+          {refreshing ? (
+            <Spinner animation="border" size="sm" className="me-1" />
+          ) : (
+            <i className="bi bi-arrow-clockwise me-1"></i>
+          )}
+          {t('Atualizar', '刷新')}
+        </Button>
+      </div>
 
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
