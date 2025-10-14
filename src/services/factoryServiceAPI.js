@@ -54,7 +54,7 @@ class FactoryServiceAPI {
 
   async updateFactory(id, factoryData) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/update?collection=factories&id=${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/update/factories/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ class FactoryServiceAPI {
 
   async deleteFactory(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/delete?collection=factories&id=${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/delete/factories/${id}`, {
         method: 'DELETE',
       });
 
@@ -94,7 +94,7 @@ class FactoryServiceAPI {
 
   async getFactoryById(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/get?collection=factories&id=${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/get/factories/${id}`, {
         cache: 'no-store'
       });
 
