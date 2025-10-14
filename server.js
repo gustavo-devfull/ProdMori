@@ -464,14 +464,20 @@ app.get('/api/firestore/products-with-factory', async (req, res) => {
 });
 
 // Rota para buscar produtos de uma fábrica específica
-app.get('/api/firestore/products-by-factory/:factoryId', async (req, res) => {
+app.get('/api/firestore/products-by-factory', async (req, res) => {
   try {
-    const { factoryId } = req.params;
+    const { factoryId } = req.query;
     const { limit = '20' } = req.query;
+    
+    if (!factoryId) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'factoryId é obrigatório' 
+      });
+    }
     
     const productsSnapshot = await db.collection('products')
       .where('factoryId', '==', factoryId)
-      .orderBy('createdAt', 'desc')
       .limit(Number(limit))
       .get();
     
