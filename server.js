@@ -156,11 +156,29 @@ app.post('/api/upload-image', (req, res) => {
         temp: false // Não é temporária, é a URL final
       };
       
-      console.log('Sending immediate response:', response);
-      res.json(response);
+      // Tentar fazer upload FTP com timeout
+      try {
+        console.log('Starting FTP upload with timeout...');
+        const uploadPromise = uploadToFTP(localPath, remotePath);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('FTP upload timeout')), 10000) // 10 segundos
+        );
+        
+        await Promise.race([uploadPromise, timeoutPromise]);
+        console.log('FTP upload completed successfully');
+        
+        // Remover arquivo local após upload bem-sucedido
+        if (fs.existsSync(localPath)) {
+          fs.unlinkSync(localPath);
+          console.log('Local file cleaned up after successful FTP upload');
+        }
+      } catch (error) {
+        console.error('FTP upload failed or timed out:', error);
+        // Continuar mesmo se o FTP falhar - a imagem já foi salva localmente
+      }
 
-      // Fazer upload FTP em background (não bloquear a resposta)
-      uploadToFTPInBackground(localPath, remotePath);
+      console.log('Sending response:', response);
+      res.json(response);
 
     } catch (error) {
       console.error('Erro no upload:', error);
