@@ -150,48 +150,18 @@ const Factories = () => {
             <Col xs={12} md={6} lg={4} key={factory.id}>
               <Card className="h-100 shadow-lg">
                 <Card.Body>
-                  {/* Segmento, Localização e Contatos */}
-                  <div className="d-flex flex-wrap gap-3 mb-3">
-                    <div className="d-flex align-items-center text-muted small">
-                      <i className="bi bi-tag-fill text-primary me-1"></i>
-                      <span>{factory.segment || t('Sem segmento', '无行业')}</span>
-                    </div>
-                    <div className="d-flex align-items-center text-muted small">
-                      <i className="bi bi-geo-alt me-1"></i>
-                      <span>{factory.location || t('Localização não informada', '位置未提供')}</span>
-                    </div>
+                  {/* Nome da fábrica e botão de editar */}
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="card-title mb-0">{factory.name}</h5>
+                    <Button 
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => handleEdit(factory)}
+                      title={t('Editar fábrica', '编辑工厂')}
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </Button>
                   </div>
-
-                  {/* Informações de contato */}
-                  <div className="mb-3">
-                    {factory.contactName && (
-                      <div className="d-flex align-items-center text-muted small mb-1">
-                        <i className="bi bi-person me-1"></i>
-                        <span>{factory.contactName}</span>
-                      </div>
-                    )}
-                    {factory.phone && (
-                      <div className="d-flex align-items-center text-muted small mb-1">
-                        <i className="bi bi-telephone me-1"></i>
-                        <span>{factory.phone}</span>
-                      </div>
-                    )}
-                    {factory.wechat && (
-                      <div className="d-flex align-items-center text-muted small mb-1">
-                        <i className="bi bi-chat-dots me-1"></i>
-                        <span>{factory.wechat}</span>
-                      </div>
-                    )}
-                    {factory.email && (
-                      <div className="d-flex align-items-center text-muted small mb-1">
-                        <i className="bi bi-envelope me-1"></i>
-                        <span>{factory.email}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Nome da fábrica/loja */}
-                  <h5 className="card-title mb-3">{factory.name}</h5>
 
                   {/* Imagens da fábrica */}
                   {(factory.imageUrl1 || factory.imageUrl2) && (
@@ -225,6 +195,7 @@ const Factories = () => {
                     </div>
                   )}
 
+                  {/* Lista de Produtos da fábrica */}
                   {factory.products && factory.products.length > 0 && (
                     <div className="mt-3">
                       <div 
@@ -252,7 +223,7 @@ const Factories = () => {
                                     {product.name}
                                   </span>
                                   <small className="text-muted">
-                                    {product.price ? `¥ ${product.price.toFixed(2)}` : 'Sob consulta'}
+                                    {product.price ? `¥ ${product.price.toFixed(2)}` : t('Sob consulta', '咨询价格')}
                                   </small>
                                 </div>
                               </ListGroup.Item>
@@ -263,20 +234,12 @@ const Factories = () => {
                     </div>
                   )}
 
-                  <div className="d-flex gap-2 mt-3">
-                    <Button 
-                      variant="primary"
-                      size="sm"
-                      className="flex-fill fw-semibold"
-                      onClick={() => handleEdit(factory)}
-                    >
-                      <i className="bi bi-pencil me-1"></i>
-                      {t('Editar', '编辑')}
-                    </Button>
+                  {/* Botão de excluir */}
+                  <div className="mt-3">
                     <Button 
                       variant="danger"
                       size="sm"
-                      className="flex-fill fw-semibold"
+                      className="w-100 fw-semibold"
                       onClick={() => {
                         if (window.confirm(t('Tem certeza que deseja excluir esta fábrica?', '确定要删除这个工厂吗？'))) {
                           handleDelete(factory.id);
