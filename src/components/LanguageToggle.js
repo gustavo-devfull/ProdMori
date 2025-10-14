@@ -3,7 +3,7 @@ import { Form } from 'react-bootstrap';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const LanguageToggle = () => {
-  const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
 
   // Determinar qual idioma será ativado quando o toggle for clicado
   const nextLanguage = language === 'pt' ? '中文' : 'PT';
