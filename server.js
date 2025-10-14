@@ -478,7 +478,6 @@ app.get('/api/firestore/products-by-factory', async (req, res) => {
     
     const productsSnapshot = await db.collection('products')
       .where('factoryId', '==', factoryId)
-      .limit(Number(limit))
       .get();
     
     const products = productsSnapshot.docs.map(doc => ({
@@ -486,13 +485,16 @@ app.get('/api/firestore/products-by-factory', async (req, res) => {
       ...doc.data()
     }));
     
+    // Aplicar limite após obter os dados para evitar problemas de índice
+    const limitedProducts = products.slice(0, Number(limit));
+    
     // Cache moderado
     res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
     
     res.status(200).json({ 
       ok: true, 
-      count: products.length, 
-      data: products,
+      count: limitedProducts.length, 
+      data: limitedProducts,
       factoryId 
     });
   } catch (error) {
