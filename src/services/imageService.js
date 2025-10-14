@@ -166,44 +166,47 @@ class ImageService {
     }
     
     try {
-      // Primeiro, tentar normalizar a URL se já for válida
-      const normalizedUrl = this.normalizeImageUrl(imageUrl);
-      if (normalizedUrl) {
-        console.log('ImageService.getImageUrl - Using normalized URL:', normalizedUrl);
-        return normalizedUrl;
+      // Se já é uma URL completa e válida, retornar diretamente
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        try {
+          new URL(imageUrl);
+          console.log('ImageService.getImageUrl - Using complete URL:', imageUrl);
+          return imageUrl;
+        } catch (urlError) {
+          console.error('URL completa inválida:', imageUrl, urlError);
+          return null;
+        }
+      }
+      
+      // Se já é uma URL relativa válida, retornar diretamente
+      if (imageUrl.startsWith('/api/image/') || imageUrl.startsWith('/api/image?')) {
+        console.log('ImageService.getImageUrl - Using relative URL:', imageUrl);
+        return imageUrl;
       }
       
       // Se é um nome de arquivo, construir URL
       let constructedUrl;
       if (this.isVercel) {
         // Para Vercel, usar URL relativa para a própria API
-        if (imageUrl.startsWith('/api/image/')) {
-          constructedUrl = imageUrl; // Usar URL relativa
-        } else {
-          constructedUrl = `/api/image/${imageUrl}`; // URL relativa
-        }
+        constructedUrl = `/api/image/${imageUrl}`;
       } else {
         // Para desenvolvimento local, usar URL completa
-        if (imageUrl.startsWith('/api/image/')) {
-          constructedUrl = `${this.apiUrl}${imageUrl}`;
-        } else {
-          constructedUrl = `${this.apiUrl}/image/${imageUrl}`;
-        }
+        constructedUrl = `${this.apiUrl}/image/${imageUrl}`;
       }
       
       // Validar se a URL construída é válida
       if (constructedUrl.startsWith('/')) {
         // URL relativa - válida para uso direto
-        console.log('ImageService.getImageUrl - Using relative URL:', constructedUrl);
+        console.log('ImageService.getImageUrl - Using constructed relative URL:', constructedUrl);
         return constructedUrl;
       } else if (constructedUrl.startsWith('http://') || constructedUrl.startsWith('https://')) {
         // URL absoluta - validar com construtor URL
         try {
           new URL(constructedUrl);
-          console.log('ImageService.getImageUrl - Using absolute URL:', constructedUrl);
+          console.log('ImageService.getImageUrl - Using constructed absolute URL:', constructedUrl);
           return constructedUrl;
         } catch (urlError) {
-          console.error('URL absoluta inválida:', constructedUrl, urlError);
+          console.error('URL absoluta construída inválida:', constructedUrl, urlError);
           return null;
         }
       } else {
