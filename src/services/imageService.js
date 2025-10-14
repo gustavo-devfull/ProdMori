@@ -16,6 +16,13 @@ class ImageService {
 
   async uploadFile(file) {
     try {
+      console.log('ImageService.uploadFile - Iniciando upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        apiUrl: this.apiUrl
+      });
+
       // Validar o arquivo
       if (!file) {
         throw new Error('Nenhum arquivo fornecido');
@@ -35,19 +42,52 @@ class ImageService {
       const formData = new FormData();
       formData.append('image', file);
 
+      console.log('ImageService.uploadFile - Enviando requisição para:', `${this.apiUrl}/upload-image`);
+
       // Fazer upload via API
       const response = await fetch(`${this.apiUrl}/upload-image`, {
         method: 'POST',
         body: formData,
       });
 
+      console.log('ImageService.uploadFile - Resposta recebida:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          const responseText = await response.text();
+          console.log('ImageService.uploadFile - Resposta de erro (texto):', responseText);
+          
+          if (responseText) {
+            errorData = JSON.parse(responseText);
+          } else {
+            errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+          }
+        } catch (parseError) {
+          console.error('ImageService.uploadFile - Erro ao fazer parse da resposta:', parseError);
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        
         throw new Error(errorData.error || 'Erro no upload');
       }
 
-      const result = await response.json();
-      console.log('Upload realizado com sucesso:', result.imageUrl);
+      const responseText = await response.text();
+      console.log('ImageService.uploadFile - Resposta de sucesso (texto):', responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('ImageService.uploadFile - Erro ao fazer parse da resposta de sucesso:', parseError);
+        throw new Error('Resposta inválida do servidor');
+      }
+
+      console.log('ImageService.uploadFile - Upload realizado com sucesso:', result.imageUrl);
       
       // Para Vercel, usar URL direta do FTP
       // Para local, usar proxy
@@ -60,7 +100,7 @@ class ImageService {
       }
 
     } catch (error) {
-      console.error('Erro ao fazer upload da imagem:', error);
+      console.error('ImageService.uploadFile - Erro ao fazer upload da imagem:', error);
       throw new Error(`Erro no upload: ${error.message}`);
     }
   }
