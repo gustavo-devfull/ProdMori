@@ -119,7 +119,6 @@ const Dashboard = () => {
                   value={selectedFactory}
                   onChange={(e) => {
                     setSelectedFactory(e.target.value);
-                    handleFactorySelect(e.target.value);
                   }}
                   size="sm"
                 >
@@ -130,6 +129,22 @@ const Dashboard = () => {
                     </option>
                   ))}
                 </Form.Select>
+                
+                {/* Botão para ver produtos da fábrica selecionada */}
+                {selectedFactory && (
+                  <Button 
+                    variant="success"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFactorySelect(selectedFactory);
+                    }}
+                    className="w-100 mt-2"
+                    size="sm"
+                  >
+                    <i className="bi bi-eye me-1"></i>
+                    {t('Ver Produtos desta Fábrica', '查看此工厂的产品')}
+                  </Button>
+                )}
               </div>
 
               
