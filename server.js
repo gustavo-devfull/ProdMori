@@ -44,17 +44,25 @@ app.use(express.json());
 // Configuração do multer para upload de arquivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
+    const uploadDir = '/tmp/uploads/';
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+        console.log('Created upload directory:', uploadDir);
+      }
+      cb(null, uploadDir);
+    } catch (error) {
+      console.error('Error creating upload directory:', error);
+      cb(error, null);
     }
-    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 8);
     const extension = path.extname(file.originalname);
-    cb(null, `product_${timestamp}_${randomString}${extension}`);
+    const filename = `product_${timestamp}_${randomString}${extension}`;
+    console.log('Generated filename:', filename);
+    cb(null, filename);
   }
 });
 
@@ -109,62 +117,73 @@ async function uploadToFTP(localPath, remotePath) {
 }
 
 // Rota para upload de imagem
-app.post('/api/upload-image', upload.single('image'), async (req, res) => {
-  try {
-    console.log('Upload request received:', req.file ? 'File present' : 'No file');
-    
-    if (!req.file) {
-      console.log('No file uploaded');
-      return res.status(400).json({ error: 'Nenhum arquivo enviado' });
-    }
-
-    console.log('File details:', {
-      originalname: req.file.originalname,
-      filename: req.file.filename,
-      path: req.file.path,
-      size: req.file.size
-    });
-
-    const localPath = req.file.path;
-    const remotePath = req.file.filename;
-
-    // Retornar resposta imediata com URL temporária
-    const tempImageUrl = `/api/image?filename=${remotePath}`;
-    
-    const response = { 
-      success: true, 
-      imageUrl: tempImageUrl,
-      message: 'Imagem enviada com sucesso!',
-      temp: true // Indicar que é temporária
-    };
-    
-    console.log('Sending immediate response:', response);
-    res.json(response);
-
-    // Fazer upload FTP em background (não bloquear a resposta)
-    uploadToFTPInBackground(localPath, remotePath);
-
-  } catch (error) {
-    console.error('Erro no upload:', error);
-    
-    // Limpar arquivo local em caso de erro
-    if (req.file && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-        console.log('Local file cleaned up after error');
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+app.post('/api/upload-image', (req, res) => {
+  upload.single('image')(req, res, async (err) => {
+    try {
+      console.log('Upload request received:', req.file ? 'File present' : 'No file');
+      console.log('Multer error:', err);
+      
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({ 
+          error: 'Erro no processamento do arquivo',
+          details: err.message 
+        });
       }
-    }
+      
+      if (!req.file) {
+        console.log('No file uploaded');
+        return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+      }
 
-    const errorResponse = { 
-      error: 'Erro no upload da imagem',
-      details: error.message 
-    };
-    
-    console.log('Sending error response:', errorResponse);
-    res.status(500).json(errorResponse);
-  }
+      console.log('File details:', {
+        originalname: req.file.originalname,
+        filename: req.file.filename,
+        path: req.file.path,
+        size: req.file.size
+      });
+
+      const localPath = req.file.path;
+      const remotePath = req.file.filename;
+
+      // Retornar resposta imediata com URL temporária
+      const tempImageUrl = `/api/image?filename=${remotePath}`;
+      
+      const response = { 
+        success: true, 
+        imageUrl: tempImageUrl,
+        message: 'Imagem enviada com sucesso!',
+        temp: true // Indicar que é temporária
+      };
+      
+      console.log('Sending immediate response:', response);
+      res.json(response);
+
+      // Fazer upload FTP em background (não bloquear a resposta)
+      uploadToFTPInBackground(localPath, remotePath);
+
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      
+      // Limpar arquivo local em caso de erro
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+          console.log('Local file cleaned up after error');
+        } catch (cleanupError) {
+          console.error('Error cleaning up file:', cleanupError);
+        }
+      }
+
+      const errorResponse = { 
+        error: 'Erro no upload da imagem',
+        details: error.message 
+      };
+      
+      console.log('Sending error response:', errorResponse);
+      res.status(500).json(errorResponse);
+    }
+  });
 });
 
 // Função para upload FTP em background
