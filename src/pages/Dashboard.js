@@ -6,7 +6,8 @@ import {
   Spinner,
   Alert,
   Button,
-  ListGroup
+  ListGroup,
+  Form
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import factoryServiceAPI from '../services/factoryServiceAPI';
@@ -25,6 +26,8 @@ const Dashboard = () => {
     factories: [],
     products: []
   });
+  const [allFactories, setAllFactories] = useState([]);
+  const [selectedFactory, setSelectedFactory] = useState('');
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -68,6 +71,8 @@ const Dashboard = () => {
           factories: recentFactories,
           products: recentProducts
         });
+        
+        setAllFactories(validFactories);
       } catch (err) {
         setError(t('Erro ao carregar estatísticas', '加载统计信息时出错'));
         console.error(err);
@@ -89,6 +94,13 @@ const Dashboard = () => {
 
     loadStats();
   }, [t]);
+
+  const handleFactorySelect = (factoryId) => {
+    if (factoryId) {
+      // Navegar para a página de produtos com a fábrica selecionada
+      navigate(`/products?factory=${factoryId}`);
+    }
+  };
 
   if (loading) {
     return (
@@ -129,6 +141,29 @@ const Dashboard = () => {
                 </div>
               </div>
               
+              {/* Caixa de seleção de fábricas */}
+              <div className="mb-3">
+                <div className="d-flex align-items-center mb-2 text-muted small">
+                  <i className="bi bi-list-ul me-1"></i>
+                  {t('Selecionar Fábrica:', '选择工厂:')}
+                </div>
+                <Form.Select
+                  value={selectedFactory}
+                  onChange={(e) => {
+                    setSelectedFactory(e.target.value);
+                    handleFactorySelect(e.target.value);
+                  }}
+                  size="sm"
+                >
+                  <option value="">{t('Escolha uma fábrica...', '选择工厂...')}</option>
+                  {allFactories.map((factory) => (
+                    <option key={factory.id} value={factory.id}>
+                      {factory.name} - {factory.segment || t('Sem segmento', '无行业')}
+                    </option>
+                  ))}
+                </Form.Select>
+              </div>
+
               {/* Lista dos 5 últimos cadastrados */}
               <div className="mb-3">
                 <div className="d-flex align-items-center mb-2 text-muted small">
