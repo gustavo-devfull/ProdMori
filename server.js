@@ -801,7 +801,13 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-  console.log(`Teste: http://localhost:${PORT}/api/test`);
-});
+// Para Vercel, exportar o app como módulo
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  // Para desenvolvimento local, usar app.listen
+  app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Teste: http://localhost:${PORT}/api/test`);
+  });
+}
