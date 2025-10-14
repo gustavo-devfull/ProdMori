@@ -136,38 +136,6 @@ const Products = () => {
     setPreviewVisible(true);
   };
 
-  const getFactoryColor = (factoryName) => {
-    if (!factoryName) return '#1890ff';
-    
-    // Paleta de cores mais ampla e diversificada
-    const colors = [
-      '#1890ff', '#52c41a', '#fa541c', '#722ed1', '#eb2f96',
-      '#13c2c2', '#faad14', '#f5222d', '#2f54eb', '#52c41a',
-      '#fa8c16', '#a0d911', '#faad14', '#13c2c2', '#722ed1', '#eb2f96',
-      '#096dd9', '#389e0d', '#d4380d', '#531dab', '#c41d7f',
-      '#08979c', '#d48806', '#cf1322', '#1d39c4', '#389e0d',
-      '#d46b08', '#7cb305', '#d4b106', '#08979c', '#531dab', '#c41d7f',
-      '#0050b3', '#237804', '#a8071a', '#391085', '#9e1068',
-      '#006d75', '#ad6800', '#a8071a', '#10239e', '#237804',
-      '#ad4e00', '#5b8c00', '#ad8b00', '#006d75', '#391085', '#9e1068'
-    ];
-    
-    // Gerar hash mais robusto para melhor distribuição
-    let hash = 0;
-    for (let i = 0; i < factoryName.length; i++) {
-      const char = factoryName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Converte para 32-bit integer
-    }
-    
-    // Usar valor absoluto e módulo para garantir índice válido
-    const colorIndex = Math.abs(hash) % colors.length;
-    const selectedColor = colors[colorIndex];
-    
-    console.log(`Factory: ${factoryName} -> Color: ${selectedColor} (index: ${colorIndex})`);
-    return selectedColor;
-  };
-
   const handleFactoryFilter = (factoryId) => {
     setSelectedFactory(factoryId);
   };
