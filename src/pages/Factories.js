@@ -187,15 +187,10 @@ const Factories = () => {
         <Button 
           variant="outline-primary"
           size="sm"
-          onClick={() => loadFactories(true)}
-          disabled={refreshing}
+          onClick={() => window.location.reload()}
           className="d-flex align-items-center"
         >
-          {refreshing ? (
-            <Spinner animation="border" size="sm" className="me-1" />
-          ) : (
-            <i className="bi bi-arrow-clockwise me-1"></i>
-          )}
+          <i className="bi bi-arrow-clockwise me-1"></i>
           {t('Atualizar', '刷新')}
         </Button>
       </div>

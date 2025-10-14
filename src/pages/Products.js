@@ -22,7 +22,6 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [error, setError] = useState(null);
@@ -34,10 +33,9 @@ const Products = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const loadData = useCallback(async (showRefresh = false) => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      if (showRefresh) setRefreshing(true);
       
       const [productsData, factoriesData] = await Promise.all([
         productServiceAPI.getAllProducts(),
@@ -52,7 +50,6 @@ const Products = () => {
       console.error(err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [t]);
 
@@ -234,15 +231,10 @@ const Products = () => {
         <Button 
           variant="outline-primary"
           size="sm"
-          onClick={() => loadData(true)}
-          disabled={refreshing}
+          onClick={() => window.location.reload()}
           className="d-flex align-items-center"
         >
-          {refreshing ? (
-            <Spinner animation="border" size="sm" className="me-1" />
-          ) : (
-            <i className="bi bi-arrow-clockwise me-1"></i>
-          )}
+          <i className="bi bi-arrow-clockwise me-1"></i>
           {t('Atualizar', '刷新')}
         </Button>
       </div>
