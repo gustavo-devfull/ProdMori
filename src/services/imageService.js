@@ -192,9 +192,16 @@ class ImageService {
       }
       
       // Validar se a URL construída é válida
-      new URL(constructedUrl);
-      console.log('ImageService.getImageUrl - Using constructed URL:', constructedUrl);
-      return constructedUrl;
+      if (constructedUrl.startsWith('/')) {
+        // URL relativa - válida para uso direto
+        console.log('ImageService.getImageUrl - Using relative URL:', constructedUrl);
+        return constructedUrl;
+      } else {
+        // URL absoluta - validar com construtor URL
+        new URL(constructedUrl);
+        console.log('ImageService.getImageUrl - Using absolute URL:', constructedUrl);
+        return constructedUrl;
+      }
     } catch (error) {
       console.error('Erro ao construir URL da imagem:', error, 'imageUrl:', imageUrl);
       return null;
