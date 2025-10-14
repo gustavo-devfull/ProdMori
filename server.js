@@ -141,7 +141,93 @@ function isCacheValid(timestamp) {
   return Date.now() - timestamp < CACHE_DURATION;
 }
 
-// Rota para servir imagens via proxy com cache
+// Rota para servir imagens via proxy com cache (query parameter)
+app.get('/api/image', async (req, res) => {
+  try {
+    const filename = req.query.filename;
+    
+    if (!filename) {
+      return res.status(400).json({ error: 'Parâmetro filename é obrigatório' });
+    }
+    
+    // Verificar cache primeiro
+    const cached = imageCache.get(filename);
+    if (cached && isCacheValid(cached.timestamp)) {
+      console.log(`Serving cached image: ${filename}`);
+      
+      // Configurar headers para cache
+      res.setHeader('Content-Type', cached.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutos
+      res.setHeader('Content-Length', cached.buffer.length);
+      
+      return res.status(200).send(cached.buffer);
+    }
+
+    console.log(`Fetching image from FTP: ${filename}`);
+    const client = new ftp.Client();
+    
+    await client.access(ftpConfig);
+    
+    // Verificar se o arquivo existe no FTP
+    const files = await client.list();
+    const fileExists = files.some(file => file.name === filename);
+    
+    if (!fileExists) {
+      await client.close();
+      return res.status(404).json({ error: 'Imagem não encontrada no FTP' });
+    }
+    
+    // Baixar imagem do FTP
+    const tempPath = `temp/${filename}`;
+    await client.downloadTo(tempPath, filename);
+    await client.close();
+    
+    // Ler o arquivo para buffer
+    const imageBuffer = fs.readFileSync(tempPath);
+    
+    // Limpar arquivo temporário
+    fs.unlinkSync(tempPath);
+    
+    // Determinar tipo de conteúdo
+    const extension = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml'
+    };
+    
+    const contentType = mimeTypes[extension] || 'application/octet-stream';
+    
+    // Armazenar no cache
+    imageCache.set(filename, {
+      buffer: imageBuffer,
+      contentType: contentType,
+      timestamp: Date.now()
+    });
+    
+    // Limpar cache antigo (manter apenas os últimos 100 itens)
+    if (imageCache.size > 100) {
+      const oldestKey = imageCache.keys().next().value;
+      imageCache.delete(oldestKey);
+    }
+    
+    // Configurar headers
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutos
+    res.setHeader('Content-Length', imageBuffer.length);
+    
+    res.status(200).send(imageBuffer);
+    
+  } catch (error) {
+    console.error('Erro no proxy de imagem:', error);
+    res.status(500).json({ error: 'Erro ao carregar imagem do FTP' });
+  }
+});
+
+// Rota para servir imagens via proxy com cache (path parameter)
 app.get('/api/image/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
