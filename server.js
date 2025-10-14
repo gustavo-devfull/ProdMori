@@ -146,14 +146,14 @@ app.post('/api/upload-image', (req, res) => {
       const localPath = req.file.path;
       const remotePath = req.file.filename;
 
-      // Retornar resposta imediata com URL temporária
-      const tempImageUrl = `/api/image?filename=${remotePath}`;
+      // Retornar resposta imediata com URL direta do FTP
+      const ftpImageUrl = `https://ideolog.ia.br/${remotePath}`;
       
       const response = { 
         success: true, 
-        imageUrl: tempImageUrl,
+        imageUrl: ftpImageUrl,
         message: 'Imagem enviada com sucesso!',
-        temp: true // Indicar que é temporária
+        temp: false // Não é temporária, é a URL final
       };
       
       console.log('Sending immediate response:', response);
