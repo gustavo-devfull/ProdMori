@@ -144,6 +144,12 @@ const Factories = () => {
         </div>
       </div>
 
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
       {factories.length === 0 ? (
         <Card>
           <Card.Body className="text-center py-5">
