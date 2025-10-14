@@ -790,8 +790,8 @@ app.get('/api/test-products', async (req, res) => {
   }
 });
 
-// Servir arquivos estáticos do React (para produção no Vercel)
-if (process.env.NODE_ENV === 'production') {
+// Servir arquivos estáticos do React (apenas para desenvolvimento local)
+if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
   // Servir arquivos estáticos da pasta build
   app.use(express.static(path.join(__dirname, 'build')));
   
