@@ -84,51 +84,90 @@ const ftpConfig = {
 async function uploadToFTP(localPath, remotePath) {
   const client = new ftp.Client();
   try {
+    console.log('Connecting to FTP server...');
     await client.access(ftpConfig);
+    console.log('FTP connection successful');
+    
+    console.log(`Uploading file: ${localPath} -> ${remotePath}`);
     await client.uploadFrom(localPath, remotePath);
-    return `https://ideolog.ia.br/${remotePath}`;
+    console.log('FTP upload completed');
+    
+    const imageUrl = `https://ideolog.ia.br/${remotePath}`;
+    console.log('Generated image URL:', imageUrl);
+    return imageUrl;
   } catch (error) {
     console.error('Erro no upload FTP:', error);
     throw error;
   } finally {
-    client.close();
+    try {
+      client.close();
+      console.log('FTP connection closed');
+    } catch (closeError) {
+      console.error('Error closing FTP connection:', closeError);
+    }
   }
 }
 
 // Rota para upload de imagem
 app.post('/api/upload-image', upload.single('image'), async (req, res) => {
   try {
+    console.log('Upload request received:', req.file ? 'File present' : 'No file');
+    
     if (!req.file) {
+      console.log('No file uploaded');
       return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     }
+
+    console.log('File details:', {
+      originalname: req.file.originalname,
+      filename: req.file.filename,
+      path: req.file.path,
+      size: req.file.size
+    });
 
     const localPath = req.file.path;
     const remotePath = req.file.filename;
 
+    console.log('Starting FTP upload...');
     // Upload para FTP
     const imageUrl = await uploadToFTP(localPath, remotePath);
+    console.log('FTP upload successful:', imageUrl);
 
     // Remover arquivo local após upload
-    fs.unlinkSync(localPath);
+    if (fs.existsSync(localPath)) {
+      fs.unlinkSync(localPath);
+      console.log('Local file cleaned up');
+    }
 
-    res.json({ 
+    const response = { 
       success: true, 
       imageUrl: imageUrl,
       message: 'Imagem enviada com sucesso!' 
-    });
+    };
+    
+    console.log('Sending response:', response);
+    res.json(response);
 
   } catch (error) {
     console.error('Erro no upload:', error);
     
     // Limpar arquivo local em caso de erro
     if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log('Local file cleaned up after error');
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
     }
 
-    res.status(500).json({ 
+    const errorResponse = { 
       error: 'Erro no upload da imagem',
       details: error.message 
-    });
+    };
+    
+    console.log('Sending error response:', errorResponse);
+    res.status(500).json(errorResponse);
   }
 });
 
