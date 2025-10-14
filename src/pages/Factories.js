@@ -412,13 +412,17 @@ const Factories = () => {
                 accept="image/*"
                 name="image2"
                 onChange={async (e) => {
+                  console.log('Evento onChange da imagem secundária disparado');
                   const file = e.target.files[0];
+                  console.log('Arquivo selecionado para imagem secundária:', file);
                   if (file) {
                     try {
+                      console.log('Iniciando upload da imagem secundária...');
                       const imageUrl = await imageService.uploadFile(file);
                       console.log('Imagem secundária enviada:', imageUrl);
                       // Armazenar URL da imagem em um campo hidden
                       const hiddenInput = document.querySelector('input[name="imageUrl2"]');
+                      console.log('Campo hidden imageUrl2 encontrado:', hiddenInput);
                       if (hiddenInput) {
                         hiddenInput.value = imageUrl;
                         console.log('Campo hidden imageUrl2 atualizado:', hiddenInput.value);
@@ -433,9 +437,11 @@ const Factories = () => {
                         console.log('Campo hidden imageUrl2 criado:', imageUrl);
                       }
                     } catch (error) {
-                      console.error('Erro no upload da imagem:', error);
+                      console.error('Erro no upload da imagem secundária:', error);
                       setError(t('Erro no upload da imagem', '图片上传时出错'));
                     }
+                  } else {
+                    console.log('Nenhum arquivo selecionado para imagem secundária');
                   }
                 }}
               />
