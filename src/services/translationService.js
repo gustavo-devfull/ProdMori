@@ -95,4 +95,5 @@ class TranslationService {
   }
 }
 
-export default new TranslationService();
+const translationService = new TranslationService();
+export default translationService;
