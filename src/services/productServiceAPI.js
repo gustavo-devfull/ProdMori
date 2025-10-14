@@ -77,7 +77,7 @@ class ProductServiceAPI {
         )
       );
 
-      const response = await fetch(`${this.apiUrl}/firestore/update?collection=products&id=${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/update/products/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ class ProductServiceAPI {
 
   async deleteProduct(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/delete?collection=products&id=${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/delete/products/${id}`, {
         method: 'DELETE',
       });
 
@@ -117,7 +117,7 @@ class ProductServiceAPI {
 
   async getProductById(id) {
     try {
-      const response = await fetch(`${this.apiUrl}/firestore/get?collection=products&id=${id}`, {
+      const response = await fetch(`${this.apiUrl}/firestore/get/products/${id}`, {
         cache: 'no-store'
       });
 
