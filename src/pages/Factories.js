@@ -126,7 +126,7 @@ const Factories = () => {
         </Alert>
       )}
 
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-start align-items-center mb-3">
         <Button 
           variant="primary"
           onClick={() => setModalVisible(true)}
@@ -134,10 +134,6 @@ const Factories = () => {
           <i className="bi bi-plus-circle me-2"></i>
           Nova Fábrica/Loja | 新建工厂/商店
         </Button>
-        
-        <div className="text-muted small">
-          Choose the language
-        </div>
       </div>
 
       {factories.length === 0 ? (

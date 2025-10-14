@@ -6,8 +6,9 @@ const LanguageToggle = () => {
   const { language, toggleLanguage } = useLanguage();
 
   return (
-    <div className="d-flex justify-content-center py-2 bg-light border-bottom">
-      <div className="language-toggle-container">
+    <div className="d-flex justify-content-center align-items-center py-2 bg-light border-bottom">
+      <div className="language-toggle-container d-flex align-items-center gap-3">
+        <span className="text-muted small">Choose the language</span>
         <Form.Check
           type="switch"
           id="language-switch"
