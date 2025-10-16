@@ -388,111 +388,9 @@ const Factories = () => {
     setPreviewVisible(true);
   };
 
-  // Função de debug para criar tags de teste
-  const createTestTags = () => {
-    console.log('Criando tags de teste...');
-    const testTags = {
-      regiao: [
-        { id: '1', name: 'Teste Região', division: 'regiao', createdAt: new Date(), updatedAt: new Date() }
-      ],
-      material: [
-        { id: '2', name: 'Teste Material', division: 'material', createdAt: new Date(), updatedAt: new Date() }
-      ],
-      outros: [
-        { id: '3', name: 'Teste Outros', division: 'outros', createdAt: new Date(), updatedAt: new Date() }
-      ]
-    };
-    
-    // Salvar tags para a primeira fábrica
-    if (factories.length > 0) {
-      const firstFactory = factories[0];
-      localStorage.setItem(`tags_${firstFactory.id}`, JSON.stringify(testTags));
-      console.log(`Tags de teste salvas para ${firstFactory.name} (${firstFactory.id})`);
-      
-      // Recarregar fábricas para ver o resultado
-      loadFactories();
-    } else {
-      console.log('Nenhuma fábrica encontrada para testar');
-    }
-  };
 
-  // Função de debug para testar upload de imagens
-  const testImageUpload = async () => {
-    try {
-      console.log('Testando upload de imagem...');
-      const result = await imageService.testUpload();
-      console.log('Upload de teste bem-sucedido:', result);
-      alert(`Upload de teste bem-sucedido! URL: ${result}`);
-    } catch (error) {
-      console.error('Erro no upload de teste:', error);
-      alert(`Erro no upload de teste: ${error.message}`);
-    }
-  };
 
-  // Função de debug para testar URLs de imagens
-  const testImageUrls = async () => {
-    try {
-      console.log('Testando URLs de imagens...');
-      
-      // Coletar todas as URLs de imagens das fábricas
-      const imageUrls = [];
-      factories.forEach(factory => {
-        if (factory.imageUrl1) imageUrls.push(factory.imageUrl1);
-        if (factory.imageUrl2) imageUrls.push(factory.imageUrl2);
-      });
-      
-      if (imageUrls.length === 0) {
-        alert('Nenhuma imagem encontrada para testar');
-        return;
-      }
-      
-      console.log('URLs encontradas:', imageUrls);
-      const results = await imageService.testImageUrls(imageUrls);
-      
-      // Mostrar resultados
-      const okCount = results.filter(r => r.status === 'ok').length;
-      const errorCount = results.filter(r => r.status === 'error').length;
-      const invalidCount = results.filter(r => r.status === 'invalid').length;
-      
-      let message = `Teste de URLs concluído:\n`;
-      message += `✅ OK: ${okCount}\n`;
-      message += `❌ Erro: ${errorCount}\n`;
-      message += `⚠️ Inválidas: ${invalidCount}\n\n`;
-      
-      // Mostrar detalhes dos erros
-      const errors = results.filter(r => r.status !== 'ok');
-      if (errors.length > 0) {
-        message += 'Detalhes dos erros:\n';
-        errors.forEach(error => {
-          message += `• ${error.url}: ${error.error}\n`;
-        });
-      }
-      
-      alert(message);
-      console.log('Resultados do teste de URLs:', results);
-      
-    } catch (error) {
-      console.error('Erro no teste de URLs:', error);
-      alert(`Erro no teste de URLs: ${error.message}`);
-    }
-  };
 
-  // Função de debug para testar conexão com Firebase
-  const testFirebaseConnection = async () => {
-    try {
-      console.log('Testando conexão com Firebase...');
-      const result = await tagService.testConnection();
-      
-      if (result.success) {
-        alert(`✅ Conexão com Firebase OK!\n\n${result.message}\n\nTags encontradas: ${result.data?.count || 0}`);
-      } else {
-        alert(`❌ Erro na conexão com Firebase\n\nErro: ${result.error}\n\nDetalhes: ${result.details}`);
-      }
-    } catch (error) {
-      console.error('Erro no teste de Firebase:', error);
-      alert(`❌ Erro no teste de Firebase: ${error.message}`);
-    }
-  };
 
   if (loading && !refreshing) {
     return (
@@ -508,42 +406,6 @@ const Factories = () => {
         <div className="d-flex justify-content-between align-items-center">
           <h2 className="mb-0 fs-5 fw-semibold">{t('Fábricas/Lojas', '工厂/商店')}</h2>
           <div className="d-flex gap-2">
-            <Button 
-              variant="outline-warning"
-              size="sm"
-              onClick={createTestTags}
-              className="d-flex align-items-center"
-            >
-              <i className="bi bi-bug me-1"></i>
-              Debug Tags
-            </Button>
-            <Button 
-              variant="outline-info"
-              size="sm"
-              onClick={testImageUpload}
-              className="d-flex align-items-center"
-            >
-              <i className="bi bi-image me-1"></i>
-              Test Upload
-            </Button>
-            <Button 
-              variant="outline-success"
-              size="sm"
-              onClick={testFirebaseConnection}
-              className="d-flex align-items-center"
-            >
-              <i className="bi bi-database me-1"></i>
-              Test Firebase
-            </Button>
-            <Button 
-              variant="outline-warning"
-              size="sm"
-              onClick={testImageUrls}
-              className="d-flex align-items-center"
-            >
-              <i className="bi bi-link-45deg me-1"></i>
-              Test URLs
-            </Button>
             <Button 
               variant="light"
               size="sm"
