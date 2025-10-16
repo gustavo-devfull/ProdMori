@@ -16,6 +16,7 @@ import productServiceAPI from '../services/productServiceAPI';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
 import AudioRecorder from '../components/AudioRecorder';
+import AudioPlayer from '../components/AudioPlayer';
 import audioUploadService from '../services/audioUploadService';
 import CustomImage from '../components/CustomImage';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -60,7 +61,7 @@ const FactoryDetail = () => {
     material: [],
     outros: []
   });
-  const [audioUrl, setAudioUrl] = useState('');
+  const [audioUrls, setAudioUrls] = useState([]);
   const [uploadingAudio, setUploadingAudio] = useState(false);
 
   const loadFactoryData = useCallback(async () => {
@@ -120,7 +121,7 @@ const FactoryDetail = () => {
       const finalValues = {
         ...values,
         imageUrl: imageUrl || values.imageUrl,
-        audioUrl: audioUrl, // Incluir URL do áudio
+        audioUrls: audioUrls, // Incluir lista de URLs de áudio
         factoryId: factoryId,
         unit: 'PC' // Valor padrão conforme solicitado
       };
@@ -149,7 +150,7 @@ const FactoryDetail = () => {
     setError(null);
     setImageUrl('');
     setUploadingImage(false);
-    setAudioUrl('');
+    setAudioUrls([]);
     setUploadingAudio(false);
   };
 
@@ -160,15 +161,14 @@ const FactoryDetail = () => {
 
   // Função para lidar com áudio gravado
   const handleAudioReady = async (blob, url) => {
-    setAudioUrl(url);
-    
     if (blob && editingProduct) {
       try {
         setUploadingAudio(true);
         const result = await audioUploadService.uploadAudio(blob, editingProduct.id);
         
         if (result.success) {
-          setAudioUrl(result.audioUrl);
+          // Adicionar novo áudio à lista
+          setAudioUrls(prev => [...prev, result.audioUrl]);
           console.log('Áudio enviado com sucesso:', result);
         }
       } catch (error) {
@@ -180,11 +180,19 @@ const FactoryDetail = () => {
     }
   };
 
+  // Função para deletar áudio da lista
+  const handleDeleteAudio = (index) => {
+    setAudioUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
 
   const handleEditProduct = (product) => {
     setEditingProduct(product);
     setModalVisible(true);
     setImageUrl(product.imageUrl || '');
+    // Carregar áudios existentes (pode ser array ou string única)
+    const existingAudios = product.audioUrls || (product.audioUrl ? [product.audioUrl] : []);
+    setAudioUrls(Array.isArray(existingAudios) ? existingAudios : []);
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -716,9 +724,14 @@ const FactoryDetail = () => {
             </Form.Group>
 
             {/* Áudio (substitui REMARK) */}
+            <AudioPlayer 
+              audioUrls={audioUrls}
+              onDelete={handleDeleteAudio}
+              disabled={uploadingAudio}
+            />
+            
             <AudioRecorder 
               onAudioReady={handleAudioReady}
-              initialAudioUrl={editingProduct?.audioUrl || ''}
               disabled={uploadingAudio}
             />
             
