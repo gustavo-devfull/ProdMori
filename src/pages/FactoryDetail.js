@@ -872,6 +872,17 @@ const FactoryDetail = () => {
             <Button variant="secondary" onClick={handleModalClose}>
               {t('Cancelar', '取消')}
             </Button>
+            {editingProduct && (
+              <Button 
+                variant="danger" 
+                onClick={() => handleDeleteProduct(editingProduct.id)}
+                disabled={submitting}
+                className="me-auto"
+              >
+                <i className="bi bi-trash me-1"></i>
+                {t('Excluir Produto', '删除产品')}
+              </Button>
+            )}
             <Button 
               variant="success" 
               type="submit" 

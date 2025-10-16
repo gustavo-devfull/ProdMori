@@ -1313,7 +1313,8 @@ app.post('/api/firestore/create/tags', async (req, res) => {
 // Rota para buscar tags
 app.get('/api/firestore/get/tags', async (req, res) => {
   try {
-    console.log('Getting tags from Firebase');
+    console.log('=== GET TAGS REQUEST ===');
+    console.log('Query params:', req.query);
     console.log('Firebase environment variables:', {
       FB_PROJECT_ID: process.env.FB_PROJECT_ID ? 'SET' : 'NOT SET',
       FB_CLIENT_EMAIL: process.env.FB_CLIENT_EMAIL ? 'SET' : 'NOT SET',
@@ -1329,29 +1330,37 @@ app.get('/api/firestore/get/tags', async (req, res) => {
     }
 
     const { factoryId, division } = req.query;
+    console.log('Filtering by factoryId:', factoryId, 'division:', division);
 
     let query = db.collection('tags');
 
     // Filtrar por fábrica se especificado
     if (factoryId) {
+      console.log('Adding factoryId filter:', factoryId);
       query = query.where('factoryId', '==', factoryId);
     }
 
     // Filtrar por divisão se especificado
     if (division) {
+      console.log('Adding division filter:', division);
       query = query.where('division', '==', division);
     }
 
     // Ordenar por data de criação
     query = query.orderBy('createdAt', 'desc');
 
+    console.log('Executing query...');
     const snapshot = await query.get();
+    console.log('Query executed successfully, snapshot size:', snapshot.size);
+    
     const tags = [];
 
     snapshot.forEach(doc => {
+      const data = doc.data();
+      console.log('Tag data:', { id: doc.id, ...data });
       tags.push({
         id: doc.id,
-        ...doc.data()
+        ...data
       });
     });
 
@@ -1364,10 +1373,17 @@ app.get('/api/firestore/get/tags', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting tags:', error);
+    console.error('=== ERROR GETTING TAGS ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error code:', error.code);
+    console.error('Error details:', error.details);
+    
     res.status(500).json({ 
       error: 'Erro interno do servidor',
-      details: error.message 
+      details: error.message,
+      code: error.code || 'UNKNOWN'
     });
   }
 });
