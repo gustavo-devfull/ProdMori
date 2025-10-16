@@ -65,7 +65,7 @@ const Tags = () => {
       console.error('Erro ao carregar tags globais:', error);
       // Fallback para localStorage se Firebase falhar
       try {
-        const fallbackTags = tagService.getAllTags();
+        const fallbackTags = await tagService.getAllTags();
         setGlobalTags(fallbackTags);
       } catch (fallbackError) {
         console.error('Erro no fallback:', fallbackError);
@@ -197,38 +197,57 @@ const Tags = () => {
   };
 
   const handleDelete = async (tagId, division) => {
+    console.log('=== HANDLE DELETE TAG ===');
+    console.log('Tag ID:', tagId);
+    console.log('Division:', division);
+    console.log('Selected Factory:', selectedFactory);
+    
     if (!window.confirm(t('Tem certeza que deseja excluir esta tag?', '确定要删除这个标签吗？'))) {
+      console.log('User cancelled deletion');
       return;
     }
 
     try {
-      console.log('Deletando tag:', tagId, 'Division:', division, 'Factory:', selectedFactory);
+      console.log('Starting tag deletion...');
 
       if (selectedFactory) {
         // Modo fábrica selecionada - deletar tag da fábrica
+        console.log('Deleting tag from factory:', selectedFactory);
         const result = await tagService.removeTagFromFactory(selectedFactory, tagId, division);
+        console.log('Remove from factory result:', result);
         
         if (!result.success) {
+          console.error('Failed to remove tag from factory:', result.message);
           setError(result.message);
           return;
         }
         
         // Recarregar tags da fábrica
+        console.log('Reloading factory tags...');
         await loadTags();
+        console.log('Factory tags reloaded');
       } else {
         // Modo global - deletar tag global diretamente
+        console.log('Deleting global tag');
         const result = await tagService.removeTag(tagId, division);
+        console.log('Remove global tag result:', result);
+        
         if (!result.success) {
+          console.error('Failed to remove global tag:', result.message);
           setError(result.message);
           return;
         }
       }
       
       // Recarregar tags globais
+      console.log('Reloading global tags...');
       await loadGlobalTags();
+      console.log('Global tags reloaded');
+      
+      console.log('Tag deletion completed successfully');
     } catch (err) {
+      console.error('Error in handleDelete:', err);
       setError(t('Erro ao excluir tag', '删除标签时出错'));
-      console.error('Erro ao excluir tag:', err);
     }
   };
 
