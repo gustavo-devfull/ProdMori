@@ -26,6 +26,7 @@ const Products = () => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedFactory, setSelectedFactory] = useState(null);
   const [selectedSegment, setSelectedSegment] = useState(null);
+  const [selectedTag, setSelectedTag] = useState(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -170,7 +171,10 @@ const Products = () => {
     const matchesFactory = !selectedFactory || product.factory?.id === selectedFactory;
     const matchesSegment = !selectedSegment || product.segment === selectedSegment;
     
-    return matchesSearch && matchesFactory && matchesSegment;
+    const matchesTag = !selectedTag || 
+      (product.tags && product.tags.some(tag => tag.name === selectedTag));
+    
+    return matchesSearch && matchesFactory && matchesSegment && matchesTag;
   });
 
   // Agrupar produtos por fábrica
@@ -253,6 +257,26 @@ const Products = () => {
                   {[...new Set(products.map(p => p.segment).filter(Boolean))].map(segment => (
                     <option key={segment} value={segment}>
                       {segment}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+          <Row className="mt-3">
+            <Col md={12}>
+              <Form.Group>
+                <Form.Label>{t('Tags', '标签')}</Form.Label>
+                <Form.Select
+                  value={selectedTag || ''}
+                  onChange={(e) => setSelectedTag(e.target.value || null)}
+                >
+                  <option value="">{t('Todas as tags', '所有标签')}</option>
+                  {[...new Set(products.flatMap(p => 
+                    (p.tags || []).map(tag => tag.name)
+                  ).filter(Boolean))].map(tagName => (
+                    <option key={tagName} value={tagName}>
+                      {tagName}
                     </option>
                   ))}
                 </Form.Select>
