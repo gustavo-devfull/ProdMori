@@ -67,9 +67,24 @@ const Dashboard = () => {
   const loadAvailableTags = useCallback(() => {
     try {
       const globalTags = tagService.getAllTags();
-      setAvailableTags(globalTags);
+      console.log('Dashboard - Tags globais carregadas:', globalTags);
+      
+      // Garantir que a estrutura está correta
+      const safeTags = {
+        regiao: Array.isArray(globalTags?.regiao) ? globalTags.regiao : [],
+        material: Array.isArray(globalTags?.material) ? globalTags.material : [],
+        outros: Array.isArray(globalTags?.outros) ? globalTags.outros : []
+      };
+      
+      setAvailableTags(safeTags);
     } catch (error) {
       console.error('Erro ao carregar tags disponíveis:', error);
+      // Fallback para estrutura vazia
+      setAvailableTags({
+        regiao: [],
+        material: [],
+        outros: []
+      });
     }
   }, []);
 
@@ -511,7 +526,7 @@ const Dashboard = () => {
                 {showAvailableTags && (
                   <div className="border rounded p-3 bg-light">
                     {/* Tags Região Disponíveis */}
-                    {availableTags.regiao.length > 0 && (
+                    {availableTags && availableTags.regiao && availableTags.regiao.length > 0 && (
                       <div className="mb-3">
                         <h6 className="text-primary small">{t('Região', '地区')}</h6>
                         <div className="d-flex flex-wrap gap-2">
@@ -532,7 +547,7 @@ const Dashboard = () => {
                     )}
 
                     {/* Tags Material Disponíveis */}
-                    {availableTags.material.length > 0 && (
+                    {availableTags && availableTags.material && availableTags.material.length > 0 && (
                       <div className="mb-3">
                         <h6 className="text-success small">{t('Material', '材料')}</h6>
                         <div className="d-flex flex-wrap gap-2">
@@ -553,7 +568,7 @@ const Dashboard = () => {
                     )}
 
                     {/* Tags Outros Disponíveis */}
-                    {availableTags.outros.length > 0 && (
+                    {availableTags && availableTags.outros && availableTags.outros.length > 0 && (
                       <div className="mb-3">
                         <h6 className="text-warning small">{t('Outros', '其他')}</h6>
                         <div className="d-flex flex-wrap gap-2">
@@ -573,7 +588,8 @@ const Dashboard = () => {
                       </div>
                     )}
 
-                    {availableTags.regiao.length === 0 && availableTags.material.length === 0 && availableTags.outros.length === 0 && (
+                    {availableTags && availableTags.regiao && availableTags.material && availableTags.outros && 
+                     availableTags.regiao.length === 0 && availableTags.material.length === 0 && availableTags.outros.length === 0 && (
                       <p className="text-muted text-center mb-0">{t('Nenhuma tag disponível', '没有可用标签')}</p>
                     )}
                   </div>
