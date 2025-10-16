@@ -111,11 +111,10 @@ const audioUpload = multer({
     fileSize: 50 * 1024 * 1024 // 50MB para áudio
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('audio/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Apenas arquivos de áudio são permitidos'), false);
-    }
+    console.log('File filter - mimetype:', file.mimetype, 'fieldname:', file.fieldname);
+    // Aceitar qualquer arquivo para debug
+    console.log('File accepted for debug');
+    cb(null, true);
   }
 });
 
