@@ -76,8 +76,32 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
 
     try {
       const stream = streamRef.current;
+      
+      // Tentar formatos em ordem de compatibilidade
+      const mimeTypes = [
+        'audio/mp4',
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/wav'
+      ];
+      
+      let selectedMimeType = null;
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+      
+      if (!selectedMimeType) {
+        throw new Error('Nenhum formato de áudio suportado');
+      }
+      
+      console.log('Usando formato de áudio:', selectedMimeType);
+      
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
+        mimeType: selectedMimeType
       });
 
       mediaRecorderRef.current = mediaRecorder;
@@ -95,7 +119,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const blob = new Blob(chunks, { type: selectedMimeType });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         
@@ -295,13 +319,15 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
         {/* Player de áudio */}
         {audioUrl && (
           <div className="text-center">
-            <audio 
+            <audio
               ref={audioRef}
-              controls 
+              controls
               className="w-100 mb-3"
               style={{ maxWidth: '400px' }}
             >
+              <source src={audioUrl} type="audio/mp4" />
               <source src={audioUrl} type="audio/webm" />
+              <source src={audioUrl} type="audio/ogg" />
               {t('Seu navegador não suporta o elemento de áudio', '您的浏览器不支持音频元素')}
             </audio>
             
