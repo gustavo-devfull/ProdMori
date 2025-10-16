@@ -15,6 +15,8 @@ import factoryServiceAPI from '../services/factoryServiceAPI';
 import productServiceAPI from '../services/productServiceAPI';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
+import AudioRecorder from '../components/AudioRecorder';
+import audioUploadService from '../services/audioUploadService';
 import CustomImage from '../components/CustomImage';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -58,6 +60,8 @@ const FactoryDetail = () => {
     material: [],
     outros: []
   });
+  const [audioUrl, setAudioUrl] = useState('');
+  const [uploadingAudio, setUploadingAudio] = useState(false);
 
   const loadFactoryData = useCallback(async () => {
     try {
@@ -116,6 +120,7 @@ const FactoryDetail = () => {
       const finalValues = {
         ...values,
         imageUrl: imageUrl || values.imageUrl,
+        audioUrl: audioUrl, // Incluir URL do áudio
         factoryId: factoryId,
         unit: 'PC' // Valor padrão conforme solicitado
       };
@@ -144,11 +149,35 @@ const FactoryDetail = () => {
     setError(null);
     setImageUrl('');
     setUploadingImage(false);
+    setAudioUrl('');
+    setUploadingAudio(false);
   };
 
   const handlePreview = (imageUrl) => {
     setPreviewImage(imageUrl);
     setPreviewVisible(true);
+  };
+
+  // Função para lidar com áudio gravado
+  const handleAudioReady = async (blob, url) => {
+    setAudioUrl(url);
+    
+    if (blob && editingProduct) {
+      try {
+        setUploadingAudio(true);
+        const result = await audioUploadService.uploadAudio(blob, editingProduct.id);
+        
+        if (result.success) {
+          setAudioUrl(result.audioUrl);
+          console.log('Áudio enviado com sucesso:', result);
+        }
+      } catch (error) {
+        console.error('Erro ao enviar áudio:', error);
+        setError(t('Erro ao enviar áudio', '发送音频时出错'));
+      } finally {
+        setUploadingAudio(false);
+      }
+    }
   };
 
 
@@ -686,16 +715,19 @@ const FactoryDetail = () => {
               />
             </Form.Group>
 
-            {/* REMARK */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('REMARK', '备注')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="remark"
-                defaultValue={editingProduct?.remark || ''}
-                placeholder={t('Digite observações', '输入备注')}
-              />
-            </Form.Group>
+            {/* Áudio (substitui REMARK) */}
+            <AudioRecorder 
+              onAudioReady={handleAudioReady}
+              initialAudioUrl={editingProduct?.audioUrl || ''}
+              disabled={uploadingAudio}
+            />
+            
+            {uploadingAudio && (
+              <div className="text-center mb-3">
+                <Spinner animation="border" size="sm" className="me-2" />
+                <span className="text-muted">{t('Enviando áudio...', '发送音频中...')}</span>
+              </div>
+            )}
 
             {/* U.PRICE | UNIT */}
             <Row className="mb-3">

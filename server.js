@@ -204,6 +204,101 @@ app.post('/api/upload-image', (req, res) => {
   });
 });
 
+// Rota para upload de áudio
+app.post('/api/upload-audio', (req, res) => {
+  upload.single('audio')(req, res, async (err) => {
+    try {
+      console.log('Audio upload request received:', req.file ? 'File present' : 'No file');
+      console.log('Multer error:', err);
+      
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({ 
+          error: 'Erro no processamento do arquivo de áudio',
+          details: err.message 
+        });
+      }
+      
+      if (!req.file) {
+        console.log('No audio file uploaded');
+        return res.status(400).json({ error: 'Nenhum arquivo de áudio enviado' });
+      }
+
+      console.log('Audio file details:', {
+        originalname: req.file.originalname,
+        filename: req.file.filename,
+        path: req.file.path,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
+
+      const localPath = req.file.path;
+      const fileName = req.body.fileName || req.file.filename;
+      const productId = req.body.productId;
+      
+      // Criar pasta de áudio no FTP
+      const remotePath = `audio/${fileName}`;
+
+      // Retornar resposta imediata com URL direta do FTP
+      const ftpAudioUrl = `https://ideolog.ia.br/${remotePath}`;
+      
+      const response = { 
+        success: true, 
+        audioUrl: ftpAudioUrl,
+        fileName: fileName,
+        duration: 0, // Será calculado pelo cliente
+        message: 'Áudio enviado com sucesso!'
+      };
+      
+      // Tentar fazer upload FTP com timeout
+      try {
+        console.log('Starting FTP audio upload with timeout...');
+        const uploadPromise = uploadToFTP(localPath, remotePath);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('FTP upload timeout')), 30000) // 30 segundos para áudio
+        );
+        
+        await Promise.race([uploadPromise, timeoutPromise]);
+        console.log('FTP audio upload completed successfully');
+        
+        // Limpar arquivo local após upload bem-sucedido
+        if (fs.existsSync(localPath)) {
+          fs.unlinkSync(localPath);
+          console.log('Local audio file cleaned up');
+        }
+        
+      } catch (ftpError) {
+        console.error('FTP upload error (continuing with response):', ftpError);
+        // Continuar mesmo com erro FTP - o cliente pode tentar novamente
+      }
+      
+      console.log('Sending audio response:', response);
+      res.json(response);
+
+    } catch (error) {
+      console.error('Erro no upload de áudio:', error);
+      
+      // Limpar arquivo local em caso de erro
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+          console.log('Local audio file cleaned up after error');
+        } catch (cleanupError) {
+          console.error('Error cleaning up audio file:', cleanupError);
+        }
+      }
+
+      const errorResponse = { 
+        error: 'Erro no upload do áudio',
+        details: error.message 
+      };
+      
+      console.log('Sending audio error response:', errorResponse);
+      res.status(500).json(errorResponse);
+    }
+  });
+});
+
 // Função para upload FTP em background
 async function uploadToFTPInBackground(localPath, remotePath) {
   try {
