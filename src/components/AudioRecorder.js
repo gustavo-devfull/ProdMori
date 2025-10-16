@@ -30,7 +30,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
 
     try {
       // Verificar se estamos em HTTPS (necessário para iOS)
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
         setError(t('Gravação de áudio requer HTTPS em dispositivos móveis', '移动设备上的音频录制需要HTTPS'));
         return false;
       }
