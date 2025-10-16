@@ -476,7 +476,7 @@ app.get('/api/image', async (req, res) => {
   }
 });
 
-// Rota para servir áudios via proxy com cache
+// Rota para servir áudios via proxy com cache (versão simplificada para produção)
 app.get('/api/audio', async (req, res) => {
   try {
     const filename = req.query.filename;
@@ -530,46 +530,53 @@ app.get('/api/audio', async (req, res) => {
       // Continuar sem verificação - tentar download direto
     }
     
-    // Criar diretório temp se não existir
-    const tempDir = 'temp';
+    // Criar diretório temp se não existir (compatível com Vercel)
+    const tempDir = process.env.VERCEL ? '/tmp' : 'temp';
     if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-      console.log('Diretório temp criado');
+      try {
+        fs.mkdirSync(tempDir, { recursive: true });
+        console.log('Diretório temp criado:', tempDir);
+      } catch (mkdirError) {
+        console.error('Erro ao criar diretório temp:', mkdirError);
+        // Usar diretório alternativo
+        const altTempDir = '/tmp';
+        console.log('Tentando usar diretório alternativo:', altTempDir);
+      }
     }
     
-    // Baixar áudio do FTP
+    // Baixar áudio do FTP (versão simplificada)
     const tempPath = `${tempDir}/${filename}`;
     console.log(`Baixando arquivo para: ${tempPath}`);
     
     try {
-      // Tentar diferentes caminhos
-      let downloadSuccess = false;
+      // Usar timeout mais longo para produção
+      const timeoutMs = process.env.VERCEL ? 60000 : 30000; // 60s no Vercel, 30s local
       
-      try {
-        await client.downloadTo(tempPath, `audio/${filename}`);
-        console.log('Download concluído com caminho audio/');
-        downloadSuccess = true;
-      } catch (downloadError1) {
-        console.log('Erro com caminho audio/, tentando caminho direto:', downloadError1.message);
-        
-        try {
-          await client.downloadTo(tempPath, filename);
-          console.log('Download concluído com caminho direto');
-          downloadSuccess = true;
-        } catch (downloadError2) {
-          console.error('Erro com caminho direto:', downloadError2.message);
-          throw downloadError2;
-        }
-      }
+      const downloadPromise = client.downloadTo(tempPath, `audio/${filename}`);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Download timeout')), timeoutMs)
+      );
       
-      if (!downloadSuccess) {
-        throw new Error('Falha em todos os métodos de download');
-      }
+      await Promise.race([downloadPromise, timeoutPromise]);
+      console.log('Download concluído com sucesso');
       
     } catch (downloadError) {
       console.error('Erro no download:', downloadError);
-      await client.close();
-      return res.status(500).json({ error: 'Erro ao baixar arquivo de áudio' });
+      
+      // Tentar caminho direto como fallback
+      try {
+        console.log('Tentando download com caminho direto...');
+        await client.downloadTo(tempPath, filename);
+        console.log('Download concluído com caminho direto');
+      } catch (fallbackError) {
+        console.error('Erro no fallback:', fallbackError);
+        await client.close();
+        return res.status(500).json({ 
+          error: 'Erro ao baixar arquivo de áudio',
+          details: downloadError.message,
+          fallback: fallbackError.message
+        });
+      }
     }
     
     await client.close();
