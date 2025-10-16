@@ -6,6 +6,23 @@ class TagService {
     this.useFirebase = true; // Tentar usar Firebase primeiro
   }
 
+  // Função para remover tags duplicadas
+  removeDuplicateTags(tags) {
+    if (!Array.isArray(tags)) return [];
+    
+    const seen = new Set();
+    return tags.filter(tag => {
+      // Criar uma chave única baseada no nome e divisão
+      const key = `${tag.name.toLowerCase()}_${tag.division}`;
+      if (seen.has(key)) {
+        console.log('Tag duplicada removida:', tag.name, 'na divisão:', tag.division);
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+
   // Obter todas as tags globais
   async getAllTags() {
     try {
@@ -14,7 +31,16 @@ class TagService {
         try {
           const globalTags = await tagServiceFirebase.getAllGlobalTags();
           console.log('Tags globais carregadas do Firebase:', globalTags);
-          return globalTags;
+          
+          // Remover duplicatas de cada divisão
+          const cleanedTags = {
+            regiao: this.removeDuplicateTags(globalTags.regiao || []),
+            material: this.removeDuplicateTags(globalTags.material || []),
+            outros: this.removeDuplicateTags(globalTags.outros || [])
+          };
+          
+          console.log('Tags após remoção de duplicatas:', cleanedTags);
+          return cleanedTags;
         } catch (firebaseError) {
           console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
           this.useFirebase = false; // Desabilitar Firebase temporariamente
@@ -25,11 +51,11 @@ class TagService {
       const tags = localStorage.getItem(this.storageKey);
       if (tags) {
         const parsedTags = JSON.parse(tags);
-        // Garantir que a estrutura está correta
+        // Garantir que a estrutura está correta e remover duplicatas
         return {
-          regiao: Array.isArray(parsedTags.regiao) ? parsedTags.regiao : [],
-          material: Array.isArray(parsedTags.material) ? parsedTags.material : [],
-          outros: Array.isArray(parsedTags.outros) ? parsedTags.outros : []
+          regiao: this.removeDuplicateTags(Array.isArray(parsedTags.regiao) ? parsedTags.regiao : []),
+          material: this.removeDuplicateTags(Array.isArray(parsedTags.material) ? parsedTags.material : []),
+          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : [])
         };
       }
       
@@ -166,7 +192,16 @@ class TagService {
         try {
           const tags = await tagServiceFirebase.getFactoryTags(factoryId);
           console.log('Tags carregadas do Firebase:', tags);
-          return tags;
+          
+          // Remover duplicatas de cada divisão
+          const cleanedTags = {
+            regiao: this.removeDuplicateTags(tags.regiao || []),
+            material: this.removeDuplicateTags(tags.material || []),
+            outros: this.removeDuplicateTags(tags.outros || [])
+          };
+          
+          console.log('Tags da fábrica após remoção de duplicatas:', cleanedTags);
+          return cleanedTags;
         } catch (firebaseError) {
           console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
           this.useFirebase = false; // Desabilitar Firebase temporariamente
@@ -177,11 +212,11 @@ class TagService {
       const factoryTags = localStorage.getItem(`tags_${factoryId}`);
       if (factoryTags) {
         const parsedTags = JSON.parse(factoryTags);
-        // Garantir que a estrutura está correta
+        // Garantir que a estrutura está correta e remover duplicatas
         return {
-          regiao: Array.isArray(parsedTags.regiao) ? parsedTags.regiao : [],
-          material: Array.isArray(parsedTags.material) ? parsedTags.material : [],
-          outros: Array.isArray(parsedTags.outros) ? parsedTags.outros : []
+          regiao: this.removeDuplicateTags(Array.isArray(parsedTags.regiao) ? parsedTags.regiao : []),
+          material: this.removeDuplicateTags(Array.isArray(parsedTags.material) ? parsedTags.material : []),
+          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : [])
         };
       }
       

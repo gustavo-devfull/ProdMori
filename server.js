@@ -1449,11 +1449,25 @@ app.get('/api/firestore/get/tags', async (req, res) => {
 
     // Ordenar por data de criação (apenas se não há filtros específicos)
     if (!factoryId && !division) {
-      query = query.orderBy('createdAt', 'desc');
+      try {
+        query = query.orderBy('createdAt', 'desc');
+      } catch (orderError) {
+        console.warn('Erro ao aplicar orderBy, continuando sem ordenação:', orderError);
+      }
     }
 
     console.log('Executing query...');
-    const snapshot = await query.get();
+    let snapshot;
+    try {
+      snapshot = await query.get();
+    } catch (queryError) {
+      console.error('Erro na query do Firestore:', queryError);
+      return res.status(500).json({ 
+        error: 'Erro na consulta do Firestore',
+        details: queryError.message,
+        query: { factoryId, division }
+      });
+    }
     console.log('Query executed successfully, snapshot size:', snapshot.size);
     
     const tags = [];
