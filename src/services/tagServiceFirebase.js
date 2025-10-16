@@ -166,6 +166,7 @@ class TagServiceFirebase {
   async getAllGlobalTags() {
     try {
       const tags = await this.getTags();
+      console.log('TagServiceFirebase.getAllGlobalTags - Raw tags from Firebase:', tags);
       
       // Organizar tags por divisão
       const organizedTags = {
@@ -175,12 +176,16 @@ class TagServiceFirebase {
       };
 
       tags.forEach(tag => {
-        if (organizedTags[tag.division]) {
+        console.log('TagServiceFirebase.getAllGlobalTags - Processing tag:', tag);
+        if (tag.division && organizedTags[tag.division]) {
           organizedTags[tag.division].push(tag);
+          console.log(`TagServiceFirebase.getAllGlobalTags - Added to ${tag.division}:`, tag.name);
+        } else {
+          console.warn('TagServiceFirebase.getAllGlobalTags - Invalid division:', tag.division, 'for tag:', tag.name);
         }
       });
 
-      console.log('TagServiceFirebase.getAllGlobalTags - Global tags:', organizedTags);
+      console.log('TagServiceFirebase.getAllGlobalTags - Final organized tags:', organizedTags);
       return organizedTags;
     } catch (error) {
       console.error('TagServiceFirebase.getAllGlobalTags - Error:', error);
