@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, Nav, Button } from 'react-bootstrap';
+import { Navbar, Nav, Button, Dropdown } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useLanguage();
+  const { t, language, toggleLanguage } = useLanguage();
   const [isMobile, setIsMobile] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -34,6 +35,56 @@ const AppHeader = () => {
             height: isMobile ? '32px' : '40px'
           }}
         />
+        
+        {/* Ícone de Tradução */}
+        <Dropdown 
+          show={showLanguageDropdown} 
+          onToggle={setShowLanguageDropdown}
+          className="ms-3"
+        >
+          <Dropdown.Toggle 
+            variant="outline-light" 
+            size="sm"
+            className="d-flex align-items-center"
+            style={{
+              backgroundColor: 'transparent',
+              borderColor: 'rgba(255,255,255,0.5)',
+              color: 'white',
+              padding: '4px 8px'
+            }}
+            title={t('Choose Language', '选择语言')}
+          >
+            <i className="bi bi-translate me-1"></i>
+            <span className="small">{language === 'pt' ? 'PT' : '中文'}</span>
+          </Dropdown.Toggle>
+          
+          <Dropdown.Menu align="end">
+            <Dropdown.Item 
+              active={language === 'pt'}
+              onClick={() => {
+                if (language !== 'pt') {
+                  toggleLanguage();
+                }
+                setShowLanguageDropdown(false);
+              }}
+            >
+              <i className="bi bi-flag me-2"></i>
+              Português
+            </Dropdown.Item>
+            <Dropdown.Item 
+              active={language === 'zh'}
+              onClick={() => {
+                if (language !== 'zh') {
+                  toggleLanguage();
+                }
+                setShowLanguageDropdown(false);
+              }}
+            >
+              <i className="bi bi-flag me-2"></i>
+              中文
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
       </Navbar.Brand>
       
       <Nav className="ms-auto d-flex align-items-center gap-3">
