@@ -78,6 +78,40 @@ const Products = () => {
     setModalVisible(true);
   };
 
+  const handleDeleteProduct = async (productId) => {
+    console.log('=== HANDLE DELETE PRODUCT (Products page) ===');
+    console.log('Product ID:', productId);
+    console.log('Current submitting:', submitting);
+    
+    if (!window.confirm(t('Tem certeza que deseja excluir este produto?', '确定要删除这个产品吗？'))) {
+      console.log('User cancelled deletion');
+      return;
+    }
+
+    try {
+      console.log('Starting product deletion...');
+      setSubmitting(true);
+      
+      console.log('Calling productServiceAPI.deleteProduct...');
+      await productServiceAPI.deleteProduct(productId);
+      console.log('Product deleted successfully');
+      
+      console.log('Reloading products data...');
+      await loadProducts();
+      console.log('Products data reloaded');
+      
+      setError(null);
+      console.log('Product deletion completed');
+      
+    } catch (err) {
+      console.error('Error deleting product:', err);
+      setError(t('Erro ao excluir produto', '删除产品时出错'));
+    } finally {
+      console.log('Setting submitting to false');
+      setSubmitting(false);
+    }
+  };
+
   const handleModalClose = () => {
     setModalVisible(false);
     setEditingProduct(null);
@@ -297,9 +331,28 @@ const Products = () => {
                             </div>
                           </div>
                           
-                          <p className="text-muted small mb-2">
-                            {product.segment || t('Sem segmento', '无行业')}
-                          </p>
+                          {/* Segmento e botão de exclusão */}
+                          <div className="d-flex align-items-center justify-content-between mb-2">
+                            <p className="text-muted small mb-0">
+                              {product.segment || t('Sem segmento', '无行业')}
+                            </p>
+                            <Button 
+                              variant="outline-danger" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Delete button clicked from Products page card, submitting:', submitting);
+                                if (!submitting) {
+                                  handleDeleteProduct(product.id);
+                                }
+                              }}
+                              disabled={submitting}
+                              title={t('Excluir produto', '删除产品')}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </Button>
+                          </div>
                         </div>
                         
                         <div className="mt-auto">
