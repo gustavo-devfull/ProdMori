@@ -271,10 +271,17 @@ const Factories = () => {
   // Função para renderizar tags da fábrica
   const renderFactoryTags = (factory) => {
     try {
+      console.log('renderFactoryTags - Factory ID:', factory.id);
       const savedTags = localStorage.getItem(`tags_${factory.id}`);
-      if (!savedTags) return null;
+      console.log('renderFactoryTags - Saved tags:', savedTags);
+      
+      if (!savedTags) {
+        console.log('renderFactoryTags - No saved tags found');
+        return null;
+      }
       
       const factoryTags = JSON.parse(savedTags);
+      console.log('renderFactoryTags - Parsed tags:', factoryTags);
       const allFactoryTags = [];
       
       // Combinar todas as tags da fábrica
@@ -290,17 +297,28 @@ const Factories = () => {
         allFactoryTags.push(...factoryTags.outros.map(tag => ({ ...tag, type: 'outros' })));
       }
       
-      if (allFactoryTags.length === 0) return null;
+      console.log('renderFactoryTags - All factory tags:', allFactoryTags);
+      
+      if (allFactoryTags.length === 0) {
+        console.log('renderFactoryTags - No tags to display');
+        return null;
+      }
       
       return (
-        <div className="mt-3">
-          <div className="d-flex flex-wrap gap-1">
+        <div className="mt-3" style={{ minHeight: '30px' }}>
+          <div className="d-flex flex-wrap gap-1" style={{ width: '100%' }}>
             {allFactoryTags.map(tag => (
               <Badge 
                 key={tag.id} 
                 bg={tag.type === 'regiao' ? 'primary' : tag.type === 'material' ? 'success' : 'danger'}
                 className="d-flex align-items-center gap-1"
-                style={{ fontSize: '14px' }}
+                style={{ 
+                  fontSize: '14px',
+                  minHeight: '24px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap'
+                }}
               >
                 <i className={`bi ${tag.type === 'regiao' ? 'bi-geo-alt' : tag.type === 'material' ? 'bi-box' : 'bi-tag'}`}></i>
                 {tag.name}
@@ -401,31 +419,54 @@ const Factories = () => {
                   </div>
 
                   {/* Imagens da fábrica */}
-                  {(factory.imageUrl1 || factory.imageUrl2) && (
-                    <div className="mb-3">
+                  {(() => {
+                    console.log('Factory images check:', {
+                      factoryId: factory.id,
+                      factoryName: factory.name,
+                      imageUrl1: factory.imageUrl1,
+                      imageUrl2: factory.imageUrl2,
+                      hasImages: !!(factory.imageUrl1 || factory.imageUrl2)
+                    });
+                    return (factory.imageUrl1 || factory.imageUrl2);
+                  })() && (
+                    <div className="mb-3" style={{ minHeight: '120px' }}>
                       <Row className="g-2">
                         {factory.imageUrl1 && (
                           <Col xs={6}>
-                            <CustomImage
-                              src={factory.imageUrl1}
-                              alt={`${factory.name} - Imagem 1`}
-                              className="img-fluid rounded"
-                              style={{ height: '120px', objectFit: 'cover', width: '100%' }}
-                              showPreview={true}
-                              onPreview={handlePreview}
-                            />
+                            <div style={{ width: '100%', height: '120px', overflow: 'hidden', borderRadius: '8px' }}>
+                              <CustomImage
+                                src={factory.imageUrl1}
+                                alt={`${factory.name} - Imagem 1`}
+                                className="img-fluid rounded"
+                                style={{ 
+                                  height: '120px', 
+                                  objectFit: 'cover', 
+                                  width: '100%',
+                                  minHeight: '120px'
+                                }}
+                                showPreview={true}
+                                onPreview={handlePreview}
+                              />
+                            </div>
                           </Col>
                         )}
                         {factory.imageUrl2 && (
                           <Col xs={6}>
-                            <CustomImage
-                              src={factory.imageUrl2}
-                              alt={`${factory.name} - Imagem 2`}
-                              className="img-fluid rounded"
-                              style={{ height: '120px', objectFit: 'cover', width: '100%' }}
-                              showPreview={true}
-                              onPreview={handlePreview}
-                            />
+                            <div style={{ width: '100%', height: '120px', overflow: 'hidden', borderRadius: '8px' }}>
+                              <CustomImage
+                                src={factory.imageUrl2}
+                                alt={`${factory.name} - Imagem 2`}
+                                className="img-fluid rounded"
+                                style={{ 
+                                  height: '120px', 
+                                  objectFit: 'cover', 
+                                  width: '100%',
+                                  minHeight: '120px'
+                                }}
+                                showPreview={true}
+                                onPreview={handlePreview}
+                              />
+                            </div>
                           </Col>
                         )}
                       </Row>
