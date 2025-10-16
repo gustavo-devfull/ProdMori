@@ -14,6 +14,22 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   };
 
+  // Testar compatibilidade de formato no iOS
+  const testFormatCompatibility = (url) => {
+    if (!isIOS()) return true;
+    
+    const extension = url.split('.').pop().toLowerCase();
+    console.log(`Testando compatibilidade de ${extension} no iOS`);
+    
+    // iOS tem problemas conhecidos com M4A
+    if (extension === 'm4a') {
+      console.log('M4A detectado - iOS pode ter problemas');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handlePlay = async (index, url) => {
     console.log(`=== TENTATIVA DE REPRODUÇÃO ${index} ===`);
     console.log('URL:', url);
@@ -113,19 +129,29 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
   };
 
   const handleAudioError = (index, error) => {
-    console.error(`Erro no elemento de áudio ${index}:`, error);
-    console.error('Detalhes do erro:', {
-      error: error.nativeEvent?.error,
-      code: error.nativeEvent?.error?.code,
-      message: error.nativeEvent?.error?.message,
-      target: error.target,
-      src: error.target?.src
+    console.log(`=== ERRO NO ELEMENTO DE ÁUDIO ${index} ===`);
+    console.log('Error object:', error);
+    console.log('Native event:', error.nativeEvent);
+    console.log('Target:', error.target);
+    console.log('iOS detectado:', isIOS());
+    
+    const audioElement = error.target;
+    const audioError = error.nativeEvent?.error;
+    
+    console.log('Detalhes do erro:', {
+      error: audioError,
+      code: audioError?.code,
+      message: audioError?.message,
+      src: audioElement?.src,
+      currentSrc: audioElement?.currentSrc,
+      readyState: audioElement?.readyState,
+      networkState: audioElement?.networkState,
+      duration: audioElement?.duration
     });
     
-    let errorMessage = 'Erro ao carregar áudio';
+    let errorMessage = 'Erro ao carregar arquivo de áudio';
     
-    if (error.nativeEvent?.error) {
-      const audioError = error.nativeEvent.error;
+    if (audioError) {
       switch (audioError.code) {
         case 1: // MEDIA_ERR_ABORTED
           errorMessage = 'Carregamento de áudio interrompido';
@@ -134,24 +160,50 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
           errorMessage = 'Erro de rede ao carregar áudio';
           break;
         case 3: // MEDIA_ERR_DECODE
-          errorMessage = 'Erro ao decodificar áudio';
+          errorMessage = 'Erro ao decodificar áudio (formato não suportado)';
           break;
         case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
-          errorMessage = 'Formato de áudio não suportado';
+          errorMessage = 'Formato de áudio não suportado pelo navegador';
           break;
         default:
           errorMessage = `Erro de áudio: ${audioError.message || 'Desconhecido'}`;
       }
     } else {
-      // Se não há código de erro específico, pode ser problema de formato
-      const url = error.target?.src;
+      // Se não há código de erro específico, verificar problemas específicos
+      const url = audioElement?.src;
       if (url && url.includes('.m4a')) {
         errorMessage = 'Formato M4A pode não ser suportado neste navegador';
+      } else if (url && url.includes('api/audio')) {
+        errorMessage = 'Erro ao carregar áudio do servidor';
       } else {
         errorMessage = 'Erro ao carregar arquivo de áudio';
       }
     }
     
+    // Detectar problemas específicos do iOS
+    if (isIOS()) {
+      console.log('iOS detectado - verificando problemas específicos');
+      
+      // Verificar se é problema de formato M4A
+      if (audioElement?.src && audioElement.src.includes('.m4a')) {
+        console.log('Arquivo M4A detectado - pode ser problema de compatibilidade');
+        errorMessage = 'Formato M4A pode não ser suportado no iOS. Tente regravar em outro formato.';
+      }
+      
+      // Verificar se é problema de CORS
+      if (audioElement?.src && audioElement.src.includes('api/audio')) {
+        console.log('Proxy de áudio detectado - verificando CORS');
+        errorMessage = 'Erro ao carregar áudio do servidor (possível problema de CORS)';
+      }
+      
+      // Verificar se é problema de HTTPS
+      if (audioElement?.src && audioElement.src.startsWith('http://')) {
+        console.log('HTTP detectado - iOS pode bloquear conteúdo misto');
+        errorMessage = 'Erro de segurança: iOS pode bloquear conteúdo HTTP em HTTPS';
+      }
+    }
+    
+    console.log('Mensagem de erro final:', errorMessage);
     setAudioErrors(prev => ({ ...prev, [index]: errorMessage }));
     setPlayingIndex(null);
   };
@@ -284,11 +336,16 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                         {hasError}
                       </small>
                     )}
-                             {!isSupported && !hasError && (
-                               <small className="text-warning">
-                                 Formato {extension} pode não ser suportado neste navegador
-                               </small>
-                             )}
+                    {!isSupported && !hasError && (
+                      <small className="text-warning">
+                        Formato {extension} pode não ser suportado neste navegador
+                      </small>
+                    )}
+                    {!hasError && isIOS() && extension === 'm4a' && (
+                      <small className="text-warning">
+                        ⚠️ M4A pode ter problemas no iOS. Tente regravar em MP3.
+                      </small>
+                    )}
                   </div>
                 </div>
                 
