@@ -78,30 +78,17 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     try {
       const stream = streamRef.current;
       
-      // Detectar iOS para ajustar ordem de formatos
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      
-      // Tentar formatos em ordem de compatibilidade
-      // Para iOS: priorizar AAC/M4A, evitar WebM
-      const mimeTypes = isIOS ? [
-        'audio/mp4',            // M4A - melhor para iOS
+      // Priorizar MP3 sempre - formato mais universalmente compatível
+      const mimeTypes = [
+        'audio/mpeg',           // MP3 - melhor compatibilidade universal
+        'audio/mp3',            // MP3 alternativo
+        'audio/wav',            // WAV - universal fallback
+        'audio/mp4',            // M4A - iOS fallback
         'audio/m4a',            // M4A alternativo
-        'audio/mpeg',           // MP3 - boa compatibilidade
-        'audio/wav',            // WAV - universal
         'audio/ogg;codecs=opus', // OGG com codec específico
         'audio/ogg',            // OGG genérico
-        'audio/webm;codecs=opus', // WebM com codec específico (último)
-        'audio/webm'            // WebM genérico (último)
-      ] : [
-        'audio/mpeg',           // MP3 - melhor compatibilidade geral
-        'audio/wav',            // WAV - universal
         'audio/webm;codecs=opus', // WebM com codec específico
-        'audio/webm',           // WebM genérico
-        'audio/ogg;codecs=opus', // OGG com codec específico
-        'audio/ogg',            // OGG genérico
-        'audio/mp4',            // M4A - último recurso
-        'audio/m4a'             // M4A alternativo
+        'audio/webm'            // WebM genérico
       ];
       
       let selectedMimeType = null;
@@ -117,7 +104,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
       }
       
       console.log('Usando formato de áudio:', selectedMimeType);
-      console.log('iOS detectado:', isIOS);
+      console.log('Priorizando MP3 para máxima compatibilidade');
       console.log('Ordem de formatos:', mimeTypes);
       
       const mediaRecorder = new MediaRecorder(stream, {

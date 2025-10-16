@@ -381,10 +381,11 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                   style={{ display: 'none' }}
                 >
                   <source src={url} type="audio/mpeg" />
-                  <source src={url} type="audio/mp4" />
-                  <source src={url} type="audio/webm" />
-                  <source src={url} type="audio/ogg" />
+                  <source src={url} type="audio/mp3" />
                   <source src={url} type="audio/wav" />
+                  <source src={url} type="audio/mp4" />
+                  <source src={url} type="audio/ogg" />
+                  <source src={url} type="audio/webm" />
                   Seu navegador não suporta o elemento de áudio.
                 </audio>
               </ListGroup.Item>

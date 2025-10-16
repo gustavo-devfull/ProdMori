@@ -18,27 +18,29 @@ class AudioUploadService {
     });
   }
 
-  // Gerar nome de arquivo único
+  // Gerar nome de arquivo único - sempre tentar MP3 primeiro
   generateFileName(mimeType) {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
     
-    // Determinar extensão baseada no MIME type (mais abrangente)
-    let extension = 'mp3'; // padrão para MP3
+    // Priorizar MP3 sempre que possível
+    let extension = 'mp3'; // padrão MP3 para máxima compatibilidade
     
     if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
       extension = 'mp3';
-    } else if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
-      extension = 'm4a';
-    } else if (mimeType.includes('webm')) {
-      extension = 'webm';
-    } else if (mimeType.includes('ogg')) {
-      extension = 'ogg';
     } else if (mimeType.includes('wav')) {
       extension = 'wav';
+    } else if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+      extension = 'm4a';
+    } else if (mimeType.includes('ogg')) {
+      extension = 'ogg';
+    } else if (mimeType.includes('webm')) {
+      extension = 'webm';
     } else if (mimeType.includes('aac')) {
       extension = 'aac';
     }
+    
+    console.log(`AudioUploadService.generateFileName - MIME: ${mimeType} -> Extensão: ${extension}`);
     
     return `audio_${timestamp}_${random}.${extension}`;
   }
