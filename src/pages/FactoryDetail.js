@@ -628,20 +628,23 @@ const FactoryDetail = () => {
                                 </div>
                               </div>
                               
-                              {/* Botões */}
-                              <div className="mt-auto d-flex gap-2">
-                                <Button 
-                                  variant="outline-primary" 
-                                  size="sm"
-                                  onClick={() => handleEditProduct(product)}
-                                  title={t('Editar produto', '编辑产品')}
-                                >
-                                  <i className="bi bi-pencil"></i>
-                                </Button>
+                              {/* Segmento e botão de exclusão */}
+                              <div className="mt-auto d-flex align-items-center justify-content-between">
+                                <div className="text-muted small">
+                                  {product.segment || t('Sem segmento', '无行业')}
+                                </div>
                                 <Button 
                                   variant="outline-danger" 
                                   size="sm"
-                                  onClick={() => handleDeleteProduct(product.id)}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Delete button clicked from card, submitting:', submitting);
+                                    if (!submitting) {
+                                      handleDeleteProduct(product.id);
+                                    }
+                                  }}
+                                  disabled={submitting}
                                   title={t('Excluir produto', '删除产品')}
                                 >
                                   <i className="bi bi-trash"></i>
