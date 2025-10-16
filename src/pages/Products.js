@@ -7,8 +7,7 @@ import {
   Row,
   Col,
   Alert,
-  Spinner,
-  Badge
+  Spinner
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
 import productServiceAPI from '../services/productServiceAPI';
@@ -25,11 +24,10 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [searchTerm, setSearchTerm] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -167,10 +165,7 @@ const Products = () => {
       product.segment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.factory?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesTags = selectedTags.length === 0 || 
-      (product.tags && product.tags.some(tag => selectedTags.includes(tag.name)));
-    
-    return matchesSearch && matchesTags;
+    return matchesSearch;
   });
 
   // Agrupar produtos por fábrica
@@ -215,7 +210,7 @@ const Products = () => {
       <Card className="mb-4">
         <Card.Body>
           <Row>
-            <Col md={6}>
+            <Col md={12}>
               <Form.Group>
                 <Form.Label>{t('Buscar', '搜索')}</Form.Label>
                 <Form.Control
@@ -224,49 +219,6 @@ const Products = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group>
-                <Form.Label>{t('Tags', '标签')}</Form.Label>
-                <div className="d-flex flex-wrap gap-2 mt-2">
-                  {[...new Set(products.flatMap(p => 
-                    (p.tags || []).map(tag => tag.name)
-                  ).filter(Boolean))].map(tagName => (
-                    <Badge
-                      key={tagName}
-                      bg={selectedTags.includes(tagName) ? "primary" : "secondary"}
-                      style={{ cursor: 'pointer', fontSize: '14px' }}
-                      onClick={() => {
-                        if (selectedTags.includes(tagName)) {
-                          setSelectedTags(selectedTags.filter(t => t !== tagName));
-                        } else {
-                          setSelectedTags([...selectedTags, tagName]);
-                        }
-                      }}
-                    >
-                      {tagName}
-                      {selectedTags.includes(tagName) && (
-                        <i className="bi bi-x ms-1"></i>
-                      )}
-                    </Badge>
-                  ))}
-                  {selectedTags.length > 0 && (
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={() => setSelectedTags([])}
-                      className="ms-2"
-                    >
-                      {t('Limpar', '清除')}
-                    </Button>
-                  )}
-                </div>
-                {selectedTags.length > 0 && (
-                  <small className="text-muted d-block mt-1">
-                    {t('Tags selecionadas', '已选标签')}: {selectedTags.join(', ')}
-                  </small>
-                )}
               </Form.Group>
             </Col>
           </Row>
