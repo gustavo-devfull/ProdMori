@@ -6,6 +6,7 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
   const { t } = useLanguage();
   const [playingIndex, setPlayingIndex] = useState(null);
   const [audioErrors, setAudioErrors] = useState({});
+  const [loadingIndex, setLoadingIndex] = useState(null);
   const audioRefs = useRef({});
 
   // Detectar iOS
@@ -35,41 +36,60 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
         if (playingIndex === index && !audio.paused) {
           audio.pause();
           setPlayingIndex(null);
+          setLoadingIndex(null);
         } else {
           // Verificar se o áudio pode ser reproduzido
           console.log(`Tentando reproduzir áudio ${index}:`, url);
           
-          // Para iOS, aguardar mais tempo e verificar se o áudio está carregado
-          if (isIOS()) {
-            console.log('iOS detectado - aplicando configurações específicas');
-            
-            // Aguardar mais tempo no iOS
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            // Verificar se o áudio está carregado
-            if (audio.readyState < 2) {
-              console.log('Áudio ainda não carregado, aguardando...');
-              await new Promise(resolve => {
-                const checkReady = () => {
-                  if (audio.readyState >= 2) {
-                    resolve();
-                  } else {
-                    setTimeout(checkReady, 100);
-                  }
-                };
-                checkReady();
-              });
-            }
-            
-            // Definir volume para iOS
-            audio.volume = 1.0;
-          } else {
-            // Aguardar um pouco antes de tentar reproduzir para evitar AbortError
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
+          // Mostrar indicador de carregamento
+          setLoadingIndex(index);
+          setAudioErrors(prev => ({ ...prev, [index]: null }));
+          
+                   // Para iOS, aguardar mais tempo e verificar se o áudio está carregado
+                   if (isIOS()) {
+                     console.log('iOS detectado - aplicando configurações específicas');
+                     
+                     // Aguardar mais tempo no iOS
+                     await new Promise(resolve => setTimeout(resolve, 500));
+                     
+                     // Verificar se o áudio está carregado com timeout
+                     if (audio.readyState < 2) {
+                       console.log('Áudio ainda não carregado, aguardando com timeout...');
+                       await new Promise((resolve, reject) => {
+                         let attempts = 0;
+                         const maxAttempts = 20; // 2 segundos máximo
+                         
+                         const checkReady = () => {
+                           attempts++;
+                           console.log(`Tentativa ${attempts}/${maxAttempts} - readyState: ${audio.readyState}`);
+                           
+                           if (audio.readyState >= 2) {
+                             console.log('Áudio carregado com sucesso!');
+                             resolve();
+                           } else if (attempts >= maxAttempts) {
+                             console.log('Timeout: áudio não carregou em tempo hábil');
+                             reject(new Error('Timeout de carregamento'));
+                           } else {
+                             setTimeout(checkReady, 100);
+                           }
+                         };
+                         checkReady();
+                       });
+                     }
+                     
+                     // Definir volume para iOS
+                     audio.volume = 1.0;
+                     
+                     // Forçar carregamento no iOS
+                     audio.load();
+                   } else {
+                     // Aguardar um pouco antes de tentar reproduzir para evitar AbortError
+                     await new Promise(resolve => setTimeout(resolve, 100));
+                   }
           
           await audio.play();
           setPlayingIndex(index);
+          setLoadingIndex(null);
           // Limpar erro se reprodução foi bem-sucedida
           setAudioErrors(prev => ({ ...prev, [index]: null }));
           console.log(`Áudio ${index} reproduzindo com sucesso`);
@@ -105,12 +125,14 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
         
         setAudioErrors(prev => ({ ...prev, [index]: errorMessage }));
         setPlayingIndex(null);
+        setLoadingIndex(null);
       }
     }
   };
 
   const handleAudioEnded = (index) => {
     setPlayingIndex(null);
+    setLoadingIndex(null);
   };
 
   const handleAudioError = (index, error) => {
@@ -191,6 +213,7 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     console.log('Mensagem de erro final:', errorMessage);
     setAudioErrors(prev => ({ ...prev, [index]: errorMessage }));
     setPlayingIndex(null);
+    setLoadingIndex(null);
   };
 
   // Tentar recarregar áudio
@@ -303,14 +326,19 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
               <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
                 <div className="d-flex align-items-center">
                   <Button
-                    variant={playingIndex === index ? "danger" : hasError ? "warning" : "success"}
+                    variant={playingIndex === index ? "danger" : hasError ? "warning" : loadingIndex === index ? "info" : "success"}
                     size="sm"
                     className="me-2"
                     onClick={() => handlePlay(index, url)}
-                    disabled={disabled || hasError}
-                    title={hasError ? `Erro: ${hasError}` : isSupported ? 'Reproduzir' : 'Formato não suportado'}
+                    disabled={disabled || hasError || loadingIndex === index}
+                    title={hasError ? `Erro: ${hasError}` : loadingIndex === index ? 'Carregando...' : isSupported ? 'Reproduzir' : 'Formato não suportado'}
                   >
-                    <i className={`bi ${playingIndex === index ? 'bi-pause' : hasError ? 'bi-exclamation-triangle' : 'bi-play'}`}></i>
+                    <i className={`bi ${
+                      playingIndex === index ? 'bi-pause' : 
+                      hasError ? 'bi-exclamation-triangle' : 
+                      loadingIndex === index ? 'bi-hourglass-split' : 
+                      'bi-play'
+                    }`}></i>
                   </Button>
                   <div className="d-flex flex-column">
                     <span className="text-muted">
@@ -319,6 +347,12 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                     {hasError && (
                       <small className="text-danger">
                         {hasError}
+                      </small>
+                    )}
+                    {loadingIndex === index && !hasError && (
+                      <small className="text-info">
+                        <i className="bi bi-hourglass-split me-1"></i>
+                        Carregando áudio...
                       </small>
                     )}
                     {!isSupported && !hasError && (
