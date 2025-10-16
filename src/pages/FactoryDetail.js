@@ -323,18 +323,23 @@ const FactoryDetail = () => {
 
   // Função para renderizar tags da fábrica
   const renderFactoryTags = () => {
+    // Verificar se factoryTagsDisplay é válido
+    if (!factoryTagsDisplay || typeof factoryTagsDisplay !== 'object') {
+      return null;
+    }
+    
     const allFactoryTags = [];
     
     // Combinar todas as tags da fábrica
-    if (factoryTagsDisplay.regiao && factoryTagsDisplay.regiao.length > 0) {
+    if (factoryTagsDisplay.regiao && Array.isArray(factoryTagsDisplay.regiao) && factoryTagsDisplay.regiao.length > 0) {
       allFactoryTags.push(...factoryTagsDisplay.regiao.map(tag => ({ ...tag, type: 'regiao' })));
     }
     
-    if (factoryTagsDisplay.material && factoryTagsDisplay.material.length > 0) {
+    if (factoryTagsDisplay.material && Array.isArray(factoryTagsDisplay.material) && factoryTagsDisplay.material.length > 0) {
       allFactoryTags.push(...factoryTagsDisplay.material.map(tag => ({ ...tag, type: 'material' })));
     }
     
-    if (factoryTagsDisplay.outros && factoryTagsDisplay.outros.length > 0) {
+    if (factoryTagsDisplay.outros && Array.isArray(factoryTagsDisplay.outros) && factoryTagsDisplay.outros.length > 0) {
       allFactoryTags.push(...factoryTagsDisplay.outros.map(tag => ({ ...tag, type: 'outros' })));
     }
     
@@ -470,7 +475,7 @@ const FactoryDetail = () => {
           {/* Listagem dos produtos */}
           <div>
             <h5 className="mb-3">{t('Produtos Cadastrados', '已注册产品')}</h5>
-            {products.length === 0 ? (
+            {!products || products.length === 0 ? (
               <div className="text-center py-4">
                 <i className="bi bi-bag text-muted fs-1"></i>
                 <p className="text-muted mt-2">{t('Nenhum produto cadastrado', '没有注册产品')}</p>
