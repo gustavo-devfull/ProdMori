@@ -208,6 +208,9 @@ const FactoryDetail = () => {
       await productServiceAPI.deleteProduct(productId);
       await loadFactoryData();
       setError(null);
+      
+      // Fechar o modal após exclusão bem-sucedida
+      handleModalClose();
     } catch (err) {
       setError(t('Erro ao excluir produto', '删除产品时出错'));
       console.error(err);
