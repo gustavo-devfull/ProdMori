@@ -284,12 +284,13 @@ class TagService {
     try {
       if (this.useFirebase) {
         const result = await tagServiceFirebase.testConnection();
+        console.log('TagService.testConnection - Firebase result:', result);
         return result;
       }
-      return false;
+      return { success: false, error: 'Firebase not enabled', details: 'useFirebase is false' };
     } catch (error) {
-      console.error('Erro ao testar conexão:', error);
-      return false;
+      console.error('TagService.testConnection - Error:', error);
+      return { success: false, error: 'Test failed', details: error.message };
     }
   }
 }

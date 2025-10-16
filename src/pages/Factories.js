@@ -482,14 +482,15 @@ const Factories = () => {
     try {
       console.log('Testando conexão com Firebase...');
       const result = await tagService.testConnection();
-      if (result) {
-        alert('Conexão com Firebase OK!');
+      
+      if (result.success) {
+        alert(`✅ Conexão com Firebase OK!\n\n${result.message}\n\nTags encontradas: ${result.data?.count || 0}`);
       } else {
-        alert('Erro na conexão com Firebase');
+        alert(`❌ Erro na conexão com Firebase\n\nErro: ${result.error}\n\nDetalhes: ${result.details}`);
       }
     } catch (error) {
       console.error('Erro no teste de Firebase:', error);
-      alert(`Erro no teste de Firebase: ${error.message}`);
+      alert(`❌ Erro no teste de Firebase: ${error.message}`);
     }
   };
 

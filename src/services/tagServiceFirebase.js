@@ -192,12 +192,30 @@ class TagServiceFirebase {
   async testConnection() {
     try {
       console.log('TagServiceFirebase.testConnection - Testing connection...');
-      const tags = await this.getTags();
-      console.log('TagServiceFirebase.testConnection - Connection OK, found', tags.length, 'tags');
-      return true;
+      
+      // Tentar fazer uma requisição simples para verificar se a API está funcionando
+      const response = await fetch(`${this.apiUrl}/firestore/get/tags`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('TagServiceFirebase.testConnection - Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('TagServiceFirebase.testConnection - API Error:', errorData);
+        return { success: false, error: errorData.error || 'API Error', details: errorData.details };
+      }
+
+      const result = await response.json();
+      console.log('TagServiceFirebase.testConnection - Success:', result);
+      return { success: true, message: 'Firebase connection OK', data: result };
+      
     } catch (error) {
       console.error('TagServiceFirebase.testConnection - Connection failed:', error);
-      return false;
+      return { success: false, error: 'Connection failed', details: error.message };
     }
   }
 }
