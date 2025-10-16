@@ -63,6 +63,7 @@ const FactoryDetail = () => {
   });
   const [audioUrls, setAudioUrls] = useState([]);
   const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [lastUploadedAudioUrl, setLastUploadedAudioUrl] = useState('');
 
   const loadFactoryData = useCallback(async () => {
     try {
@@ -152,6 +153,7 @@ const FactoryDetail = () => {
     setUploadingImage(false);
     setAudioUrls([]);
     setUploadingAudio(false);
+    setLastUploadedAudioUrl('');
   };
 
   const handlePreview = (imageUrl) => {
@@ -169,6 +171,7 @@ const FactoryDetail = () => {
         if (result.success) {
           // Adicionar novo áudio à lista
           setAudioUrls(prev => [...prev, result.audioUrl]);
+          setLastUploadedAudioUrl(result.audioUrl);
           console.log('Áudio enviado com sucesso:', result);
         }
       } catch (error) {
@@ -726,6 +729,7 @@ const FactoryDetail = () => {
             {/* Áudio (substitui REMARK) */}
             <AudioRecorder 
               onAudioReady={handleAudioReady}
+              initialAudioUrl={lastUploadedAudioUrl}
               disabled={uploadingAudio}
             />
             

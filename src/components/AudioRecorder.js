@@ -10,6 +10,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
   const [audioUrl, setAudioUrl] = useState(initialAudioUrl || '');
   const [error, setError] = useState(null);
   const [hasPermission, setHasPermission] = useState(null);
+  const [hasRecorded, setHasRecorded] = useState(false);
   
   const mediaRecorderRef = useRef(null);
   const audioRef = useRef(null);
@@ -124,7 +125,9 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: selectedMimeType });
         const url = URL.createObjectURL(blob);
-        setAudioUrl(url);
+        
+        // Marcar que há um áudio gravado
+        setHasRecorded(true);
         
         // Chamar callback com o áudio
         if (onAudioReady) {
@@ -177,6 +180,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     setAudioUrl('');
     setRecordingTime(0);
     setError(null);
+    setHasRecorded(false);
     
     // Limpar áudio anterior
     if (audioRef.current) {
@@ -193,6 +197,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     setAudioUrl('');
     setRecordingTime(0);
     setError(null);
+    setHasRecorded(false);
     
     if (onAudioReady) {
       onAudioReady(null, '');
@@ -319,8 +324,18 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
           </div>
         )}
 
+        {/* Status de envio */}
+        {hasRecorded && !audioUrl && (
+          <div className="text-center mb-3">
+            <Alert variant="info">
+              <i className="bi bi-cloud-upload me-2"></i>
+              {t('Áudio gravado! Aguardando envio...', '音频已录制！等待上传...')}
+            </Alert>
+          </div>
+        )}
+
         {/* Player de áudio */}
-        {audioUrl && (
+        {audioUrl && !audioUrl.startsWith('blob:') && (
           <div className="text-center">
             <audio
               ref={audioRef}
