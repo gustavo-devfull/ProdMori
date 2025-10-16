@@ -389,10 +389,14 @@ const Factories = () => {
       
       console.log('loadFactoryTags - All factory tags:', allFactoryTags);
       
-      // Atualizar o estado com as tags da fábrica
+      // Atualizar o estado com as tags da fábrica (manter estrutura com divisões)
       setFactoryTagsMap(prev => ({
         ...prev,
-        [factoryId]: allFactoryTags
+        [factoryId]: {
+          regiao: factoryTags.regiao || [],
+          material: factoryTags.material || [],
+          outros: factoryTags.outros || []
+        }
       }));
       
     } catch (error) {
@@ -402,16 +406,23 @@ const Factories = () => {
 
   // Função para renderizar tags da fábrica
   const renderFactoryTags = (factory) => {
-    const factoryTags = factoryTagsMap[factory.id] || [];
+    const factoryTags = factoryTagsMap[factory.id] || { regiao: [], material: [], outros: [] };
     
-    if (!factoryTags || factoryTags.length === 0) {
+    // Combinar todas as tags em um array para renderização
+    const allTags = [
+      ...(factoryTags.regiao || []),
+      ...(factoryTags.material || []),
+      ...(factoryTags.outros || [])
+    ];
+    
+    if (!allTags || allTags.length === 0) {
       return null;
     }
     
     return (
       <div className="mt-3" style={{ minHeight: '30px' }}>
         <div className="d-flex flex-wrap gap-1" style={{ width: '100%' }}>
-          {factoryTags.map(tag => (
+          {allTags.map(tag => (
             <Badge 
               key={tag.id} 
               bg={tag.type === 'regiao' ? 'primary' : tag.type === 'material' ? 'success' : 'danger'}
