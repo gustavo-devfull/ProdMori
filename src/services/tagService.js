@@ -23,7 +23,17 @@ class TagService {
 
       // Fallback para localStorage
       const tags = localStorage.getItem(this.storageKey);
-      return tags ? JSON.parse(tags) : { regiao: [], material: [], outros: [] };
+      if (tags) {
+        const parsedTags = JSON.parse(tags);
+        // Garantir que a estrutura está correta
+        return {
+          regiao: Array.isArray(parsedTags.regiao) ? parsedTags.regiao : [],
+          material: Array.isArray(parsedTags.material) ? parsedTags.material : [],
+          outros: Array.isArray(parsedTags.outros) ? parsedTags.outros : []
+        };
+      }
+      
+      return { regiao: [], material: [], outros: [] };
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
       return { regiao: [], material: [], outros: [] };
@@ -57,7 +67,7 @@ class TagService {
       }
 
       // Fallback para localStorage
-      const allTags = this.getAllTags();
+      const allTags = await this.getAllTags();
       
       // Verificar se a tag já existe
       const existingTag = allTags[tag.division].find(t => t.name === tag.name);
@@ -79,10 +89,26 @@ class TagService {
   }
 
   // Remover uma tag global
-  removeTag(tagId, division) {
+  async removeTag(tagId, division) {
     try {
-      const allTags = this.getAllTags();
+      console.log('=== REMOVE TAG ===');
+      console.log('Tag ID:', tagId);
+      console.log('Division:', division);
+      
+      const allTags = await this.getAllTags();
+      console.log('All tags before removal:', allTags);
+      
+      // Verificar se a divisão existe e é um array
+      if (!allTags || !allTags[division] || !Array.isArray(allTags[division])) {
+        console.error('Division not found or not an array:', division);
+        return { success: false, message: 'Divisão não encontrada' };
+      }
+      
+      const originalLength = allTags[division].length;
       allTags[division] = allTags[division].filter(tag => tag.id !== tagId);
+      const newLength = allTags[division].length;
+      
+      console.log('Tags removed:', originalLength - newLength);
       
       this.saveAllTags(allTags);
       
