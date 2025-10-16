@@ -34,6 +34,14 @@ const Products = () => {
   const [audioUrls, setAudioUrls] = useState([]);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [lastUploadedAudioUrl, setLastUploadedAudioUrl] = useState('');
+  const [expandedAudioSections, setExpandedAudioSections] = useState({});
+
+  const toggleAudioSection = (productId) => {
+    setExpandedAudioSections(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -313,23 +321,37 @@ const Products = () => {
                                 </Badge>
                               </Card.Header>
                               <Card.Body className="py-2">
-                                {(product.audioUrls && product.audioUrls.length > 0) || product.audioUrl ? (
-                                  <div>
-                                    <div className="fw-semibold text-dark mb-2">
-                                      {(() => {
-                                        const audioCount = (product.audioUrls && product.audioUrls.length > 0) ? product.audioUrls.length : (product.audioUrl ? 1 : 0);
-                                        return t(`Gravação #${audioCount}`, `录制 #${audioCount}`);
-                                      })()}
-                                    </div>
-                                    <AudioPlayer 
-                                      audioUrls={product.audioUrls || (product.audioUrl ? [product.audioUrl] : [])} 
-                                      disabled={false}
-                                    />
+                                {/* Botão para expandir/recolher seção de áudio */}
+                                <div 
+                                  className="d-flex justify-content-between align-items-center mb-2 cursor-pointer"
+                                  onClick={() => toggleAudioSection(product.id)}
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  <div className="fw-semibold text-dark">
+                                    {t('Gravações de Áudio', '音频录制')}
                                   </div>
-                                ) : (
-                                  <div className="text-center text-muted">
-                                    <i className="bi bi-mic-mute fs-4 d-block mb-2"></i>
-                                    <small>{t('Nenhuma gravação disponível', '无可用录制')}</small>
+                                  <i className={`bi ${expandedAudioSections[product.id] ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                                </div>
+                                
+                                {/* Conteúdo colapsável */}
+                                {expandedAudioSections[product.id] && (
+                                  <div>
+                                    {(product.audioUrls && product.audioUrls.length > 0) || product.audioUrl ? (
+                                      <AudioPlayer 
+                                        audioUrls={product.audioUrls || (product.audioUrl ? [product.audioUrl] : [])} 
+                                        disabled={false}
+                                      />
+                                    ) : (
+                                      <AudioRecorder 
+                                        onAudioReady={(blob, url) => {
+                                          if (blob && url) {
+                                            // Aqui você pode implementar a lógica para salvar o áudio
+                                            console.log('Áudio gravado:', blob, url);
+                                          }
+                                        }}
+                                        disabled={false}
+                                      />
+                                    )}
                                   </div>
                                 )}
                               </Card.Body>
