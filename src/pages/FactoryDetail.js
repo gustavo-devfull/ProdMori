@@ -645,7 +645,7 @@ const FactoryDetail = () => {
                                   {product.name || t('Sem nome', '无名称')}
                                 </div>
                                 <div className="text-primary fw-bold">
-                                  {product.uPrice || t('Sob consulta', '咨询价格')}
+                                  ¥ {product.uPrice || t('Sob consulta', '咨询价格')}
                                 </div>
                               </div>
                               
