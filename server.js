@@ -1402,8 +1402,10 @@ app.get('/api/firestore/get/tags', async (req, res) => {
       query = query.where('division', '==', division);
     }
 
-    // Ordenar por data de criação
-    query = query.orderBy('createdAt', 'desc');
+    // Ordenar por data de criação (apenas se não há filtros específicos)
+    if (!factoryId && !division) {
+      query = query.orderBy('createdAt', 'desc');
+    }
 
     console.log('Executing query...');
     const snapshot = await query.get();
