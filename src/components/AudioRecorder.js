@@ -29,6 +29,12 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     }
 
     try {
+      // Verificar se estamos em HTTPS (necessário para iOS)
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        setError(t('Gravação de áudio requer HTTPS em dispositivos móveis', '移动设备上的音频录制需要HTTPS'));
+        return false;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
@@ -42,7 +48,20 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
       return true;
     } catch (err) {
       console.error('Erro ao solicitar permissão:', err);
-      setError(t('Permissão de microfone negada', '麦克风权限被拒绝'));
+      
+      let errorMessage = t('Permissão de microfone negada', '麦克风权限被拒绝');
+      
+      if (err.name === 'NotAllowedError') {
+        errorMessage = t('Permissão de microfone negada. Por favor, permita o acesso ao microfone nas configurações do navegador.', '麦克风权限被拒绝。请在浏览器设置中允许麦克风访问。');
+      } else if (err.name === 'NotFoundError') {
+        errorMessage = t('Nenhum microfone encontrado. Verifique se há um microfone conectado.', '未找到麦克风。请检查是否连接了麦克风。');
+      } else if (err.name === 'NotSupportedError') {
+        errorMessage = t('Gravação de áudio não suportada neste dispositivo.', '此设备不支持音频录制。');
+      } else if (err.name === 'SecurityError') {
+        errorMessage = t('Erro de segurança. Certifique-se de que o site está usando HTTPS.', '安全错误。请确保网站使用HTTPS。');
+      }
+      
+      setError(errorMessage);
       setHasPermission(false);
       return false;
     }
@@ -204,6 +223,27 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
         {error && (
           <Alert variant="danger" className="mb-3">
             {error}
+            {/* Instruções específicas para iOS */}
+            {error.includes('Permissão de microfone negada') && (
+              <div className="mt-2">
+                <small>
+                  <strong>Instruções para iPhone/iPad:</strong><br/>
+                  1. Toque no ícone "aA" na barra de endereços<br/>
+                  2. Selecione "Configurações do Site"<br/>
+                  3. Ative "Microfone"<br/>
+                  4. Recarregue a página
+                </small>
+              </div>
+            )}
+          </Alert>
+        )}
+
+        {/* Aviso para iOS */}
+        {!hasPermission && !error && (
+          <Alert variant="info" className="mb-3">
+            <small>
+              <strong>📱 iPhone/iPad:</strong> Certifique-se de permitir o acesso ao microfone quando solicitado.
+            </small>
           </Alert>
         )}
 
