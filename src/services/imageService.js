@@ -5,7 +5,8 @@ class ImageService {
       (window.location.protocol === 'https:' || 
        window.location.hostname.includes('vercel.app') || 
        window.location.hostname.includes('vercel.com') ||
-       window.location.hostname.includes('gpreto.space'));
+       window.location.hostname.includes('gpreto.space') ||
+       window.location.hostname !== 'localhost');
     
     // URL base da API
     this.apiUrl = this.isVercel 
@@ -15,7 +16,8 @@ class ImageService {
     console.log('ImageService initialized:', {
       isVercel: this.isVercel,
       apiUrl: this.apiUrl,
-      hostname: typeof window !== 'undefined' ? window.location.hostname : 'server'
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+      protocol: typeof window !== 'undefined' ? window.location.protocol : 'unknown'
     });
   }
 
