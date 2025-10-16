@@ -7,7 +7,8 @@ import {
   Row,
   Col,
   Alert,
-  Spinner
+  Spinner,
+  Badge
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
 import productServiceAPI from '../services/productServiceAPI';
@@ -24,9 +25,7 @@ const Products = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedFactory, setSelectedFactory] = useState(null);
-  const [selectedSegment, setSelectedSegment] = useState(null);
-  const [selectedTag, setSelectedTag] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -168,13 +167,10 @@ const Products = () => {
       product.segment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.factory?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFactory = !selectedFactory || product.factory?.id === selectedFactory;
-    const matchesSegment = !selectedSegment || product.segment === selectedSegment;
+    const matchesTags = selectedTags.length === 0 || 
+      (product.tags && product.tags.some(tag => selectedTags.includes(tag.name)));
     
-    const matchesTag = !selectedTag || 
-      (product.tags && product.tags.some(tag => tag.name === selectedTag));
-    
-    return matchesSearch && matchesFactory && matchesSegment && matchesTag;
+    return matchesSearch && matchesTags;
   });
 
   // Agrupar produtos por fábrica
@@ -219,7 +215,7 @@ const Products = () => {
       <Card className="mb-4">
         <Card.Body>
           <Row>
-            <Col md={4}>
+            <Col md={6}>
               <Form.Group>
                 <Form.Label>{t('Buscar', '搜索')}</Form.Label>
                 <Form.Control
@@ -230,56 +226,47 @@ const Products = () => {
                 />
               </Form.Group>
             </Col>
-            <Col md={4}>
-              <Form.Group>
-                <Form.Label>{t('Fábrica', '工厂')}</Form.Label>
-                <Form.Select
-                  value={selectedFactory || ''}
-                  onChange={(e) => setSelectedFactory(e.target.value || null)}
-                >
-                  <option value="">{t('Todas as fábricas', '所有工厂')}</option>
-                  {factories.map(factory => (
-                    <option key={factory.id} value={factory.id}>
-                      {factory.name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group>
-                <Form.Label>{t('Segmento', '行业')}</Form.Label>
-                <Form.Select
-                  value={selectedSegment || ''}
-                  onChange={(e) => setSelectedSegment(e.target.value || null)}
-                >
-                  <option value="">{t('Todos os segmentos', '所有行业')}</option>
-                  {[...new Set(products.map(p => p.segment).filter(Boolean))].map(segment => (
-                    <option key={segment} value={segment}>
-                      {segment}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Row className="mt-3">
-            <Col md={12}>
+            <Col md={6}>
               <Form.Group>
                 <Form.Label>{t('Tags', '标签')}</Form.Label>
-                <Form.Select
-                  value={selectedTag || ''}
-                  onChange={(e) => setSelectedTag(e.target.value || null)}
-                >
-                  <option value="">{t('Todas as tags', '所有标签')}</option>
+                <div className="d-flex flex-wrap gap-2 mt-2">
                   {[...new Set(products.flatMap(p => 
                     (p.tags || []).map(tag => tag.name)
                   ).filter(Boolean))].map(tagName => (
-                    <option key={tagName} value={tagName}>
+                    <Badge
+                      key={tagName}
+                      bg={selectedTags.includes(tagName) ? "primary" : "secondary"}
+                      style={{ cursor: 'pointer', fontSize: '14px' }}
+                      onClick={() => {
+                        if (selectedTags.includes(tagName)) {
+                          setSelectedTags(selectedTags.filter(t => t !== tagName));
+                        } else {
+                          setSelectedTags([...selectedTags, tagName]);
+                        }
+                      }}
+                    >
                       {tagName}
-                    </option>
+                      {selectedTags.includes(tagName) && (
+                        <i className="bi bi-x ms-1"></i>
+                      )}
+                    </Badge>
                   ))}
-                </Form.Select>
+                  {selectedTags.length > 0 && (
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => setSelectedTags([])}
+                      className="ms-2"
+                    >
+                      {t('Limpar', '清除')}
+                    </Button>
+                  )}
+                </div>
+                {selectedTags.length > 0 && (
+                  <small className="text-muted d-block mt-1">
+                    {t('Tags selecionadas', '已选标签')}: {selectedTags.join(', ')}
+                  </small>
+                )}
               </Form.Group>
             </Col>
           </Row>
