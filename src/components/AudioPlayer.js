@@ -10,10 +10,34 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
   const [loadedAudios, setLoadedAudios] = useState(new Set());
   const audioRefs = useRef({});
 
-  // Detectar iOS
+  // Detectar iOS e versão
   const isIOS = () => {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  };
+
+  // Detectar se é iOS 15+ (tem melhor suporte a M4A)
+  const isIOS15Plus = () => {
+    if (!isIOS()) return false;
+    const match = navigator.userAgent.match(/OS (\d+)_/);
+    return match ? parseInt(match[1]) >= 15 : false;
+  };
+
+  // Verificar compatibilidade de formato específica para iOS
+  const isFormatCompatibleWithIOS = (url) => {
+    if (!isIOS()) return true;
+    
+    const extension = url.split('.').pop().toLowerCase();
+    
+    // iOS tem melhor suporte para MP3 e AAC
+    if (extension === 'mp3' || extension === 'aac') return true;
+    
+    // M4A tem problemas em versões antigas do iOS
+    if (extension === 'm4a') {
+      return isIOS15Plus();
+    }
+    
+    return true;
   };
 
   // Pré-carregar áudios quando a lista muda
@@ -27,19 +51,36 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
         if (!loadedAudios.has(url)) {
           console.log(`Pré-carregando áudio ${i}:`, url);
           
+          // Verificar compatibilidade antes de tentar carregar
+          if (!isFormatCompatibleWithIOS(url)) {
+            console.log(`Áudio ${i} não compatível com iOS, pulando pré-carregamento`);
+            setAudioErrors(prev => ({ 
+              ...prev, 
+              [i]: 'Formato não suportado no iOS. Use MP3 ou AAC.' 
+            }));
+            continue;
+          }
+          
           try {
             const audio = audioRefs.current[i];
             if (audio) {
+              // Configurações específicas para iOS
+              if (isIOS()) {
+                audio.preload = 'metadata';
+                audio.crossOrigin = 'anonymous';
+              }
+              
               // Definir src e forçar carregamento
               audio.src = url;
               audio.load();
               
-              // Aguardar carregamento com timeout
+              // Aguardar carregamento com timeout maior para iOS
+              const timeoutDuration = isIOS() ? 10000 : 5000;
               await new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
                   console.log(`Timeout no pré-carregamento do áudio ${i}`);
                   reject(new Error('Preload timeout'));
-                }, 5000);
+                }, timeoutDuration);
                 
                 const onCanPlay = () => {
                   clearTimeout(timeout);
@@ -64,7 +105,10 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
             }
           } catch (error) {
             console.log(`Falha no pré-carregamento do áudio ${i}:`, error.message);
-            // Continuar com os outros áudios mesmo se um falhar
+            setAudioErrors(prev => ({ 
+              ...prev, 
+              [i]: `Erro de carregamento: ${error.message}` 
+            }));
           }
           
           // Pequena pausa entre carregamentos para não sobrecarregar
@@ -103,6 +147,17 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
           setPlayingIndex(null);
           setLoadingIndex(null);
         } else {
+          // Verificar compatibilidade antes de tentar reproduzir
+          if (!isFormatCompatibleWithIOS(url)) {
+            console.log(`Áudio ${index} não compatível com iOS`);
+            setAudioErrors(prev => ({ 
+              ...prev, 
+              [index]: 'Formato não suportado no iOS. Use MP3 ou AAC.' 
+            }));
+            setLoadingIndex(null);
+            return;
+          }
+          
           // Verificar se o áudio pode ser reproduzido
           console.log(`Tentando reproduzir áudio ${index}:`, url);
           console.log(`Áudio já carregado:`, loadedAudios.has(url));
@@ -263,6 +318,11 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     // Detectar problemas específicos do iOS
     if (isIOS()) {
       console.log('iOS detectado - verificando problemas específicos');
+      
+      // Verificar se é problema de formato M4A
+      if (url && url.includes('.m4a')) {
+        errorMessage = 'Formato M4A pode não ser suportado no iOS. Tente regravar em MP3.';
+      }
       
       // Verificar se é problema de formato M4A
       if (audioElement?.src && audioElement.src.includes('.m4a')) {
