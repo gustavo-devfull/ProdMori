@@ -252,7 +252,7 @@ const FactoryDetail = () => {
 
 
   // Funções para gerenciar edição da fábrica
-  const handleEditFactory = () => {
+  const handleEditFactory = async () => {
     setFactoryEditModalVisible(true);
     // Inicializar URLs das imagens para edição
     setImageUrls({
@@ -269,8 +269,18 @@ const FactoryDetail = () => {
     }
     
     // Recarregar tags globais
-    const globalTagsData = tagService.getAllTags();
-    setGlobalTags(globalTagsData);
+    console.log('=== CARREGANDO TAGS GLOBAIS ===');
+    try {
+      const globalTagsData = await tagService.getAllTags();
+      console.log('Tags globais carregadas:', globalTagsData);
+      setGlobalTags(globalTagsData);
+    } catch (error) {
+      console.error('Erro ao carregar tags globais:', error);
+      // Fallback para localStorage
+      const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[]}');
+      console.log('Usando tags globais do localStorage:', localGlobalTags);
+      setGlobalTags(localGlobalTags);
+    }
   };
 
   const handleFactoryModalClose = () => {
@@ -380,7 +390,7 @@ const FactoryDetail = () => {
       addTagToFactory(newTag, division);
       
       // Atualizar tags globais disponíveis
-      const globalTagsData = tagService.getAllTags();
+      const globalTagsData = await tagService.getAllTags();
       setGlobalTags(globalTagsData);
     } else {
       console.warn('Tag já existe globalmente:', result.message);
