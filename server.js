@@ -1310,6 +1310,62 @@ app.post('/api/firestore/create/tags', async (req, res) => {
   }
 });
 
+// Rota para deletar produto
+app.delete('/api/firestore/delete/products/:id', async (req, res) => {
+  try {
+    console.log('=== DELETE PRODUCT REQUEST ===');
+    console.log('Product ID:', req.params.id);
+    
+    if (!db) {
+      console.error('Firebase not initialized');
+      return res.status(500).json({ 
+        error: 'Firebase not initialized',
+        details: 'Firebase Admin SDK not properly configured'
+      });
+    }
+
+    const productId = req.params.id;
+    console.log('Deleting product with ID:', productId);
+
+    // Verificar se o produto existe
+    const productDoc = await db.collection('products').doc(productId).get();
+    
+    if (!productDoc.exists) {
+      console.log('Product not found');
+      return res.status(404).json({ 
+        error: 'Produto não encontrado',
+        details: `Produto com ID ${productId} não existe`
+      });
+    }
+
+    console.log('Product found, deleting...');
+    
+    // Deletar o produto
+    await db.collection('products').doc(productId).delete();
+    
+    console.log('Product deleted successfully');
+
+    res.status(200).json({
+      success: true,
+      message: 'Produto deletado com sucesso',
+      id: productId
+    });
+
+  } catch (error) {
+    console.error('=== ERROR DELETING PRODUCT ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error code:', error.code);
+    
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: error.message,
+      code: error.code || 'UNKNOWN'
+    });
+  }
+});
+
 // Rota para buscar tags
 app.get('/api/firestore/get/tags', async (req, res) => {
   try {

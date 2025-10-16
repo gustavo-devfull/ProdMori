@@ -199,22 +199,37 @@ const FactoryDetail = () => {
   };
 
   const handleDeleteProduct = async (productId) => {
+    console.log('=== HANDLE DELETE PRODUCT ===');
+    console.log('Product ID:', productId);
+    console.log('Current editingProduct:', editingProduct);
+    
     if (!window.confirm(t('Tem certeza que deseja excluir este produto?', '确定要删除这个产品吗？'))) {
+      console.log('User cancelled deletion');
       return;
     }
 
     try {
+      console.log('Starting product deletion...');
       setSubmitting(true);
+      
+      console.log('Calling productServiceAPI.deleteProduct...');
       await productServiceAPI.deleteProduct(productId);
+      console.log('Product deleted successfully');
+      
+      console.log('Reloading factory data...');
       await loadFactoryData();
+      console.log('Factory data reloaded');
+      
       setError(null);
       
-      // Fechar o modal após exclusão bem-sucedida
+      console.log('Closing modal...');
       handleModalClose();
+      console.log('Modal closed');
     } catch (err) {
+      console.error('Error deleting product:', err);
       setError(t('Erro ao excluir produto', '删除产品时出错'));
-      console.error(err);
     } finally {
+      console.log('Setting submitting to false');
       setSubmitting(false);
     }
   };
