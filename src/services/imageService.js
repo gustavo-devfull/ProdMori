@@ -54,17 +54,18 @@ class ImageService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
 
-      // Fazer upload via API com timeout
-      const response = await fetch(`${this.apiUrl}/upload-image`, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-        headers: {
-          // Não definir Content-Type, deixar o browser definir com boundary
-        }
-      });
+      try {
+        // Fazer upload via API com timeout
+        const response = await fetch(`${this.apiUrl}/upload-image`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+          headers: {
+            // Não definir Content-Type, deixar o browser definir com boundary
+          }
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
       console.log('ImageService.uploadFile - Resposta recebida:', {
         status: response.status,
