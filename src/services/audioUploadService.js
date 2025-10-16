@@ -1,5 +1,3 @@
-import { Client } from 'basic-ftp';
-
 class AudioUploadService {
   constructor() {
     this.isVercel = typeof window !== 'undefined' && 
