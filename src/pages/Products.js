@@ -9,7 +9,6 @@ import {
   Alert,
   Spinner
 } from 'react-bootstrap';
-import { useSearchParams } from 'react-router-dom';
 import CustomImage from '../components/CustomImage';
 import productServiceAPI from '../services/productServiceAPI';
 import factoryServiceAPI from '../services/factoryServiceAPI';
@@ -18,7 +17,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const Products = () => {
   const { t } = useLanguage();
-  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
