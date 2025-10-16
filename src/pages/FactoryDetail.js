@@ -624,7 +624,7 @@ const FactoryDetail = () => {
                     <Card className="h-100">
                       <Card.Body className="p-3">
                         <Row className="align-items-start">
-                          {/* Foto do produto - 150x150px */}
+                          {/* Foto do produto - 150px de largura */}
                           <Col xs={4}>
                             <div className="d-flex justify-content-center">
                               {product.imageUrl ? (
@@ -634,7 +634,7 @@ const FactoryDetail = () => {
                                   className="img-fluid rounded"
                                   style={{ 
                                     width: '150px', 
-                                    height: '150px', 
+                                    height: 'auto', 
                                     objectFit: 'cover',
                                     cursor: 'pointer'
                                   }}
@@ -668,12 +668,9 @@ const FactoryDetail = () => {
                                     ¥ {product.uPrice || t('Sob consulta', '咨询价格')}
                                   </span>
                                 </div>
-                                <div className="text-truncate fw-medium">
-                                  {product.name || t('Sem nome', '无名称')}
-                                </div>
                               </div>
                               
-                              {/* Ícones de ação na linha abaixo */}
+                              {/* Ícones de ação alinhados à direita */}
                               <div className="mt-auto d-flex justify-content-end gap-2">
                                 <Button 
                                   variant="outline-primary" 
