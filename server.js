@@ -292,6 +292,20 @@ app.post('/api/upload-audio', (req, res) => {
       // Tentar fazer upload FTP com timeout
       try {
         console.log('Starting FTP audio upload with timeout...');
+        
+        // Criar pasta audio/ se não existir
+        const client = new ftp.Client();
+        await client.access(ftpConfig);
+        
+        try {
+          await client.ensureDir('audio/');
+          console.log('Pasta audio/ criada/verificada');
+        } catch (dirError) {
+          console.log('Pasta audio/ já existe ou erro ao criar:', dirError.message);
+        }
+        
+        await client.close();
+        
         const uploadPromise = uploadToFTP(localPath, remotePath);
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('FTP upload timeout')), 30000) // 30 segundos para áudio
@@ -482,6 +496,15 @@ app.get('/api/audio', async (req, res) => {
     try {
       await client.access(ftpConfig);
       console.log('Conexão FTP estabelecida');
+      
+      // Criar pasta audio/ se não existir
+      try {
+        await client.ensureDir('audio/');
+        console.log('Pasta audio/ criada/verificada');
+      } catch (dirError) {
+        console.log('Pasta audio/ já existe ou erro ao criar:', dirError.message);
+      }
+      
     } catch (ftpError) {
       console.error('Erro ao conectar ao FTP:', ftpError);
       return res.status(500).json({ error: 'Erro ao conectar ao servidor FTP' });
@@ -973,6 +996,66 @@ app.get('/api/test-image', async (req, res) => {
     res.status(500).json({ 
       error: 'Erro na conexão FTP',
       details: error.message 
+    });
+  }
+});
+
+// Rota de teste para verificar arquivo de áudio
+app.get('/api/test-audio/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    console.log('=== TESTE DE ÁUDIO ===');
+    console.log('Filename:', filename);
+    
+    const client = new ftp.Client();
+    
+    try {
+      await client.access(ftpConfig);
+      console.log('Conexão FTP estabelecida');
+      
+      // Listar arquivos na pasta audio
+      const fileList = await client.list('audio/');
+      console.log('Arquivos na pasta audio:', fileList.map(f => f.name));
+      
+      const fileExists = fileList.some(file => file.name === filename);
+      console.log(`Arquivo ${filename} existe:`, fileExists);
+      
+      if (fileExists) {
+        const fileInfo = fileList.find(file => file.name === filename);
+        console.log('Informações do arquivo:', fileInfo);
+        
+        res.json({
+          success: true,
+          exists: true,
+          filename: filename,
+          fileInfo: fileInfo,
+          allFiles: fileList.map(f => f.name)
+        });
+      } else {
+        res.json({
+          success: true,
+          exists: false,
+          filename: filename,
+          allFiles: fileList.map(f => f.name)
+        });
+      }
+      
+    } catch (ftpError) {
+      console.error('Erro FTP:', ftpError);
+      res.status(500).json({
+        success: false,
+        error: 'Erro de conexão FTP',
+        details: ftpError.message
+      });
+    } finally {
+      await client.close();
+    }
+    
+  } catch (error) {
+    console.error('Erro no teste:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
