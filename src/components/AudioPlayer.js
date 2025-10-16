@@ -7,6 +7,7 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
   const [playingIndex, setPlayingIndex] = useState(null);
   const [audioErrors, setAudioErrors] = useState({});
   const [loadingIndex, setLoadingIndex] = useState(null);
+  const [loadedAudios, setLoadedAudios] = useState(new Set());
   const audioRefs = useRef({});
 
   // Detectar iOS
@@ -14,6 +15,70 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   };
+
+  // Pré-carregar áudios quando a lista muda
+  useEffect(() => {
+    const preloadAudios = async () => {
+      console.log('=== PRÉ-CARREGANDO ÁUDIOS ===');
+      console.log('Total de áudios:', audioUrls.length);
+      
+      for (let i = 0; i < audioUrls.length; i++) {
+        const url = audioUrls[i];
+        if (!loadedAudios.has(url)) {
+          console.log(`Pré-carregando áudio ${i}:`, url);
+          
+          try {
+            const audio = audioRefs.current[i];
+            if (audio) {
+              // Definir src e forçar carregamento
+              audio.src = url;
+              audio.load();
+              
+              // Aguardar carregamento com timeout
+              await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                  console.log(`Timeout no pré-carregamento do áudio ${i}`);
+                  reject(new Error('Preload timeout'));
+                }, 5000);
+                
+                const onCanPlay = () => {
+                  clearTimeout(timeout);
+                  audio.removeEventListener('canplay', onCanPlay);
+                  audio.removeEventListener('error', onError);
+                  console.log(`Áudio ${i} pré-carregado com sucesso`);
+                  setLoadedAudios(prev => new Set([...prev, url]));
+                  resolve();
+                };
+                
+                const onError = (e) => {
+                  clearTimeout(timeout);
+                  audio.removeEventListener('canplay', onCanPlay);
+                  audio.removeEventListener('error', onError);
+                  console.log(`Erro no pré-carregamento do áudio ${i}:`, e);
+                  reject(e);
+                };
+                
+                audio.addEventListener('canplay', onCanPlay);
+                audio.addEventListener('error', onError);
+              });
+            }
+          } catch (error) {
+            console.log(`Falha no pré-carregamento do áudio ${i}:`, error.message);
+            // Continuar com os outros áudios mesmo se um falhar
+          }
+          
+          // Pequena pausa entre carregamentos para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      
+      console.log('=== PRÉ-CARREGAMENTO CONCLUÍDO ===');
+    };
+    
+    if (audioUrls.length > 0) {
+      preloadAudios();
+    }
+  }, [audioUrls, loadedAudios]);
 
 
   const handlePlay = async (index, url) => {
@@ -40,52 +105,60 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
         } else {
           // Verificar se o áudio pode ser reproduzido
           console.log(`Tentando reproduzir áudio ${index}:`, url);
+          console.log(`Áudio já carregado:`, loadedAudios.has(url));
           
           // Mostrar indicador de carregamento
           setLoadingIndex(index);
           setAudioErrors(prev => ({ ...prev, [index]: null }));
           
-                   // Para iOS, aguardar mais tempo e verificar se o áudio está carregado
-                   if (isIOS()) {
-                     console.log('iOS detectado - aplicando configurações específicas');
-                     
-                     // Aguardar mais tempo no iOS
-                     await new Promise(resolve => setTimeout(resolve, 500));
-                     
-                     // Verificar se o áudio está carregado com timeout
-                     if (audio.readyState < 2) {
-                       console.log('Áudio ainda não carregado, aguardando com timeout...');
-                       await new Promise((resolve, reject) => {
-                         let attempts = 0;
-                         const maxAttempts = 20; // 2 segundos máximo
-                         
-                         const checkReady = () => {
-                           attempts++;
-                           console.log(`Tentativa ${attempts}/${maxAttempts} - readyState: ${audio.readyState}`);
-                           
-                           if (audio.readyState >= 2) {
-                             console.log('Áudio carregado com sucesso!');
-                             resolve();
-                           } else if (attempts >= maxAttempts) {
-                             console.log('Timeout: áudio não carregou em tempo hábil');
-                             reject(new Error('Timeout de carregamento'));
-                           } else {
-                             setTimeout(checkReady, 100);
-                           }
-                         };
-                         checkReady();
-                       });
-                     }
-                     
-                     // Definir volume para iOS
-                     audio.volume = 1.0;
-                     
-                     // Forçar carregamento no iOS
-                     audio.load();
-                   } else {
-                     // Aguardar um pouco antes de tentar reproduzir para evitar AbortError
-                     await new Promise(resolve => setTimeout(resolve, 100));
-                   }
+          // Se o áudio já foi pré-carregado, usar diretamente
+          if (loadedAudios.has(url)) {
+            console.log(`Áudio ${index} já carregado, reproduzindo diretamente`);
+            audio.volume = 1.0;
+          } else {
+            // Para iOS, aguardar mais tempo e verificar se o áudio está carregado
+            if (isIOS()) {
+              console.log('iOS detectado - aplicando configurações específicas');
+              
+              // Aguardar mais tempo no iOS
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              // Verificar se o áudio está carregado com timeout
+              if (audio.readyState < 2) {
+                console.log('Áudio ainda não carregado, aguardando com timeout...');
+                await new Promise((resolve, reject) => {
+                  let attempts = 0;
+                  const maxAttempts = 20; // 2 segundos máximo
+                  
+                  const checkReady = () => {
+                    attempts++;
+                    console.log(`Tentativa ${attempts}/${maxAttempts} - readyState: ${audio.readyState}`);
+                    
+                    if (audio.readyState >= 2) {
+                      console.log('Áudio carregado com sucesso!');
+                      setLoadedAudios(prev => new Set([...prev, url]));
+                      resolve();
+                    } else if (attempts >= maxAttempts) {
+                      console.log('Timeout: áudio não carregou em tempo hábil');
+                      reject(new Error('Timeout de carregamento'));
+                    } else {
+                      setTimeout(checkReady, 100);
+                    }
+                  };
+                  checkReady();
+                });
+              }
+              
+              // Definir volume para iOS
+              audio.volume = 1.0;
+              
+              // Forçar carregamento no iOS
+              audio.load();
+            } else {
+              // Aguardar um pouco antes de tentar reproduzir para evitar AbortError
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
           
           await audio.play();
           setPlayingIndex(index);
@@ -218,10 +291,17 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
 
   // Tentar recarregar áudio
   const retryAudio = async (index, url) => {
+    console.log(`Tentando recarregar áudio ${index}:`, url);
+    
     const audio = audioRefs.current[index];
     if (audio) {
       try {
-        console.log(`Tentando recarregar áudio ${index}:`, url);
+        // Limpar cache para forçar recarregamento
+        setLoadedAudios(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(url);
+          return newSet;
+        });
         
         // Limpar erro anterior
         setAudioErrors(prev => ({ ...prev, [index]: null }));
@@ -229,25 +309,33 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
         // Aguardar um pouco antes de recarregar
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Forçar reload do áudio
+        // Forçar recarregamento completo
+        audio.src = url;
         audio.load();
         
         // Aguardar carregamento
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => reject(new Error('Timeout')), 5000);
           
-          audio.addEventListener('canplaythrough', () => {
+          const onCanPlay = () => {
             clearTimeout(timeout);
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            console.log(`Áudio ${index} recarregado com sucesso`);
+            setLoadedAudios(prev => new Set([...prev, url]));
             resolve();
-          }, { once: true });
+          };
           
-          audio.addEventListener('error', () => {
+          const onError = (e) => {
             clearTimeout(timeout);
-            reject(new Error('Erro ao carregar'));
-          }, { once: true });
+            audio.removeEventListener('canplay', onCanPlay);
+            audio.removeEventListener('error', onError);
+            reject(e);
+          };
+          
+          audio.addEventListener('canplay', onCanPlay);
+          audio.addEventListener('error', onError);
         });
-        
-        console.log(`Áudio ${index} recarregado com sucesso`);
         
       } catch (error) {
         console.error(`Erro ao recarregar áudio ${index}:`, error);
