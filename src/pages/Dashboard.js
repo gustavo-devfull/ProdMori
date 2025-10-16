@@ -132,8 +132,8 @@ const Dashboard = () => {
         }
       }
       
-      console.log('Carregando tags do Firebase...');
-      // Forçar carregamento direto do Firebase, ignorando cache temporariamente
+      console.log('Carregando tags globais do Firebase...');
+      // Buscar apenas tags globais (sem factoryId)
       const response = await fetch('http://localhost:3001/api/firestore/get/tags');
       const result = await response.json();
       console.log('Dashboard - Resposta direta do Firebase:', result);
@@ -141,21 +141,40 @@ const Dashboard = () => {
       const tags = result.data || [];
       console.log('Dashboard - Tags globais carregadas:', tags);
       
-      // Processar tags do Firebase - extrair tagData e remover duplicatas
+      // Processar tags do Firebase - lidar com diferentes estruturas
       const processedTags = [];
       const seenTags = new Set();
       
       tags.forEach(tag => {
-        if (tag.tagData) {
-          const tagKey = `${tag.tagData.name}_${tag.tagData.division}`;
-          if (!seenTags.has(tagKey)) {
-            seenTags.add(tagKey);
-            processedTags.push({
-              id: tag.tagData.id,
+        // Verificar se é uma tag global (sem factoryId) ou se tem tagData
+        const isGlobalTag = !tag.factoryId;
+        const hasTagData = tag.tagData;
+        
+        if (isGlobalTag || hasTagData) {
+          let tagInfo;
+          
+          if (hasTagData) {
+            // Estrutura com tagData
+            tagInfo = {
+              id: tag.tagData.id || tag.id,
               name: tag.tagData.name,
               division: tag.tagData.division,
-              createdAt: tag.tagData.createdAt
-            });
+              createdAt: tag.tagData.createdAt || tag.createdAt
+            };
+          } else {
+            // Estrutura direta
+            tagInfo = {
+              id: tag.id,
+              name: tag.name,
+              division: tag.division,
+              createdAt: tag.createdAt
+            };
+          }
+          
+          const tagKey = `${tagInfo.name}_${tagInfo.division}`;
+          if (!seenTags.has(tagKey)) {
+            seenTags.add(tagKey);
+            processedTags.push(tagInfo);
           }
         }
       });
