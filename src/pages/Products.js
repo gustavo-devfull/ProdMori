@@ -241,7 +241,13 @@ const Products = () => {
         <div>
           {Object.entries(groupedProducts).map(([factoryName, factoryProducts]) => (
             <div key={factoryName} className="mb-4">
-              <h4 className="text-primary mb-3">{factoryName}</h4>
+              {/* Card com nome da fábrica - fundo azul e letra branca */}
+              <Card className="mb-3" style={{ backgroundColor: '#0d6efd', color: 'white' }}>
+                <Card.Body className="py-2">
+                  <h5 className="mb-0 text-center">{factoryName}</h5>
+                </Card.Body>
+              </Card>
+              
               <Row className="g-3">
                 {factoryProducts.map(product => (
                   <Col
@@ -280,23 +286,28 @@ const Products = () => {
 
                         {/* Informações do produto */}
                         <div className="flex-grow-1">
-                          <h6 className="card-title text-truncate" title={product.name}>
-                            {product.name || t('Sem nome', '无名称')}
-                          </h6>
+                          {/* Nome do produto (alinhado à esquerda) | Símbolo do yuan + U.PRICE (alinhado à direita) */}
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h6 className="card-title text-truncate mb-0" title={product.name} style={{ flex: 1, marginRight: '10px' }}>
+                              {product.name || t('Sem nome', '无名称')}
+                            </h6>
+                            <div className="text-primary fw-bold d-flex align-items-center">
+                              <span className="me-1">¥</span>
+                              {product.uPrice || t('Sob consulta', '咨询价格')}
+                            </div>
+                          </div>
+                          
                           <p className="text-muted small mb-2">
                             {product.segment || t('Sem segmento', '无行业')}
                           </p>
-                          <div className="text-primary fw-bold">
-                            {product.uPrice || t('Sob consulta', '咨询价格')}
-                          </div>
                         </div>
                         
                         <div className="mt-auto">
                           <Button 
-                            variant="primary" 
+                            variant="success" 
                             className="w-100"
                             size={isMobile ? 'lg' : 'md'}
-                            style={{ fontSize: isMobile ? '16px' : '14px' }}
+                            style={{ fontSize: '14px' }}
                             onClick={() => handleEdit(product)}
                           >
                             {t('Ver Detalhes', '查看详情')}
