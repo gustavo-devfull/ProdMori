@@ -146,6 +146,10 @@ const FactoryDetail = () => {
   };
 
   const handleModalClose = () => {
+    console.log('=== HANDLE MODAL CLOSE ===');
+    console.log('Current modalVisible:', modalVisible);
+    console.log('Current editingProduct:', editingProduct);
+    
     setModalVisible(false);
     setEditingProduct(null);
     setError(null);
@@ -154,6 +158,8 @@ const FactoryDetail = () => {
     setAudioUrls([]);
     setUploadingAudio(false);
     setLastUploadedAudioUrl('');
+    
+    console.log('Modal close states updated');
   };
 
   const handlePreview = (imageUrl) => {
@@ -224,10 +230,22 @@ const FactoryDetail = () => {
       
       console.log('Closing modal...');
       handleModalClose();
-      console.log('Modal closed');
+      console.log('Modal close called');
+      
+      // Garantir que o modal feche mesmo se houver algum problema
+      setTimeout(() => {
+        console.log('Force closing modal after timeout');
+        setModalVisible(false);
+        setEditingProduct(null);
+      }, 100);
+      
     } catch (err) {
       console.error('Error deleting product:', err);
       setError(t('Erro ao excluir produto', '删除产品时出错'));
+      
+      // Fechar modal mesmo em caso de erro
+      console.log('Closing modal due to error...');
+      handleModalClose();
     } finally {
       console.log('Setting submitting to false');
       setSubmitting(false);
