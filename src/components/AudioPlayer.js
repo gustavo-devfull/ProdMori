@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button, Card, ListGroup, Badge } from 'react-bootstrap';
 import { useLanguage } from '../contexts/LanguageContext';
 
