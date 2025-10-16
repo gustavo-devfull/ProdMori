@@ -77,7 +77,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         
@@ -129,7 +128,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
 
   // Regravar
   const reRecord = () => {
-    setAudioBlob(null);
     setAudioUrl('');
     setRecordingTime(0);
     setError(null);
@@ -146,7 +144,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     if (audioUrl && audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(audioUrl);
     }
-    setAudioBlob(null);
     setAudioUrl('');
     setRecordingTime(0);
     setError(null);
