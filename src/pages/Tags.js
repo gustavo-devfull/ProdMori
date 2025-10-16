@@ -4,16 +4,12 @@ import {
   Button,
   Modal,
   Form,
-  Row,
-  Col,
   Alert,
   Spinner,
-  ListGroup,
   Badge
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import factoryServiceAPI from '../services/factoryServiceAPI';
 import tagService from '../services/tagService';
 
 const Tags = () => {
