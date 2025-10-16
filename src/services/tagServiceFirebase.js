@@ -75,7 +75,19 @@ class TagServiceFirebase {
 
       const result = await response.json();
       console.log('TagServiceFirebase.getTags - Tags found:', result);
-      return result.data;
+      
+      // Extrair os dados das tags do formato Firebase
+      const extractedTags = result.data.map(item => ({
+        id: item.id,
+        name: item.tagData.name,
+        division: item.tagData.division,
+        createdAt: item.tagData.createdAt,
+        updatedAt: item.tagData.updatedAt,
+        factoryId: item.factoryId
+      }));
+      
+      console.log('TagServiceFirebase.getTags - Extracted tags:', extractedTags);
+      return extractedTags;
     } catch (error) {
       console.error('TagServiceFirebase.getTags - Error:', error);
       throw error;
