@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button, Card, ListGroup, Badge } from 'react-bootstrap';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -16,15 +16,8 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   };
 
-  // Detectar se é iOS 15+ (tem melhor suporte a M4A)
-  const isIOS15Plus = () => {
-    if (!isIOS()) return false;
-    const match = navigator.userAgent.match(/OS (\d+)_/);
-    return match ? parseInt(match[1]) >= 15 : false;
-  };
-
   // Verificar compatibilidade de formato específica para iOS
-  const isFormatCompatibleWithIOS = (url) => {
+  const isFormatCompatibleWithIOS = useCallback((url) => {
     if (!isIOS()) return true;
     
     const extension = url.split('.').pop().toLowerCase();
@@ -34,11 +27,14 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     
     // M4A tem problemas em versões antigas do iOS
     if (extension === 'm4a') {
-      return isIOS15Plus();
+      // Detectar se é iOS 15+ (tem melhor suporte a M4A)
+      const match = navigator.userAgent.match(/OS (\d+)_/);
+      const isIOS15Plus = match ? parseInt(match[1]) >= 15 : false;
+      return isIOS15Plus;
     }
     
     return true;
-  };
+  }, []);
 
   // Pré-carregar áudios quando a lista muda
   useEffect(() => {
@@ -122,7 +118,7 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     if (audioUrls.length > 0) {
       preloadAudios();
     }
-  }, [audioUrls, loadedAudios]);
+  }, [audioUrls, loadedAudios, isFormatCompatibleWithIOS]);
 
 
   const handlePlay = async (index, url) => {
@@ -320,7 +316,8 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
       console.log('iOS detectado - verificando problemas específicos');
       
       // Verificar se é problema de formato M4A
-      if (url && url.includes('.m4a')) {
+      const audioUrl = audioElement?.src;
+      if (audioUrl && audioUrl.includes('.m4a')) {
         errorMessage = 'Formato M4A pode não ser suportado no iOS. Tente regravar em MP3.';
       }
       
