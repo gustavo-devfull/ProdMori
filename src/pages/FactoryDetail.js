@@ -982,7 +982,7 @@ const FactoryDetail = () => {
               </div>
               
               {/* Tags Globais Região */}
-              {globalTags.regiao.length > 0 && (
+              {globalTags && globalTags.regiao && globalTags.regiao.length > 0 && (
                 <div className="mt-2">
                   <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
                   <div className="d-flex flex-wrap gap-1">
@@ -1046,7 +1046,7 @@ const FactoryDetail = () => {
               </div>
               
               {/* Tags Globais Material */}
-              {globalTags.material.length > 0 && (
+              {globalTags && globalTags.material && globalTags.material.length > 0 && (
                 <div className="mt-2">
                   <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
                   <div className="d-flex flex-wrap gap-1">
@@ -1110,7 +1110,7 @@ const FactoryDetail = () => {
               </div>
               
               {/* Tags Globais Outros */}
-              {globalTags.outros.length > 0 && (
+              {globalTags && globalTags.outros && globalTags.outros.length > 0 && (
                 <div className="mt-2">
                   <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
                   <div className="d-flex flex-wrap gap-1">
