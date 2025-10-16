@@ -36,12 +36,12 @@ const AppHeader = () => {
         />
       </Navbar.Brand>
       
-      <Nav className="ms-auto d-flex align-items-center gap-2">
+      <Nav className="ms-auto d-flex align-items-center gap-3">
         <Button
           variant={location.pathname === '/' ? 'primary' : 'outline-light'}
           onClick={() => handleNavigation('/')}
           size={isMobile ? 'sm' : 'md'}
-          className="px-2 fw-semibold"
+          className="px-3 fw-semibold"
           style={location.pathname === '/' ? {
             backgroundColor: '#0d6efd',
             borderColor: '#0d6efd',
@@ -53,7 +53,7 @@ const AppHeader = () => {
           }}
           title={t('Dashboard', '仪表板')}
         >
-          <i className="bi bi-speedometer2"></i>
+          {t('DASHBOARD', '仪表板')}
         </Button>
         <Button
           variant={location.pathname === '/factories' ? 'primary' : 'outline-light'}
@@ -69,8 +69,9 @@ const AppHeader = () => {
             borderColor: 'white',
             color: 'white'
           }}
+          title={t('Fábricas', '工厂')}
         >
-          {t('Fábricas', '工厂')}
+          <i className="bi bi-building"></i>
         </Button>
         <Button
           variant={location.pathname === '/products' ? 'primary' : 'outline-light'}
@@ -86,8 +87,9 @@ const AppHeader = () => {
             borderColor: 'white',
             color: 'white'
           }}
+          title={t('Produtos', '产品')}
         >
-          {t('Produtos', '产品')}
+          <i className="bi bi-box"></i>
         </Button>
       </Nav>
     </Navbar>
