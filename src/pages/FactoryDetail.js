@@ -1250,7 +1250,7 @@ const FactoryDetail = () => {
                   onChange={(e) => setFactoryNewTagInputs(prev => ({ ...prev, outros: e.target.value }))}
                 />
                 <Button 
-                  variant="outline-warning" 
+                  variant="outline-danger" 
                   size="sm"
                   onClick={() => addNewTagToFactory('outros')}
                   disabled={!factoryNewTagInputs.outros.trim()}

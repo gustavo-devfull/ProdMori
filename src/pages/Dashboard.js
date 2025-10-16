@@ -922,7 +922,7 @@ const Dashboard = () => {
                 {factoryTags.outros.map(tag => (
                   <Badge 
                     key={tag.id} 
-                    bg="warning" 
+                    bg="danger" 
                     className="d-flex align-items-center gap-1"
                     style={{ cursor: 'pointer' }}
                     onClick={() => removeTagFromFactory(tag.id, 'outros')}
@@ -940,7 +940,7 @@ const Dashboard = () => {
                   onChange={(e) => setNewTagInputs(prev => ({ ...prev, outros: e.target.value }))}
                 />
                 <Button 
-                  variant="outline-warning" 
+                  variant="outline-danger" 
                   size="sm"
                   onClick={() => addNewTagToFactory('outros')}
                   disabled={!newTagInputs.outros.trim()}
@@ -1011,12 +1011,12 @@ const Dashboard = () => {
                     {/* Tags Outros Disponíveis */}
                     {availableTags && availableTags.outros && availableTags.outros.length > 0 && (
                       <div className="mb-3">
-                        <h6 className="text-warning small">{t('Outros', '其他')}</h6>
+                        <h6 className="text-danger small">{t('Outros', '其他')}</h6>
                         <div className="d-flex flex-wrap gap-2">
                           {availableTags.outros.map(tag => (
                             <Badge 
                               key={tag.id} 
-                              bg="warning" 
+                              bg="danger" 
                               className="d-flex align-items-center gap-1"
                               style={{ cursor: 'pointer' }}
                               onClick={() => addAvailableTagToFactory(tag)}
