@@ -132,11 +132,19 @@ const Dashboard = () => {
       
       // Salvar as tags da fábrica usando o serviço
       if (newFactory && newFactory.id) {
+        console.log('=== SAVING FACTORY TAGS ===');
+        console.log('Factory ID:', newFactory.id);
+        console.log('Factory tags to save:', factoryTags);
+        
         Object.keys(factoryTags).forEach(division => {
+          console.log(`Processing division: ${division}`);
           factoryTags[division].forEach(tag => {
+            console.log(`Saving tag: ${tag.name} (${tag.id}) to factory ${newFactory.id}`);
             tagService.addTagToFactory(newFactory.id, tag);
           });
         });
+        
+        console.log('All factory tags saved');
       }
       
       setModalVisible(false);
@@ -178,6 +186,11 @@ const Dashboard = () => {
     const tagName = newTagInputs[division].trim();
     if (!tagName) return;
 
+    console.log('=== ADD NEW TAG TO FACTORY ===');
+    console.log('Division:', division);
+    console.log('Tag name:', tagName);
+    console.log('Current factory tags:', factoryTags);
+
     const newTag = {
       id: Date.now().toString(),
       name: tagName,
@@ -186,15 +199,22 @@ const Dashboard = () => {
       updatedAt: new Date()
     };
 
+    console.log('New tag created:', newTag);
+
     // Adicionar ao serviço global de tags
     const result = tagService.addTag(newTag);
+    console.log('Add tag result:', result);
+    
     if (result.success) {
       // Adicionar à fábrica atual
+      console.log('Adding tag to factory...');
       addTagToFactory(newTag, division);
+      console.log('Tag added to factory. New factory tags:', factoryTags);
       
       // Atualizar tags disponíveis
       loadAvailableTags();
     } else {
+      console.error('Failed to add tag:', result.message);
       setError(result.message);
     }
 

@@ -1202,9 +1202,9 @@ const FactoryDetail = () => {
               </div>
               
               {/* Tags Globais Região */}
-              {globalTags && globalTags.regiao && globalTags.regiao.length > 0 && (
-                <div className="mt-2">
-                  <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+              <div className="mt-2">
+                <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+                {globalTags && globalTags.regiao && globalTags.regiao.length > 0 ? (
                   <div className="d-flex flex-wrap gap-1">
                     {globalTags.regiao.map(tag => {
                       const isAlreadyAdded = factoryTags.regiao.some(t => t.id === tag.id);
@@ -1227,8 +1227,10 @@ const FactoryDetail = () => {
                       );
                     })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <small className="text-muted">{t('Nenhuma tag global disponível', '没有可用的全局标签')}</small>
+                )}
+              </div>
             </Form.Group>
 
             {/* Tags Material */}
@@ -1266,9 +1268,9 @@ const FactoryDetail = () => {
               </div>
               
               {/* Tags Globais Material */}
-              {globalTags && globalTags.material && globalTags.material.length > 0 && (
-                <div className="mt-2">
-                  <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+              <div className="mt-2">
+                <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+                {globalTags && globalTags.material && globalTags.material.length > 0 ? (
                   <div className="d-flex flex-wrap gap-1">
                     {globalTags.material.map(tag => {
                       const isAlreadyAdded = factoryTags.material.some(t => t.id === tag.id);
@@ -1291,8 +1293,10 @@ const FactoryDetail = () => {
                       );
                     })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <small className="text-muted">{t('Nenhuma tag global disponível', '没有可用的全局标签')}</small>
+                )}
+              </div>
             </Form.Group>
 
             {/* Tags Outros */}
@@ -1330,9 +1334,9 @@ const FactoryDetail = () => {
               </div>
               
               {/* Tags Globais Outros */}
-              {globalTags && globalTags.outros && globalTags.outros.length > 0 && (
-                <div className="mt-2">
-                  <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+              <div className="mt-2">
+                <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+                {globalTags && globalTags.outros && globalTags.outros.length > 0 ? (
                   <div className="d-flex flex-wrap gap-1">
                     {globalTags.outros.map(tag => {
                       const isAlreadyAdded = factoryTags.outros.some(t => t.id === tag.id);
@@ -1355,8 +1359,10 @@ const FactoryDetail = () => {
                       );
                     })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <small className="text-muted">{t('Nenhuma tag global disponível', '没有可用的全局标签')}</small>
+                )}
+              </div>
             </Form.Group>
 
             <Form.Group className="mb-3">

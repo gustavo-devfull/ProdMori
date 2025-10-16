@@ -16,11 +16,6 @@ const Tags = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
-  const [tags, setTags] = useState({
-    regiao: [],
-    material: [],
-    outros: []
-  });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTag, setEditingTag] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +60,7 @@ const Tags = () => {
       // Carregar tags globais do Firebase
       const globalTagsData = await tagService.getAllTags();
       console.log('Tags globais carregadas:', globalTagsData);
-      setTags(globalTagsData);
+      setGlobalTags(globalTagsData);
       
     } catch (err) {
       console.error('Erro ao carregar tags globais:', err);
@@ -73,13 +68,13 @@ const Tags = () => {
       try {
         const savedTags = localStorage.getItem('globalTags');
         if (savedTags) {
-          setTags(JSON.parse(savedTags));
+          setGlobalTags(JSON.parse(savedTags));
         } else {
-          setTags({ regiao: [], material: [], outros: [] });
+          setGlobalTags({ regiao: [], material: [], outros: [] });
         }
       } catch (fallbackError) {
         console.error('Erro no fallback localStorage:', fallbackError);
-        setTags({ regiao: [], material: [], outros: [] });
+        setGlobalTags({ regiao: [], material: [], outros: [] });
       }
       setError(t('Erro ao carregar tags', '加载标签时出错'));
     } finally {
