@@ -8,15 +8,19 @@ import {
   Col,
   Alert,
   Spinner,
-  ListGroup
+  ListGroup,
+  Badge
 } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
+import tagService from '../services/tagService';
 import CustomImage from '../components/CustomImage';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Factories = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -29,6 +33,22 @@ const Factories = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
   const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
+  const [factoryTags, setFactoryTags] = useState({
+    regiao: [],
+    material: [],
+    outros: []
+  });
+  const [newTagInputs, setNewTagInputs] = useState({
+    regiao: '',
+    material: '',
+    outros: ''
+  });
+  const [globalTags, setGlobalTags] = useState({
+    regiao: [],
+    material: [],
+    outros: []
+  });
+  const [showAdditionalFields, setShowAdditionalFields] = useState(false);
 
   const loadFactories = useCallback(async (showRefresh = false) => {
     try {
@@ -65,6 +85,20 @@ const Factories = () => {
     loadFactories();
   }, [loadFactories]);
 
+  // Carregar tags globais
+  useEffect(() => {
+    const loadGlobalTags = () => {
+      try {
+        const globalTagsData = tagService.getAllTags();
+        setGlobalTags(globalTagsData);
+      } catch (error) {
+        console.error('Erro ao carregar tags globais:', error);
+      }
+    };
+    
+    loadGlobalTags();
+  }, []);
+
   const handleSubmit = async (values) => {
     try {
       setSubmitting(true);
@@ -99,8 +133,28 @@ const Factories = () => {
       
       if (editingFactory) {
         await factoryServiceAPI.updateFactory(editingFactory.id, finalValues);
+        // Salvar as tags da fábrica usando o serviço
+        Object.keys(factoryTags).forEach(division => {
+          factoryTags[division].forEach(tag => {
+            tagService.addTagToFactory(editingFactory.id, tag);
+          });
+        });
+        
+        // Sincronizar tags globais após salvar
+        tagService.syncGlobalTags();
       } else {
-        await factoryServiceAPI.createFactory(finalValues);
+        const newFactory = await factoryServiceAPI.createFactory(finalValues);
+        // Salvar as tags da fábrica usando o serviço
+        if (newFactory && newFactory.id) {
+          Object.keys(factoryTags).forEach(division => {
+            factoryTags[division].forEach(tag => {
+              tagService.addTagToFactory(newFactory.id, tag);
+            });
+          });
+          
+          // Sincronizar tags globais após salvar
+          tagService.syncGlobalTags();
+        }
       }
       
       setModalVisible(false);
@@ -112,16 +166,6 @@ const Factories = () => {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleEdit = (factory) => {
-    setEditingFactory(factory);
-    setModalVisible(true);
-    // Inicializar URLs das imagens para edição
-    setImageUrls({
-      image1: factory.imageUrl1 || '',
-      image2: factory.imageUrl2 || ''
-    });
   };
 
   const handleDelete = async (id) => {
@@ -141,6 +185,134 @@ const Factories = () => {
     // Limpar estado das imagens
     setImageUrls({ image1: '', image2: '' });
     setUploadingImages({ image1: false, image2: false });
+    resetFactoryTags();
+    setShowAdditionalFields(false);
+  };
+
+  const handleNewFactory = () => {
+    setEditingFactory(null);
+    setModalVisible(true);
+    // Recarregar tags globais
+    const globalTagsData = tagService.getAllTags();
+    setGlobalTags(globalTagsData);
+  };
+
+  // Funções para gerenciar tags
+  const addTagToFactory = (tag, division) => {
+    setFactoryTags(prev => ({
+      ...prev,
+      [division]: [...prev[division], tag]
+    }));
+  };
+
+  const removeTagFromFactory = (tagId, division) => {
+    setFactoryTags(prev => ({
+      ...prev,
+      [division]: prev[division].filter(tag => tag.id !== tagId)
+    }));
+  };
+
+  const addNewTagToFactory = (division) => {
+    const tagName = newTagInputs[division].trim();
+    if (!tagName) return;
+
+    const newTag = {
+      id: Date.now().toString(),
+      name: tagName,
+      division: division,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Adicionar ao serviço global de tags
+    const result = tagService.addTag(newTag);
+    if (result.success) {
+      // Adicionar à fábrica atual
+      addTagToFactory(newTag, division);
+      
+      // Atualizar tags globais disponíveis
+      const globalTagsData = tagService.getAllTags();
+      setGlobalTags(globalTagsData);
+    } else {
+      console.warn('Tag já existe globalmente:', result.message);
+      // Mesmo assim, adicionar à fábrica atual
+      addTagToFactory(newTag, division);
+    }
+
+    // Limpar input
+    setNewTagInputs(prev => ({
+      ...prev,
+      [division]: ''
+    }));
+  };
+
+  const addGlobalTagToFactory = (tag, division) => {
+    // Verificar se a tag já existe na fábrica
+    const existingTag = factoryTags[division].find(t => t.id === tag.id);
+    if (existingTag) return;
+
+    // Adicionar a tag à fábrica
+    addTagToFactory(tag, division);
+  };
+
+  const resetFactoryTags = () => {
+    setFactoryTags({
+      regiao: [],
+      material: [],
+      outros: []
+    });
+    setNewTagInputs({
+      regiao: '',
+      material: '',
+      outros: ''
+    });
+  };
+
+  // Função para renderizar tags da fábrica
+  const renderFactoryTags = (factory) => {
+    try {
+      const savedTags = localStorage.getItem(`tags_${factory.id}`);
+      if (!savedTags) return null;
+      
+      const factoryTags = JSON.parse(savedTags);
+      const allFactoryTags = [];
+      
+      // Combinar todas as tags da fábrica
+      if (factoryTags.regiao && factoryTags.regiao.length > 0) {
+        allFactoryTags.push(...factoryTags.regiao.map(tag => ({ ...tag, type: 'regiao' })));
+      }
+      
+      if (factoryTags.material && factoryTags.material.length > 0) {
+        allFactoryTags.push(...factoryTags.material.map(tag => ({ ...tag, type: 'material' })));
+      }
+      
+      if (factoryTags.outros && factoryTags.outros.length > 0) {
+        allFactoryTags.push(...factoryTags.outros.map(tag => ({ ...tag, type: 'outros' })));
+      }
+      
+      if (allFactoryTags.length === 0) return null;
+      
+      return (
+        <div className="mt-3">
+          <div className="d-flex flex-wrap gap-1">
+            {allFactoryTags.map(tag => (
+              <Badge 
+                key={tag.id} 
+                bg={tag.type === 'regiao' ? 'primary' : tag.type === 'material' ? 'success' : 'danger'}
+                className="d-flex align-items-center gap-1"
+                style={{ fontSize: '14px' }}
+              >
+                <i className={`bi ${tag.type === 'regiao' ? 'bi-geo-alt' : tag.type === 'material' ? 'bi-box' : 'bi-tag'}`}></i>
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      );
+    } catch (error) {
+      console.error('Erro ao carregar tags da fábrica:', error);
+      return null;
+    }
   };
 
   const toggleProductsExpansion = (factoryId) => {
@@ -174,7 +346,7 @@ const Factories = () => {
           <Button 
             variant="light"
             size="sm"
-            onClick={() => setModalVisible(true)}
+            onClick={handleNewFactory}
             className="d-flex align-items-center"
           >
             <i className="bi bi-plus-circle me-1"></i>
@@ -221,8 +393,8 @@ const Factories = () => {
                     <Button 
                       variant="outline-primary"
                       size="sm"
-                      onClick={() => handleEdit(factory)}
-                      title={t('Editar fábrica', '编辑工厂')}
+                      onClick={() => navigate(`/factory/${factory.id}`)}
+                      title={t('Ver detalhes da fábrica', '查看工厂详情')}
                     >
                       <i className="bi bi-pencil"></i>
                     </Button>
@@ -259,6 +431,9 @@ const Factories = () => {
                       </Row>
                     </div>
                   )}
+
+                  {/* Tags da fábrica */}
+                  {renderFactoryTags(factory)}
 
                   {/* Lista de Produtos da fábrica */}
                   {factory.products && factory.products.length > 0 && (
@@ -339,55 +514,73 @@ const Factories = () => {
               />
             </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Telefone', '电话')}</Form.Label>
-              <Form.Control
-                type="tel"
-                name="phone"
-                defaultValue={editingFactory?.phone || ''}
-                placeholder={t('Digite o telefone', '输入电话号码')}
-              />
-            </Form.Group>
+            {/* Botão para mostrar/ocultar campos adicionais */}
+            <div className="d-flex justify-content-center mb-3">
+              <Button 
+                variant="outline-secondary" 
+                size="sm"
+                onClick={() => setShowAdditionalFields(!showAdditionalFields)}
+                className="d-flex align-items-center"
+              >
+                <i className={`bi ${showAdditionalFields ? 'bi-chevron-up' : 'bi-chevron-down'} me-1`}></i>
+                {showAdditionalFields ? t('Ocultar campos adicionais', '隐藏额外字段') : t('Mostrar campos adicionais', '显示额外字段')}
+              </Button>
+            </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>{t('WeChat', '微信')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="wechat"
-                defaultValue={editingFactory?.wechat || ''}
-                placeholder={t('Digite o WeChat', '输入微信号')}
-              />
-            </Form.Group>
+            {/* Campos adicionais */}
+            {showAdditionalFields && (
+              <>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('Telefone', '电话')}</Form.Label>
+                  <Form.Control
+                    type="tel"
+                    name="phone"
+                    defaultValue={editingFactory?.phone || ''}
+                    placeholder={t('Digite o telefone', '输入电话号码')}
+                  />
+                </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>{t('E-mail', '邮箱')}</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                defaultValue={editingFactory?.email || ''}
-                placeholder={t('Digite o e-mail', '输入邮箱地址')}
-              />
-            </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('WeChat', '微信')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="wechat"
+                    defaultValue={editingFactory?.wechat || ''}
+                    placeholder={t('Digite o WeChat', '输入微信号')}
+                  />
+                </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Localização', '位置')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="location"
-                defaultValue={editingFactory?.location || ''}
-                placeholder={t('Digite a localização', '输入位置')}
-              />
-            </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('E-mail', '邮箱')}</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    defaultValue={editingFactory?.email || ''}
+                    placeholder={t('Digite o e-mail', '输入邮箱地址')}
+                  />
+                </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Segmento', '行业')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="segment"
-                defaultValue={editingFactory?.segment || ''}
-                placeholder={t('Digite o segmento de atuação', '输入行业领域')}
-              />
-            </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('Localização', '位置')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="location"
+                    defaultValue={editingFactory?.location || ''}
+                    placeholder={t('Digite a localização', '输入位置')}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>{t('Segmento', '行业')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="segment"
+                    defaultValue={editingFactory?.segment || ''}
+                    placeholder={t('Digite o segmento de atuação', '输入行业领域')}
+                  />
+                </Form.Group>
+              </>
+            )}
 
             <Form.Group className="mb-3">
               <Form.Label>{t('Descrição', '描述')}</Form.Label>
@@ -398,6 +591,205 @@ const Factories = () => {
                 defaultValue={editingFactory?.description || ''}
                 placeholder={t('Digite uma descrição', '输入描述')}
               />
+            </Form.Group>
+
+            {/* Campos de Tags */}
+            <Row className="mb-3">
+              <Col xs={12}>
+                <h6 className="text-primary mb-3">{t('Tags da Fábrica', '工厂标签')}</h6>
+              </Col>
+            </Row>
+
+            {/* Tags Região */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags Região', '地区标签')}</Form.Label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {factoryTags.regiao.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    bg="primary" 
+                    className="d-flex align-items-center gap-1"
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
+                    onClick={() => removeTagFromFactory(tag.id, 'regiao')}
+                  >
+                    {tag.name}
+                    <i className="bi bi-x"></i>
+                  </Badge>
+                ))}
+              </div>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nova tag', '新标签')}
+                  value={newTagInputs.regiao}
+                  onChange={(e) => setNewTagInputs(prev => ({ ...prev, regiao: e.target.value }))}
+                />
+                <Button 
+                  variant="outline-primary" 
+                  size="sm"
+                  onClick={() => addNewTagToFactory('regiao')}
+                  disabled={!newTagInputs.regiao.trim()}
+                >
+                  <i className="bi bi-plus"></i>
+                </Button>
+              </div>
+              
+              {/* Tags Globais Região */}
+              {globalTags.regiao.length > 0 && (
+                <div className="mt-2">
+                  <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+                  <div className="d-flex flex-wrap gap-1">
+                    {globalTags.regiao.map(tag => {
+                      const isAlreadyAdded = factoryTags.regiao.some(t => t.id === tag.id);
+                      return (
+                        <Badge 
+                          key={tag.id} 
+                          bg="secondary" 
+                          className="d-flex align-items-center gap-1"
+                          style={{ 
+                            cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
+                            opacity: isAlreadyAdded ? 0.5 : 1,
+                            fontSize: '14px'
+                          }}
+                          onClick={() => !isAlreadyAdded && addGlobalTagToFactory(tag, 'regiao')}
+                          title={isAlreadyAdded ? t('Já adicionada', '已添加') : t('Clique para adicionar', '点击添加')}
+                        >
+                          {tag.name}
+                          {!isAlreadyAdded && <i className="bi bi-plus"></i>}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </Form.Group>
+
+            {/* Tags Material */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags Material', '材料标签')}</Form.Label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {factoryTags.material.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    bg="success" 
+                    className="d-flex align-items-center gap-1"
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
+                    onClick={() => removeTagFromFactory(tag.id, 'material')}
+                  >
+                    {tag.name}
+                    <i className="bi bi-x"></i>
+                  </Badge>
+                ))}
+              </div>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nova tag', '新标签')}
+                  value={newTagInputs.material}
+                  onChange={(e) => setNewTagInputs(prev => ({ ...prev, material: e.target.value }))}
+                />
+                <Button 
+                  variant="outline-success" 
+                  size="sm"
+                  onClick={() => addNewTagToFactory('material')}
+                  disabled={!newTagInputs.material.trim()}
+                >
+                  <i className="bi bi-plus"></i>
+                </Button>
+              </div>
+              
+              {/* Tags Globais Material */}
+              {globalTags.material.length > 0 && (
+                <div className="mt-2">
+                  <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+                  <div className="d-flex flex-wrap gap-1">
+                    {globalTags.material.map(tag => {
+                      const isAlreadyAdded = factoryTags.material.some(t => t.id === tag.id);
+                      return (
+                        <Badge 
+                          key={tag.id} 
+                          bg="secondary" 
+                          className="d-flex align-items-center gap-1"
+                          style={{ 
+                            cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
+                            opacity: isAlreadyAdded ? 0.5 : 1,
+                            fontSize: '14px'
+                          }}
+                          onClick={() => !isAlreadyAdded && addGlobalTagToFactory(tag, 'material')}
+                          title={isAlreadyAdded ? t('Já adicionada', '已添加') : t('Clique para adicionar', '点击添加')}
+                        >
+                          {tag.name}
+                          {!isAlreadyAdded && <i className="bi bi-plus"></i>}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </Form.Group>
+
+            {/* Tags Outros */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags Outros', '其他标签')}</Form.Label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {factoryTags.outros.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    bg="danger" 
+                    className="d-flex align-items-center gap-1"
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
+                    onClick={() => removeTagFromFactory(tag.id, 'outros')}
+                  >
+                    {tag.name}
+                    <i className="bi bi-x"></i>
+                  </Badge>
+                ))}
+              </div>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nova tag', '新标签')}
+                  value={newTagInputs.outros}
+                  onChange={(e) => setNewTagInputs(prev => ({ ...prev, outros: e.target.value }))}
+                />
+                <Button 
+                  variant="outline-warning" 
+                  size="sm"
+                  onClick={() => addNewTagToFactory('outros')}
+                  disabled={!newTagInputs.outros.trim()}
+                >
+                  <i className="bi bi-plus"></i>
+                </Button>
+              </div>
+              
+              {/* Tags Globais Outros */}
+              {globalTags.outros.length > 0 && (
+                <div className="mt-2">
+                  <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+                  <div className="d-flex flex-wrap gap-1">
+                    {globalTags.outros.map(tag => {
+                      const isAlreadyAdded = factoryTags.outros.some(t => t.id === tag.id);
+                      return (
+                        <Badge 
+                          key={tag.id} 
+                          bg="secondary" 
+                          className="d-flex align-items-center gap-1"
+                          style={{ 
+                            cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
+                            opacity: isAlreadyAdded ? 0.5 : 1,
+                            fontSize: '14px'
+                          }}
+                          onClick={() => !isAlreadyAdded && addGlobalTagToFactory(tag, 'outros')}
+                          title={isAlreadyAdded ? t('Já adicionada', '已添加') : t('Clique para adicionar', '点击添加')}
+                        >
+                          {tag.name}
+                          {!isAlreadyAdded && <i className="bi bi-plus"></i>}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </Form.Group>
 
             <Form.Group className="mb-3">

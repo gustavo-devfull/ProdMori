@@ -152,10 +152,28 @@ class ImageService {
       if (!url || typeof url !== 'string' || url.trim() === '') {
         return false;
       }
-      new URL(url);
-      return url.includes('ideolog.ia.br') || 
-             url.includes('localhost:3001/api/image') ||
-             url.includes('/api/image');
+      
+      const cleanUrl = url.trim();
+      
+      // Validar formato básico antes de tentar construir URL
+      if (cleanUrl.length < 5 || (!cleanUrl.includes('.') && !cleanUrl.startsWith('/'))) {
+        return false;
+      }
+      
+      // Se é uma URL relativa, considerar válida se começar com /api/image
+      if (cleanUrl.startsWith('/api/image')) {
+        return true;
+      }
+      
+      // Para URLs absolutas, tentar construir URL
+      if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+        new URL(cleanUrl);
+        return cleanUrl.includes('ideolog.ia.br') || 
+               cleanUrl.includes('localhost:3001/api/image') ||
+               cleanUrl.includes('/api/image');
+      }
+      
+      return false;
     } catch {
       return false;
     }
@@ -223,6 +241,12 @@ class ImageService {
       // Se já é uma URL completa e válida, retornar diretamente
       if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
         try {
+          // Validar se a URL tem formato básico válido antes de tentar construir
+          if (cleanUrl.length < 10 || !cleanUrl.includes('.')) {
+            console.log('ImageService.getImageUrl - URL muito curta ou sem domínio:', cleanUrl);
+            return null;
+          }
+          
           // Tentar construir URL para validar
           new URL(cleanUrl);
           console.log('ImageService.getImageUrl - Using complete URL:', cleanUrl);
@@ -271,6 +295,12 @@ class ImageService {
       } else if (constructedUrl.startsWith('http://') || constructedUrl.startsWith('https://')) {
         // URL absoluta - validar com construtor URL
         try {
+          // Validar formato básico antes de tentar construir URL
+          if (constructedUrl.length < 15 || !constructedUrl.includes('.')) {
+            console.log('ImageService.getImageUrl - URL construída muito curta ou sem domínio:', constructedUrl);
+            return null;
+          }
+          
           new URL(constructedUrl);
           console.log('ImageService.getImageUrl - Using constructed absolute URL:', constructedUrl);
           return constructedUrl;

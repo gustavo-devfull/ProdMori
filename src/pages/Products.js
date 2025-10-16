@@ -55,54 +55,57 @@ const Products = () => {
 
   useEffect(() => {
     loadData();
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, [loadData]);
-
-  // Ler parâmetro da URL para definir fábrica selecionada
-  useEffect(() => {
-    const factoryParam = searchParams.get('factory');
-    if (factoryParam) {
-      setSelectedFactory(factoryParam);
-    }
-  }, [searchParams]);
 
   const handleImageUpload = async (file) => {
     try {
       const imageUrl = await imageService.uploadFile(file);
       return imageUrl;
-    } catch (err) {
-      setError(t('Erro ao fazer upload da imagem', '图片上传时出错'));
-      console.error(err);
-      throw err;
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      throw error;
     }
+  };
+
+  const handlePreview = (imageUrl) => {
+    setPreviewImage(imageUrl);
+    setPreviewVisible(true);
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setEditingProduct(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const values = Object.fromEntries(formData.entries());
-    
-    // Converter preço para número se existir
-    if (values.price && values.price !== '') {
-      values.price = parseFloat(values.price);
-    }
+    setSubmitting(true);
     
     try {
-      setSubmitting(true);
+      const formData = new FormData(e.target);
+      const values = Object.fromEntries(formData.entries());
       
+      const productData = {
+        ...values,
+        factoryId: values.factoryId
+      };
+
       if (editingProduct) {
-        await productServiceAPI.updateProduct(editingProduct.id, values);
+        await productServiceAPI.updateProduct(editingProduct.id, productData);
       } else {
-        await productServiceAPI.createProduct(values);
+        await productServiceAPI.createProduct(productData);
       }
       
-      setModalVisible(false);
-      setEditingProduct(null);
       await loadData();
+      handleModalClose();
     } catch (err) {
       setError(t('Erro ao salvar produto', '保存产品时出错'));
       console.error(err);
@@ -111,96 +114,46 @@ const Products = () => {
     }
   };
 
-  const handleEdit = (product) => {
-    setEditingProduct(product);
-    setModalVisible(true);
-  };
-
   const handleDelete = async (productId) => {
-    if (!window.confirm(t('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.', '确定要删除这个产品吗？此操作无法撤销。'))) {
+    if (!window.confirm(t('Tem certeza que deseja excluir este produto?', '确定要删除这个产品吗？'))) {
       return;
     }
 
     try {
-      setSubmitting(true);
       await productServiceAPI.deleteProduct(productId);
-      setModalVisible(false);
-      setEditingProduct(null);
       await loadData();
-      setError(null);
     } catch (err) {
       setError(t('Erro ao excluir produto', '删除产品时出错'));
       console.error(err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
-
-  const handleModalClose = () => {
-    setModalVisible(false);
-    setEditingProduct(null);
-  };
-
-  const handlePreview = (imageUrl) => {
-    setPreviewImage(imageUrl);
-    setPreviewVisible(true);
-  };
-
-  const handleFactoryFilter = (factoryId) => {
-    setSelectedFactory(factoryId);
-  };
-
-  const handleSegmentFilter = (segment) => {
-    setSelectedSegment(segment);
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
+  // Filtrar produtos
   const filteredProducts = products.filter(product => {
+    const matchesSearch = !searchTerm || 
+      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.segment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.factory?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesFactory = !selectedFactory || product.factory?.id === selectedFactory;
     const matchesSegment = !selectedSegment || product.segment === selectedSegment;
     
-    // Busca em todos os campos do produto
-    const searchFields = [
-      product.name,
-      product.segment,
-      product.description,
-      product.material,
-      product.capacity,
-      product.colors,
-      product.moq,
-      product.dimensions,
-      product.factory?.name,
-      product.ref,
-      product.englishDescription,
-      product.remark,
-      product.obs,
-      product.ncm
-    ].filter(Boolean).join(' ').toLowerCase();
-    
-    const matchesSearch = !searchTerm || searchFields.includes(searchTerm.toLowerCase());
-    
-    return matchesFactory && matchesSegment && matchesSearch;
+    return matchesSearch && matchesFactory && matchesSegment;
   });
 
   // Agrupar produtos por fábrica
-  const groupedProducts = filteredProducts.reduce((groups, product) => {
-    const factoryName = product.factory?.name || 'Sem Fábrica';
-    if (!groups[factoryName]) {
-      groups[factoryName] = [];
+  const groupedProducts = filteredProducts.reduce((acc, product) => {
+    const factoryName = product.factory?.name || t('Sem fábrica', '无工厂');
+    if (!acc[factoryName]) {
+      acc[factoryName] = [];
     }
-    groups[factoryName].push(product);
-    return groups;
+    acc[factoryName].push(product);
+    return acc;
   }, {});
-
-  const uniqueSegments = [...new Set(products.map(p => p.segment).filter(Boolean))];
 
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
         <Spinner animation="border" size="lg" />
       </div>
     );
@@ -208,162 +161,135 @@ const Products = () => {
 
   return (
     <div>
-      <div className="bg-primary text-white p-3 rounded mb-3">
-        <div className="d-flex justify-content-between align-items-center">
-          <h2 className="mb-0 fs-5 fw-semibold">{t('Produtos', '产品')}</h2>
-          <Button 
-            variant="light"
-            className="text-primary fw-semibold"
-            onClick={() => setModalVisible(true)}
-            style={{ 
-              backgroundColor: 'white', 
-              borderColor: 'white',
-              color: '#0d6efd'
-            }}
-          >
-            <i className="bi bi-plus-circle me-2"></i>
-{t('Novo Produto', '新产品')}
-          </Button>
-        </div>
-      </div>
-      
-      <div className="d-flex justify-content-end mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>{t('Produtos', '产品')}</h2>
         <Button 
-          variant="outline-primary"
-          size="sm"
-          onClick={() => window.location.reload()}
+          variant="primary" 
+          onClick={() => setModalVisible(true)}
           className="d-flex align-items-center"
         >
-          <i className="bi bi-arrow-clockwise me-1"></i>
-          {t('Atualizar', '刷新')}
+          <i className="bi bi-plus-circle me-2"></i>
+          {t('Novo Produto', '新产品')}
         </Button>
       </div>
-      
+
       {error && (
-        <Alert variant="danger" className="mb-3">
-          <Alert.Heading>{t('Erro', '错误')}</Alert.Heading>
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      <Card className="mb-3">
+      {/* Filtros */}
+      <Card className="mb-4">
         <Card.Body>
-          <div className="d-flex flex-wrap gap-3 align-items-center">
-            <div className="flex-grow-1" style={{ minWidth: '200px' }}>
-              <Form.Control
-                type="text"
-                placeholder={t('Buscar em todos os campos', '搜索所有字段')}
-                value={searchTerm}
-                onChange={handleSearchChange}
-              />
-            </div>
-            
-            <div className="flex-grow-1" style={{ minWidth: '200px' }}>
-              <Form.Select
-                value={selectedFactory || ''}
-                onChange={(e) => handleFactoryFilter(e.target.value || null)}
-              >
-                <option value="">{t('Todas as fábricas', '所有工厂')}</option>
-                {factories.map(factory => (
-                  <option key={factory.id} value={factory.id}>
-                    {factory.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </div>
-            
-            <div className="flex-grow-1" style={{ minWidth: '200px' }}>
-              <Form.Select
-                value={selectedSegment || ''}
-                onChange={(e) => handleSegmentFilter(e.target.value || null)}
-              >
-                <option value="">{t('Todos os segmentos', '所有行业')}</option>
-                {uniqueSegments.map(segment => (
-                  <option key={segment} value={segment}>
-                    {segment}
-                  </option>
-                ))}
-              </Form.Select>
-            </div>
-            
-            {(selectedFactory || selectedSegment || searchTerm) && (
-              <small className="text-muted">
-                {filteredProducts.length} {t('produto(s) encontrado(s)', '找到的产品')}
-              </small>
-            )}
-          </div>
+          <Row>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>{t('Buscar', '搜索')}</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nome, segmento ou fábrica...', '名称、行业或工厂...')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>{t('Fábrica', '工厂')}</Form.Label>
+                <Form.Select
+                  value={selectedFactory || ''}
+                  onChange={(e) => setSelectedFactory(e.target.value || null)}
+                >
+                  <option value="">{t('Todas as fábricas', '所有工厂')}</option>
+                  {factories.map(factory => (
+                    <option key={factory.id} value={factory.id}>
+                      {factory.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>{t('Segmento', '行业')}</Form.Label>
+                <Form.Select
+                  value={selectedSegment || ''}
+                  onChange={(e) => setSelectedSegment(e.target.value || null)}
+                >
+                  <option value="">{t('Todos os segmentos', '所有行业')}</option>
+                  {[...new Set(products.map(p => p.segment).filter(Boolean))].map(segment => (
+                    <option key={segment} value={segment}>
+                      {segment}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
         </Card.Body>
       </Card>
 
-      {filteredProducts.length === 0 ? (
+      {/* Lista de produtos */}
+      {Object.keys(groupedProducts).length === 0 ? (
         <Card>
           <Card.Body className="text-center py-5">
-            <i className="bi bi-bag text-muted fs-1"></i>
-            <h5 className="mt-3 text-muted">{t('Nenhum produto encontrado', '没有找到产品')}</h5>
-            <p className="text-muted">{t('Clique em "Novo Produto" para começar', '点击"新产品"开始')}</p>
+            <i className="bi bi-box text-muted fs-1"></i>
+            <h5 className="mt-3 text-muted">{t('Nenhum produto encontrado', '未找到产品')}</h5>
+            <p className="text-muted">{t('Tente ajustar os filtros ou cadastre um novo produto', '尝试调整过滤器或注册新产品')}</p>
           </Card.Body>
         </Card>
       ) : (
         <div>
           {Object.entries(groupedProducts).map(([factoryName, factoryProducts]) => (
             <div key={factoryName} className="mb-4">
-              <h4 className="mb-3 text-primary border-bottom pb-2">
-                <i className="bi bi-building me-2"></i>
-                {factoryName} ({factoryProducts.length} {t('produtos', '产品')})
-              </h4>
-              <Row className="justify-content-center" style={{ gap: '48px' }}>
+              <h4 className="text-primary mb-3">{factoryName}</h4>
+              <Row className="g-3">
                 {factoryProducts.map(product => (
-                  <Col xs={12} sm={6} md={4} lg={3} xl={2} key={product.id}>
-                    <Card className="h-100">
-                      <div className="position-relative">
-                        <CustomImage
-                          src={product.imageUrl}
-                          alt={product.name}
-                          style={{ 
-                            height: '250px',
-                            width: '100%',
-                            objectFit: 'cover'
-                          }}
-                          showPreview={true}
-                          onPreview={handlePreview}
-                        />
-                      </div>
-                      
-                      <Card.Body className="d-flex flex-column p-3">
-                        {/* Campos do produto */}
-                        <div className="mb-3">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <h5 className="card-title mb-0" style={{ 
-                              fontSize: isMobile ? '16px' : '15px',
-                              lineHeight: '1.2',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              flex: '1',
-                              marginRight: '10px'
-                            }}>{product.name}</h5>
-                            
-                            <div className="fs-5 fw-bold text-primary" style={{ fontSize: isMobile ? '18px' : '16px' }}>
-                              {product.price && typeof product.price === 'number' ? `¥ ${product.price.toFixed(2)}` : t('Sob consulta', '咨询价格')}
+                  <Col
+                    key={product.id}
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={3}
+                  >
+                    <Card className="h-100 shadow-sm">
+                      <Card.Body className="d-flex flex-column">
+                        {/* Imagem do produto */}
+                        <div className="text-center mb-3">
+                          {product.imageUrl ? (
+                            <CustomImage
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="img-fluid rounded"
+                              style={{ 
+                                height: '150px', 
+                                width: '100%', 
+                                objectFit: 'cover' 
+                              }}
+                              showPreview={true}
+                              onPreview={handlePreview}
+                            />
+                          ) : (
+                            <div 
+                              className="bg-light rounded d-flex align-items-center justify-content-center"
+                              style={{ height: '150px' }}
+                            >
+                              <i className="bi bi-image text-muted fs-1"></i>
                             </div>
-                          </div>
-                          
-                          {/* Novos campos */}
-                          <div className="small text-muted">
-                            {product.ref && <div><strong>{t('REF', '参考号')}:</strong> {product.ref}</div>}
-                            {product.description && <div><strong>{t('DESCRIPTION', '描述')}:</strong> {product.description}</div>}
-                            {product.remark && <div><strong>{t('REMARK', '备注')}:</strong> {product.remark}</div>}
-                            {product.obs && <div><strong>{t('OBS', '观察')}:</strong> {product.obs}</div>}
-                            {product.ncm && <div><strong>{t('NCM', 'NCM代码')}:</strong> {product.ncm}</div>}
-                            {product.englishDescription && <div><strong>{t('English Description', '英文描述')}:</strong> {product.englishDescription}</div>}
-                            {product.unitCtn && <div><strong>{t('UNIT/CTN', '每箱单位')}:</strong> {product.unitCtn}</div>}
-                            {product.uPrice && <div><strong>{t('U.PRICE', '单价')}:</strong> {product.uPrice}</div>}
-                            {product.unit && <div><strong>{t('UNIT', '单位')}:</strong> {product.unit}</div>}
-                            {product.l && <div><strong>{t('L', 'L')}:</strong> {product.l}</div>}
-                            {product.w && <div><strong>{t('W', 'W')}:</strong> {product.w}</div>}
-                            {product.h && <div><strong>{t('H', 'H')}:</strong> {product.h}</div>}
-                            {product.gW && <div><strong>{t('G.W', 'G.W')}:</strong> {product.gW}</div>}
-                            {product.pesoUnitario && <div><strong>{t('Peso Unitário(g)', '单位重量(克)')}:</strong> {product.pesoUnitario}</div>}
+                          )}
+                        </div>
+
+                        {/* Informações do produto */}
+                        <div className="flex-grow-1">
+                          <h6 className="card-title text-truncate" title={product.name}>
+                            {product.name || t('Sem nome', '无名称')}
+                          </h6>
+                          <p className="text-muted small mb-2">
+                            {product.segment || t('Sem segmento', '无行业')}
+                          </p>
+                          <div className="text-primary fw-bold">
+                            {product.uPrice || t('Sob consulta', '咨询价格')}
                           </div>
                         </div>
                         
@@ -375,7 +301,7 @@ const Products = () => {
                             style={{ fontSize: isMobile ? '16px' : '14px' }}
                             onClick={() => handleEdit(product)}
                           >
-{t('Ver Detalhes', '查看详情')}
+                            {t('Ver Detalhes', '查看详情')}
                           </Button>
                         </div>
                       </Card.Body>
@@ -388,30 +314,57 @@ const Products = () => {
         </div>
       )}
 
+      {/* Modal para cadastrar/editar produto */}
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingProduct ? t('Editar Produto', '编辑产品') : t('Novo Produto', '新产品')}
+            {editingProduct ? t('Editar Produto', '编辑产品') : t('Cadastrar Produto', '注册产品')}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
-            {/* Exibir imagem do produto abaixo do título quando editando */}
-            {editingProduct && editingProduct.imageUrl && (
-              <div className="mb-4 text-center">
-                <CustomImage
-                  src={editingProduct.imageUrl}
-                  alt={editingProduct.name}
-                  className="img-fluid rounded"
-                  style={{ maxHeight: '200px', maxWidth: '100%' }}
-                  showPreview={true}
-                  onPreview={handlePreview}
-                />
-              </div>
-            )}
+            {/* Botão salvar no topo */}
+            <div className="d-flex justify-content-end mb-3">
+              <Button 
+                variant="success" 
+                type="submit" 
+                disabled={submitting}
+                className="d-flex align-items-center"
+              >
+                {submitting ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    {t('Salvando...', '保存中...')}
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check-lg me-1"></i>
+                    {t('Salvar', '保存')}
+                  </>
+                )}
+              </Button>
+            </div>
 
+            {/* Seleção da Fábrica */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('Imagem do Produto', '产品图片')}</Form.Label>
+              <Form.Label>{t('Fábrica', '工厂')}</Form.Label>
+              <Form.Select
+                name="factoryId"
+                defaultValue={editingProduct?.factoryId || ''}
+                required
+              >
+                <option value="">{t('Selecione uma fábrica', '选择工厂')}</option>
+                {factories.map(factory => (
+                  <option key={factory.id} value={factory.id}>
+                    {factory.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            {/* Foto do produto */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Foto do produto', '产品照片')}</Form.Label>
               <Form.Control
                 type="file"
                 accept="image/*"
@@ -427,6 +380,18 @@ const Products = () => {
                   }
                 }}
               />
+              {editingProduct?.imageUrl && (
+                <div className="mt-2">
+                  <CustomImage
+                    src={editingProduct.imageUrl}
+                    alt="Preview"
+                    className="img-fluid rounded"
+                    style={{ maxHeight: '200px', maxWidth: '100%' }}
+                    showPreview={true}
+                    onPreview={handlePreview}
+                  />
+                </div>
+              )}
               <Form.Control
                 type="hidden"
                 name="imageUrl"
@@ -434,16 +399,19 @@ const Products = () => {
               />
             </Form.Group>
 
+            {/* Nome do produto */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('Nome do Produto', '产品名称')}</Form.Label>
+              <Form.Label>{t('Nome do produto', '产品名称')}</Form.Label>
               <Form.Control
                 type="text"
                 name="name"
                 defaultValue={editingProduct?.name || ''}
                 placeholder={t('Digite o nome do produto', '输入产品名称')}
+                required
               />
             </Form.Group>
 
+            {/* Segmento */}
             <Form.Group className="mb-3">
               <Form.Label>{t('Segmento', '行业')}</Form.Label>
               <Form.Control
@@ -454,94 +422,7 @@ const Products = () => {
               />
             </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Preço', '价格')}</Form.Label>
-              <Form.Control
-                type="number"
-                name="price"
-                step="0.01"
-                defaultValue={editingProduct?.price || ''}
-                placeholder={t('Digite o preço', '输入价格')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Fábrica', '工厂')}</Form.Label>
-              <Form.Select
-                name="factoryId"
-                defaultValue={editingProduct?.factory?.id || ''}
-              >
-                <option value="">{t('Selecione uma fábrica', '选择工厂')}</option>
-                {factories.map(factory => (
-                  <option key={factory.id} value={factory.id}>
-                    {factory.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Medidas', '尺寸')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="dimensions"
-                defaultValue={editingProduct?.dimensions || ''}
-                placeholder={t('Digite as medidas (ex: 10x20x30cm)', '输入尺寸（例：10x20x30cm）')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Material', '材料')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="material"
-                defaultValue={editingProduct?.material || ''}
-                placeholder={t('Digite o material', '输入材料')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Capacidade', '容量')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="capacity"
-                defaultValue={editingProduct?.capacity || ''}
-                placeholder={t('Digite a capacidade', '输入容量')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Cores', '颜色')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="colors"
-                defaultValue={editingProduct?.colors || ''}
-                placeholder={t('Digite as cores disponíveis', '输入可用颜色')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('MOQ', '最小订购量')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="moq"
-                defaultValue={editingProduct?.moq || ''}
-                placeholder={t('Digite o MOQ (Minimum Order Quantity)', '输入最小订购量')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Descrição', '描述')}</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                defaultValue={editingProduct?.description || ''}
-                placeholder={t('Digite uma descrição', '输入描述')}
-              />
-            </Form.Group>
-
-            {/* Novos campos */}
+            {/* REF */}
             <Form.Group className="mb-3">
               <Form.Label>{t('REF', '参考号')}</Form.Label>
               <Form.Control
@@ -552,6 +433,7 @@ const Products = () => {
               />
             </Form.Group>
 
+            {/* REMARK */}
             <Form.Group className="mb-3">
               <Form.Label>{t('REMARK', '备注')}</Form.Label>
               <Form.Control
@@ -562,110 +444,103 @@ const Products = () => {
               />
             </Form.Group>
 
+            {/* U.PRICE | UNIT */}
+            <Row className="mb-3">
+              <Col xs={6}>
+                <Form.Group>
+                  <Form.Label>{t('U.PRICE', '单价')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="uPrice"
+                    defaultValue={editingProduct?.uPrice || ''}
+                    placeholder={t('Digite o preço unitário', '输入单价')}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={6}>
+                <Form.Group>
+                  <Form.Label>{t('UNIT', '单位')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="unit"
+                    defaultValue={editingProduct?.unit || 'PC'}
+                    placeholder={t('Digite a unidade', '输入单位')}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            {/* UNIT/CTNS | CBM */}
+            <Row className="mb-3">
+              <Col xs={6}>
+                <Form.Group>
+                  <Form.Label>{t('UNIT/CTNS', '每箱单位')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="unitCtn"
+                    defaultValue={editingProduct?.unitCtn || ''}
+                    placeholder={t('Digite unidades por caixa', '输入每箱单位')}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={6}>
+                <Form.Group>
+                  <Form.Label>{t('CBM', 'CBM')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="cbm"
+                    defaultValue={editingProduct?.cbm || ''}
+                    placeholder={t('Digite o CBM', '输入CBM')}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            {/* L | W | H */}
+            <Row className="mb-3">
+              <Col xs={4}>
+                <Form.Group>
+                  <Form.Label>{t('L', 'L')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="l"
+                    defaultValue={editingProduct?.l || ''}
+                    placeholder={t('Comprimento', '长度')}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={4}>
+                <Form.Group>
+                  <Form.Label>{t('W', 'W')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="w"
+                    defaultValue={editingProduct?.w || ''}
+                    placeholder={t('Largura', '宽度')}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={4}>
+                <Form.Group>
+                  <Form.Label>{t('H', 'H')}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="h"
+                    defaultValue={editingProduct?.h || ''}
+                    placeholder={t('Altura', '高度')}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            {/* G.W */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('OBS', '观察')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="obs"
-                defaultValue={editingProduct?.obs || ''}
-                placeholder={t('Digite observações adicionais', '输入额外观察')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('NCM', 'NCM代码')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="ncm"
-                defaultValue={editingProduct?.ncm || ''}
-                placeholder={t('Digite o código NCM', '输入NCM代码')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('English Description', '英文描述')}</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                name="englishDescription"
-                defaultValue={editingProduct?.englishDescription || ''}
-                placeholder={t('Digite a descrição em inglês', '输入英文描述')}
-              />
-            </Form.Group>
-
-
-
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('U.PRICE', '单价')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="uPrice"
-                defaultValue={editingProduct?.uPrice || ''}
-                placeholder={t('Digite o preço unitário', '输入单价')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('UNIT', '单位')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="unit"
-                defaultValue={editingProduct?.unit || ''}
-                placeholder={t('Digite a unidade', '输入单位')}
-              />
-            </Form.Group>
-
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('L (Length)', 'L (长度)')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="l"
-                defaultValue={editingProduct?.l || ''}
-                placeholder={t('Digite o comprimento', '输入长度')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('W (Width)', 'W (宽度)')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="w"
-                defaultValue={editingProduct?.w || ''}
-                placeholder={t('Digite a largura', '输入宽度')}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('H (Height)', 'H (高度)')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="h"
-                defaultValue={editingProduct?.h || ''}
-                placeholder={t('Digite a altura', '输入高度')}
-              />
-            </Form.Group>
-
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('G.W (Gross Weight)', 'G.W (毛重)')}</Form.Label>
+              <Form.Label>{t('G.W', 'G.W')}</Form.Label>
               <Form.Control
                 type="text"
                 name="gW"
                 defaultValue={editingProduct?.gW || ''}
                 placeholder={t('Digite o peso bruto', '输入毛重')}
-              />
-            </Form.Group>
-
-
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Peso Unitário(g)', '单位重量(克)')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="pesoUnitario"
-                defaultValue={editingProduct?.pesoUnitario || ''}
-                placeholder={t('Digite o peso unitário em gramas', '输入单位重量(克)')}
               />
             </Form.Group>
           </Modal.Body>
@@ -704,6 +579,7 @@ const Products = () => {
         </Form>
       </Modal>
 
+      {/* Modal de preview da imagem */}
       <Modal show={previewVisible} onHide={() => setPreviewVisible(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>{t('Visualizar Imagem', '查看图片')}</Modal.Title>

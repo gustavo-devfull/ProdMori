@@ -7,6 +7,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Factories from './pages/Factories';
 import Products from './pages/Products';
+import FactoryDetail from './pages/FactoryDetail';
+import Tags from './pages/Tags';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 function App() {
@@ -21,6 +23,8 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/factories" element={<Factories />} />
               <Route path="/products" element={<Products />} />
+              <Route path="/factory/:factoryId" element={<FactoryDetail />} />
+              <Route path="/tags" element={<Tags />} />
             </Routes>
           </ErrorBoundary>
         </Container>

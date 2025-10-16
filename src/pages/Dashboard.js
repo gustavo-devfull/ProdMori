@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, 
   Row, 
@@ -6,79 +6,205 @@ import {
   Spinner,
   Alert,
   Button,
-  Form
+  Form,
+  Modal,
+  Badge
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import factoryServiceAPI from '../services/factoryServiceAPI';
-import productServiceAPI from '../services/productServiceAPI';
+import imageService from '../services/imageService';
+import tagService from '../services/tagService';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    factories: 0,
-    products: 0
-  });
   const [allFactories, setAllFactories] = useState([]);
   const [selectedFactory, setSelectedFactory] = useState('');
   const [error, setError] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage] = useState('');
+  const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
+  const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
+  const [factoryTags, setFactoryTags] = useState({
+    regiao: [],
+    material: [],
+    outros: []
+  });
+  const [newTagInputs, setNewTagInputs] = useState({
+    regiao: '',
+    material: '',
+    outros: ''
+  });
+  const [availableTags, setAvailableTags] = useState({
+    regiao: [],
+    material: [],
+    outros: []
+  });
+  const [showAvailableTags, setShowAvailableTags] = useState(false);
+
+  const loadFactories = useCallback(async () => {
+    try {
+      setLoading(true);
+      const factories = await factoryServiceAPI.getAllFactories();
+      
+      // Verificar se os dados são arrays válidos
+      const validFactories = Array.isArray(factories) ? factories : [];
+      setAllFactories(validFactories);
+    } catch (err) {
+      setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
+      console.error(err);
+      setAllFactories([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  // Função para carregar tags disponíveis
+  const loadAvailableTags = useCallback(() => {
+    try {
+      const globalTags = tagService.getAllTags();
+      setAvailableTags(globalTags);
+    } catch (error) {
+      console.error('Erro ao carregar tags disponíveis:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        setLoading(true);
-        const [factories, products] = await Promise.all([
-          factoryServiceAPI.getAllFactories(),
-          productServiceAPI.getAllProducts()
-        ]);
-        
-        // Verificar se os dados são arrays válidos
-        const validFactories = Array.isArray(factories) ? factories : [];
-        const validProducts = Array.isArray(products) ? products : [];
-        
-        setStats({
-          factories: validFactories.length,
-          products: validProducts.length
-        });
-        
-        setAllFactories(validFactories);
-      } catch (err) {
-        setError(t('Erro ao carregar estatísticas', '加载统计信息时出错'));
-        console.error(err);
-        
-        // Definir valores padrão em caso de erro
-        setStats({
-          factories: 0,
-          products: 0
-        });
-        
-        setAllFactories([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    loadFactories();
+  }, [loadFactories]);
 
-    loadStats();
-  }, [t]);
+  useEffect(() => {
+    loadAvailableTags();
+  }, [loadAvailableTags]);
 
   const handleFactorySelect = (factoryId) => {
     if (factoryId) {
-      // Navegar para a página de produtos com a fábrica selecionada
-      navigate(`/products?factory=${factoryId}`);
+      // Navegar para a página da fábrica específica
+      navigate(`/factory/${factoryId}`);
     }
   };
 
-  const handleCardClick = (e) => {
-    // Não navegar se o clique foi em um elemento interativo
-    if (e.target.tagName === 'SELECT' || 
-        e.target.tagName === 'BUTTON' || 
-        e.target.closest('select') || 
-        e.target.closest('button')) {
-      return;
+  const handleSubmit = async (values) => {
+    try {
+      setSubmitting(true);
+      
+      // Verificar se há uploads em andamento
+      if (uploadingImages.image1 || uploadingImages.image2) {
+        console.log('Aguardando upload das imagens...');
+        setError(t('Aguarde o upload das imagens terminar', '等待图片上传完成'));
+        return;
+      }
+      
+      // Usar as URLs das imagens do estado do React
+      const finalValues = {
+        ...values,
+        imageUrl1: imageUrls.image1 || values.imageUrl1,
+        imageUrl2: imageUrls.image2 || values.imageUrl2
+      };
+      
+      const newFactory = await factoryServiceAPI.createFactory(finalValues);
+      
+      // Salvar as tags da fábrica usando o serviço
+      if (newFactory && newFactory.id) {
+        Object.keys(factoryTags).forEach(division => {
+          factoryTags[division].forEach(tag => {
+            tagService.addTagToFactory(newFactory.id, tag);
+          });
+        });
+      }
+      
+      setModalVisible(false);
+      await loadFactories();
+      setError(null);
+    } catch (err) {
+      setError(t('Erro ao salvar fábrica', '保存工厂时出错'));
+      console.error(err);
+    } finally {
+      setSubmitting(false);
     }
-    navigate('/factories');
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setError(null);
+    // Limpar estado das imagens
+    setImageUrls({ image1: '', image2: '' });
+    setUploadingImages({ image1: false, image2: false });
+    resetFactoryTags();
+  };
+
+  // Funções para gerenciar tags
+  const addTagToFactory = (tag, division) => {
+    setFactoryTags(prev => ({
+      ...prev,
+      [division]: [...prev[division], tag]
+    }));
+  };
+
+  const removeTagFromFactory = (tagId, division) => {
+    setFactoryTags(prev => ({
+      ...prev,
+      [division]: prev[division].filter(tag => tag.id !== tagId)
+    }));
+  };
+
+  const addNewTagToFactory = (division) => {
+    const tagName = newTagInputs[division].trim();
+    if (!tagName) return;
+
+    const newTag = {
+      id: Date.now().toString(),
+      name: tagName,
+      division: division,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Adicionar ao serviço global de tags
+    const result = tagService.addTag(newTag);
+    if (result.success) {
+      // Adicionar à fábrica atual
+      addTagToFactory(newTag, division);
+      
+      // Atualizar tags disponíveis
+      loadAvailableTags();
+    } else {
+      setError(result.message);
+    }
+
+    // Limpar input
+    setNewTagInputs(prev => ({
+      ...prev,
+      [division]: ''
+    }));
+  };
+
+  // Função para adicionar tag disponível à fábrica
+  const addAvailableTagToFactory = (tag) => {
+    addTagToFactory(tag, tag.division);
+    
+    // Remover da lista de disponíveis
+    setAvailableTags(prev => ({
+      ...prev,
+      [tag.division]: prev[tag.division].filter(t => t.id !== tag.id)
+    }));
+  };
+
+  const resetFactoryTags = () => {
+    setFactoryTags({
+      regiao: [],
+      material: [],
+      outros: []
+    });
+    setNewTagInputs({
+      regiao: '',
+      material: '',
+      outros: ''
+    });
   };
 
   if (loading) {
@@ -103,20 +229,16 @@ const Dashboard = () => {
       )}
 
       <Row className="g-3">
-        <Col xs={12} md={6}>
-          <Card 
-            className="h-100"
-            onClick={handleCardClick}
-            style={{ cursor: 'pointer' }}
-          >
+        <Col xs={12}>
+          <Card className="h-100">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div className="d-flex align-items-center">
                   <i className="bi bi-shop me-2 text-success fs-5"></i>
-                  <span className="fw-medium">{t('Total de Fábricas/Lojas', '工厂/商店总数')}</span>
+                  <span className="fw-medium">{t('Fábricas Cadastradas', '已注册工厂')}</span>
                 </div>
                 <div className="fs-3 fw-bold text-success">
-                  {stats.factories}
+                  {allFactories.length}
                 </div>
               </div>
               
@@ -129,10 +251,13 @@ const Dashboard = () => {
                 <Form.Select
                   value={selectedFactory}
                   onChange={(e) => {
-                    e.stopPropagation();
-                    setSelectedFactory(e.target.value);
+                    const factoryId = e.target.value;
+                    setSelectedFactory(factoryId);
+                    if (factoryId) {
+                      // Redirecionar automaticamente para a página da fábrica
+                      handleFactorySelect(factoryId);
+                    }
                   }}
-                  onClick={(e) => e.stopPropagation()}
                   size="sm"
                 >
                   <option value="">{t('Escolha uma fábrica...', '选择工厂...')}</option>
@@ -142,74 +267,422 @@ const Dashboard = () => {
                     </option>
                   ))}
                 </Form.Select>
-                
-                {/* Botão para ver produtos da fábrica selecionada */}
-                {selectedFactory && (
-                  <Button 
-                    variant="success"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFactorySelect(selectedFactory);
-                    }}
-                    className="w-100 mt-2"
-                    size="sm"
-                  >
-                    <i className="bi bi-eye me-1"></i>
-                    {t('Ver Produtos desta Fábrica', '查看此工厂的产品')}
-                  </Button>
-                )}
               </div>
 
-              
-              <Button 
-                variant="primary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/factories');
-                }}
-                className="w-100"
-                size="lg"
-              >
-                <i className="bi bi-plus-circle me-2"></i>
-                {t('Cadastrar Fábrica', '注册工厂')}
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} md={6}>
-          <Card 
-            className="h-100"
-            onClick={() => navigate('/products')}
-            style={{ cursor: 'pointer' }}
-          >
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-bag me-2 text-primary fs-5"></i>
-                  <span className="fw-medium">{t('Total de Produtos', '产品总数')}</span>
-                </div>
-                <div className="fs-3 fw-bold text-primary">
-                  {stats.products}
-                </div>
+              <div className="d-flex gap-2">
+                <Button 
+                  variant="primary"
+                  onClick={() => setModalVisible(true)}
+                  className="flex-grow-1"
+                  size="lg"
+                  style={{ fontSize: '18px' }}
+                >
+                  <i className="bi bi-plus-circle me-2"></i>
+                  {t('Fábrica', '工厂/商店')}
+                </Button>
+                <Button 
+                  variant="outline-secondary"
+                  onClick={() => navigate('/tags')}
+                  className="flex-grow-1"
+                  size="lg"
+                  style={{ fontSize: '18px' }}
+                >
+                  <i className="bi bi-tags me-2"></i>
+                  {t('Gerenciar Tags', '管理标签')}
+                </Button>
               </div>
-              
-              
-              <Button 
-                variant="primary"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/products');
-                }}
-                className="w-100"
-                size="lg"
-              >
-                <i className="bi bi-plus-circle me-2"></i>
-                {t('Cadastrar Produto', '注册产品')}
-              </Button>
             </Card.Body>
           </Card>
         </Col>
       </Row>
+
+      {/* Modal para cadastrar fábrica */}
+      <Modal show={modalVisible} onHide={handleModalClose} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{t('Nova Fábrica/Loja', '新建工厂/商店')}</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={(e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const values = Object.fromEntries(formData.entries());
+          handleSubmit(values);
+        }}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Nome da Fábrica/Loja', '工厂/商店名称')}</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                placeholder={t('Digite o nome da fábrica/loja', '输入工厂/商店名称')}
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Nome do Contato', '联系人姓名')}</Form.Label>
+              <Form.Control
+                type="text"
+                name="contactName"
+                placeholder={t('Digite o nome do contato', '输入联系人姓名')}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Telefone', '电话')}</Form.Label>
+              <Form.Control
+                type="tel"
+                name="phone"
+                placeholder={t('Digite o telefone', '输入电话号码')}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('WeChat', '微信')}</Form.Label>
+              <Form.Control
+                type="text"
+                name="wechat"
+                placeholder={t('Digite o WeChat', '输入微信号')}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('E-mail', '邮箱')}</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                placeholder={t('Digite o e-mail', '输入邮箱地址')}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Localização', '位置')}</Form.Label>
+              <Form.Control
+                type="text"
+                name="location"
+                placeholder={t('Digite a localização', '输入位置')}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Segmento', '行业')}</Form.Label>
+              <Form.Control
+                type="text"
+                name="segment"
+                placeholder={t('Digite o segmento de atuação', '输入行业领域')}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Descrição', '描述')}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                name="description"
+                placeholder={t('Digite uma descrição', '输入描述')}
+              />
+            </Form.Group>
+
+            {/* Campos de Tags */}
+            <Row className="mb-3">
+              <Col xs={12}>
+                <h6 className="text-primary mb-3">{t('Tags da Fábrica', '工厂标签')}</h6>
+              </Col>
+            </Row>
+
+            {/* Tags Região */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags Região', '地区标签')}</Form.Label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {factoryTags.regiao.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    bg="primary" 
+                    className="d-flex align-items-center gap-1"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => removeTagFromFactory(tag.id, 'regiao')}
+                  >
+                    {tag.name}
+                    <i className="bi bi-x"></i>
+                  </Badge>
+                ))}
+              </div>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nova tag', '新标签')}
+                  value={newTagInputs.regiao}
+                  onChange={(e) => setNewTagInputs(prev => ({ ...prev, regiao: e.target.value }))}
+                />
+                <Button 
+                  variant="outline-primary" 
+                  size="sm"
+                  onClick={() => addNewTagToFactory('regiao')}
+                  disabled={!newTagInputs.regiao.trim()}
+                >
+                  <i className="bi bi-plus"></i>
+                </Button>
+              </div>
+            </Form.Group>
+
+            {/* Tags Material */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags Material', '材料标签')}</Form.Label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {factoryTags.material.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    bg="success" 
+                    className="d-flex align-items-center gap-1"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => removeTagFromFactory(tag.id, 'material')}
+                  >
+                    {tag.name}
+                    <i className="bi bi-x"></i>
+                  </Badge>
+                ))}
+              </div>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nova tag', '新标签')}
+                  value={newTagInputs.material}
+                  onChange={(e) => setNewTagInputs(prev => ({ ...prev, material: e.target.value }))}
+                />
+                <Button 
+                  variant="outline-success" 
+                  size="sm"
+                  onClick={() => addNewTagToFactory('material')}
+                  disabled={!newTagInputs.material.trim()}
+                >
+                  <i className="bi bi-plus"></i>
+                </Button>
+              </div>
+            </Form.Group>
+
+            {/* Tags Outros */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags Outros', '其他标签')}</Form.Label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {factoryTags.outros.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    bg="warning" 
+                    className="d-flex align-items-center gap-1"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => removeTagFromFactory(tag.id, 'outros')}
+                  >
+                    {tag.name}
+                    <i className="bi bi-x"></i>
+                  </Badge>
+                ))}
+              </div>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nova tag', '新标签')}
+                  value={newTagInputs.outros}
+                  onChange={(e) => setNewTagInputs(prev => ({ ...prev, outros: e.target.value }))}
+                />
+                <Button 
+                  variant="outline-warning" 
+                  size="sm"
+                  onClick={() => addNewTagToFactory('outros')}
+                  disabled={!newTagInputs.outros.trim()}
+                >
+                  <i className="bi bi-plus"></i>
+                </Button>
+              </div>
+            </Form.Group>
+
+            {/* Tags Disponíveis */}
+            <Row className="mb-3">
+              <Col xs={12}>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="text-success mb-0">{t('Tags Disponíveis', '可用标签')}</h6>
+                  <Button 
+                    variant="outline-success" 
+                    size="sm"
+                    onClick={() => setShowAvailableTags(!showAvailableTags)}
+                  >
+                    {showAvailableTags ? t('Ocultar', '隐藏') : t('Mostrar', '显示')}
+                  </Button>
+                </div>
+                
+                {showAvailableTags && (
+                  <div className="border rounded p-3 bg-light">
+                    {/* Tags Região Disponíveis */}
+                    {availableTags.regiao.length > 0 && (
+                      <div className="mb-3">
+                        <h6 className="text-primary small">{t('Região', '地区')}</h6>
+                        <div className="d-flex flex-wrap gap-2">
+                          {availableTags.regiao.map(tag => (
+                            <Badge 
+                              key={tag.id} 
+                              bg="primary" 
+                              className="d-flex align-items-center gap-1"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => addAvailableTagToFactory(tag)}
+                            >
+                              {tag.name}
+                              <i className="bi bi-plus"></i>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tags Material Disponíveis */}
+                    {availableTags.material.length > 0 && (
+                      <div className="mb-3">
+                        <h6 className="text-success small">{t('Material', '材料')}</h6>
+                        <div className="d-flex flex-wrap gap-2">
+                          {availableTags.material.map(tag => (
+                            <Badge 
+                              key={tag.id} 
+                              bg="success" 
+                              className="d-flex align-items-center gap-1"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => addAvailableTagToFactory(tag)}
+                            >
+                              {tag.name}
+                              <i className="bi bi-plus"></i>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tags Outros Disponíveis */}
+                    {availableTags.outros.length > 0 && (
+                      <div className="mb-3">
+                        <h6 className="text-warning small">{t('Outros', '其他')}</h6>
+                        <div className="d-flex flex-wrap gap-2">
+                          {availableTags.outros.map(tag => (
+                            <Badge 
+                              key={tag.id} 
+                              bg="warning" 
+                              className="d-flex align-items-center gap-1"
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => addAvailableTagToFactory(tag)}
+                            >
+                              {tag.name}
+                              <i className="bi bi-plus"></i>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {availableTags.regiao.length === 0 && availableTags.material.length === 0 && availableTags.outros.length === 0 && (
+                      <p className="text-muted text-center mb-0">{t('Nenhuma tag disponível', '没有可用标签')}</p>
+                    )}
+                  </div>
+                )}
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Imagem Principal', '主图片')}</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                name="image1"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    try {
+                      setUploadingImages(prev => ({ ...prev, image1: true }));
+                      const imageUrl = await imageService.uploadFile(file);
+                      console.log('Imagem principal enviada:', imageUrl);
+                      setImageUrls(prev => ({ ...prev, image1: imageUrl }));
+                    } catch (error) {
+                      console.error('Erro no upload da imagem:', error);
+                      setError(t('Erro no upload da imagem', '图片上传时出错'));
+                    } finally {
+                      setUploadingImages(prev => ({ ...prev, image1: false }));
+                    }
+                  }
+                }}
+              />
+              <Form.Control
+                type="hidden"
+                name="imageUrl1"
+                value={imageUrls.image1}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Imagem Secundária', '副图片')}</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                name="image2"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    try {
+                      setUploadingImages(prev => ({ ...prev, image2: true }));
+                      const imageUrl = await imageService.uploadFile(file);
+                      console.log('Imagem secundária enviada:', imageUrl);
+                      setImageUrls(prev => ({ ...prev, image2: imageUrl }));
+                    } catch (error) {
+                      console.error('Erro no upload da imagem secundária:', error);
+                      setError(t('Erro no upload da imagem', '图片上传时出错'));
+                    } finally {
+                      setUploadingImages(prev => ({ ...prev, image2: false }));
+                    }
+                  }
+                }}
+              />
+              <Form.Control
+                type="hidden"
+                name="imageUrl2"
+                value={imageUrls.image2}
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleModalClose} style={{ fontSize: '18px' }}>
+              {t('Cancelar', '取消')}
+            </Button>
+            <Button 
+              variant="primary" 
+              type="submit" 
+              disabled={submitting || uploadingImages.image1 || uploadingImages.image2}
+              style={{ fontSize: '18px' }}
+            >
+              {submitting ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  {t('Salvando...', '保存中...')}
+                </>
+              ) : uploadingImages.image1 || uploadingImages.image2 ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  {t('Enviando imagens...', '上传图片中...')}
+                </>
+              ) : (
+                t('Criar', '创建')
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Modal de preview da imagem */}
+      <Modal show={previewVisible} onHide={() => setPreviewVisible(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{t('Visualizar Imagem', '查看图片')}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="img-fluid rounded"
+            style={{ maxHeight: '70vh' }}
+          />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
