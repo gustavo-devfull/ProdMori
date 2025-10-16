@@ -21,6 +21,10 @@ class ImageService {
   }
 
   async uploadFile(file) {
+    // Criar AbortController para timeout (fora do try para estar disponível no catch)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+    
     try {
       console.log('ImageService.uploadFile - Iniciando upload:', {
         fileName: file.name,
@@ -50,22 +54,17 @@ class ImageService {
 
       console.log('ImageService.uploadFile - Enviando requisição para:', `${this.apiUrl}/upload-image`);
 
-      // Criar AbortController para timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+      // Fazer upload via API com timeout
+      const response = await fetch(`${this.apiUrl}/upload-image`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+        headers: {
+          // Não definir Content-Type, deixar o browser definir com boundary
+        }
+      });
 
-      try {
-        // Fazer upload via API com timeout
-        const response = await fetch(`${this.apiUrl}/upload-image`, {
-          method: 'POST',
-          body: formData,
-          signal: controller.signal,
-          headers: {
-            // Não definir Content-Type, deixar o browser definir com boundary
-          }
-        });
-
-        clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
       console.log('ImageService.uploadFile - Resposta recebida:', {
         status: response.status,
