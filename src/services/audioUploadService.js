@@ -17,12 +17,22 @@ class AudioUploadService {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
     
-    // Determinar extensão baseada no MIME type
-    let extension = 'webm';
-    if (mimeType.includes('mpeg')) extension = 'mp3';  // MP3 primeiro
-    if (mimeType.includes('mp4')) extension = 'm4a';
-    if (mimeType.includes('ogg')) extension = 'ogg';
-    if (mimeType.includes('wav')) extension = 'wav';
+    // Determinar extensão baseada no MIME type (mais abrangente)
+    let extension = 'mp3'; // padrão para MP3
+    
+    if (mimeType.includes('mpeg') || mimeType.includes('mp3')) {
+      extension = 'mp3';
+    } else if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+      extension = 'm4a';
+    } else if (mimeType.includes('webm')) {
+      extension = 'webm';
+    } else if (mimeType.includes('ogg')) {
+      extension = 'ogg';
+    } else if (mimeType.includes('wav')) {
+      extension = 'wav';
+    } else if (mimeType.includes('aac')) {
+      extension = 'aac';
+    }
     
     return `audio_${timestamp}_${random}.${extension}`;
   }

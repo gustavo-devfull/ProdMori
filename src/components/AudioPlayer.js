@@ -171,22 +171,25 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     }
   };
 
-  // Verificar se o formato é suportado
+  // Verificar se o formato é suportado (versão mais inteligente)
   const isFormatSupported = (url) => {
     const extension = url.split('.').pop().toLowerCase();
     const audio = document.createElement('audio');
+    
+    // Testar múltiplos MIME types para cada formato
     const supportedFormats = {
-      'mp3': 'audio/mpeg',      // MP3 primeiro
-      'm4a': 'audio/mp4',
-      'mp4': 'audio/mp4',
-      'wav': 'audio/wav',
-      'ogg': 'audio/ogg',
-      'webm': 'audio/webm',
-      'aac': 'audio/aac'
+      'mp3': ['audio/mpeg', 'audio/mp3'],
+      'm4a': ['audio/mp4', 'audio/m4a', 'audio/x-m4a'],
+      'mp4': ['audio/mp4'],
+      'wav': ['audio/wav'],
+      'ogg': ['audio/ogg'],
+      'webm': ['audio/webm'],
+      'aac': ['audio/aac']
     };
     
     if (supportedFormats[extension]) {
-      return audio.canPlayType(supportedFormats[extension]) !== '';
+      const types = supportedFormats[extension];
+      return types.some(type => audio.canPlayType(type) !== '');
     }
     return false;
   };
@@ -232,11 +235,11 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                         {hasError}
                       </small>
                     )}
-                    {!isSupported && !hasError && (
-                      <small className="text-warning">
-                        Formato {extension} pode não ser suportado
-                      </small>
-                    )}
+                             {!isSupported && !hasError && (
+                               <small className="text-warning">
+                                 Formato {extension} pode não ser suportado neste navegador
+                               </small>
+                             )}
                   </div>
                 </div>
                 

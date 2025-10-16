@@ -80,11 +80,13 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
       // Tentar formatos em ordem de compatibilidade (MP3 primeiro)
       const mimeTypes = [
         'audio/mpeg',           // MP3 - melhor compatibilidade
-        'audio/mp4',            // M4A
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/ogg;codecs=opus',
-        'audio/wav'
+        'audio/wav',            // WAV - universal
+        'audio/webm;codecs=opus', // WebM com codec específico
+        'audio/webm',           // WebM genérico
+        'audio/ogg;codecs=opus', // OGG com codec específico
+        'audio/ogg',            // OGG genérico
+        'audio/mp4',            // M4A - último recurso
+        'audio/m4a'             // M4A alternativo
       ];
       
       let selectedMimeType = null;
