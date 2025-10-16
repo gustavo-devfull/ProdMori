@@ -251,12 +251,29 @@ const FactoryDetail = () => {
       image2: factory.imageUrl2 || ''
     });
     
-    // Carregar tags da fábrica
-    const savedTags = localStorage.getItem(`tags_${factoryId}`);
-    if (savedTags) {
-      setFactoryTags(JSON.parse(savedTags));
-    } else {
-      setFactoryTags({ regiao: [], material: [], outros: [] });
+    // Carregar tags da fábrica (mesmo método da página de fábricas)
+    try {
+      const factoryTagsData = await tagService.getFactoryTags(factoryId);
+      console.log('handleEditFactory - Tags carregadas:', factoryTagsData);
+      
+      // Garantir que a estrutura está correta
+      const safeTags = {
+        regiao: Array.isArray(factoryTagsData?.regiao) ? factoryTagsData.regiao : [],
+        material: Array.isArray(factoryTagsData?.material) ? factoryTagsData.material : [],
+        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : []
+      };
+      
+      setFactoryTags(safeTags);
+      console.log('handleEditFactory - Tags definidas no estado:', safeTags);
+    } catch (error) {
+      console.error('Erro ao carregar tags da fábrica:', error);
+      // Fallback para localStorage
+      const savedTags = localStorage.getItem(`tags_${factoryId}`);
+      if (savedTags) {
+        setFactoryTags(JSON.parse(savedTags));
+      } else {
+        setFactoryTags({ regiao: [], material: [], outros: [] });
+      }
     }
     
     // Recarregar tags globais
