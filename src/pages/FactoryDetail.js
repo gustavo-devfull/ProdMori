@@ -649,27 +649,47 @@ const FactoryDetail = () => {
                                 </div>
                               </div>
                               
-                              {/* Segmento e botão de exclusão */}
+                              {/* Segmento e botões de ação */}
                               <div className="mt-auto d-flex align-items-center justify-content-between">
                                 <div className="text-muted small">
                                   {product.segment || t('Sem segmento', '无行业')}
                                 </div>
-                                <Button 
-                                  variant="outline-danger" 
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('Delete button clicked from card, submitting:', submitting);
-                                    if (!submitting) {
-                                      handleDeleteProduct(product.id);
-                                    }
-                                  }}
-                                  disabled={submitting}
-                                  title={t('Excluir produto', '删除产品')}
-                                >
-                                  <i className="bi bi-trash"></i>
-                                </Button>
+                                <div className="d-flex gap-1">
+                                  <Button 
+                                    variant="outline-primary" 
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('Edit button clicked from card');
+                                      setEditingProduct(product);
+                                      setModalVisible(true);
+                                      setImageUrl(product.imageUrl || '');
+                                      // Carregar áudios existentes (pode ser array ou string única)
+                                      const existingAudios = product.audioUrls || (product.audioUrl ? [product.audioUrl] : []);
+                                      setAudioUrls(Array.isArray(existingAudios) ? existingAudios : []);
+                                    }}
+                                    title={t('Editar produto', '编辑产品')}
+                                  >
+                                    <i className="bi bi-pencil"></i>
+                                  </Button>
+                                  <Button 
+                                    variant="outline-danger" 
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('Delete button clicked from card, submitting:', submitting);
+                                      if (!submitting) {
+                                        handleDeleteProduct(product.id);
+                                      }
+                                    }}
+                                    disabled={submitting}
+                                    title={t('Excluir produto', '删除产品')}
+                                  >
+                                    <i className="bi bi-trash"></i>
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           </Col>
