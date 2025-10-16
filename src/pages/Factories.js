@@ -217,13 +217,24 @@ const Factories = () => {
 
   // Funções para gerenciar tags
   const addTagToFactory = (tag, division) => {
-    setFactoryTags(prev => ({
-      ...prev,
-      [division]: [...prev[division], tag]
-    }));
+    setFactoryTags(prev => {
+      // Verificar se a tag já existe na divisão
+      const existingTag = prev[division].find(t => t.id === tag.id || t.name === tag.name);
+      if (existingTag) {
+        console.log('Tag já existe na fábrica:', tag.name);
+        return prev; // Não adicionar se já existe
+      }
+      
+      console.log('Adicionando tag à fábrica:', tag.name, 'na divisão:', division);
+      return {
+        ...prev,
+        [division]: [...prev[division], tag]
+      };
+    });
   };
 
   const removeTagFromFactory = (tagId, division) => {
+    console.log('Removendo tag da fábrica:', tagId, 'da divisão:', division);
     setFactoryTags(prev => ({
       ...prev,
       [division]: prev[division].filter(tag => tag.id !== tagId)
@@ -266,10 +277,19 @@ const Factories = () => {
   };
 
   const addGlobalTagToFactory = (tag, division) => {
-    // Verificar se a tag já existe na fábrica
-    const existingTag = factoryTags[division].find(t => t.id === tag.id);
-    if (existingTag) return;
+    console.log('=== ADD GLOBAL TAG TO FACTORY (Factories page) ===');
+    console.log('Tag:', tag);
+    console.log('Division:', division);
+    console.log('Current factory tags:', factoryTags[division]);
+    
+    // Verificar se a tag já existe na fábrica (por ID ou nome)
+    const existingTag = factoryTags[division].find(t => t.id === tag.id || t.name === tag.name);
+    if (existingTag) {
+      console.log('Tag já existe na fábrica:', tag.name);
+      return;
+    }
 
+    console.log('Adicionando tag global à fábrica:', tag.name);
     // Adicionar a tag à fábrica
     addTagToFactory(tag, division);
   };
