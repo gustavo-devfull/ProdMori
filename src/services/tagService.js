@@ -110,7 +110,20 @@ class TagService {
       
       console.log('Tags removed:', originalLength - newLength);
       
+      // Salvar localmente
       this.saveAllTags(allTags);
+      
+      // Tentar remover do Firebase também
+      if (this.useFirebase) {
+        try {
+          console.log('Attempting to remove tag from Firebase...');
+          await tagServiceFirebase.deleteTag(tagId);
+          console.log('Tag successfully removed from Firebase');
+        } catch (firebaseError) {
+          console.warn('Failed to remove tag from Firebase:', firebaseError);
+          // Continuar mesmo se Firebase falhar
+        }
+      }
       
       // Remover também das fábricas que possuem essa tag
       this.removeTagFromAllFactories(tagId, division);
