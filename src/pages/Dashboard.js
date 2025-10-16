@@ -64,9 +64,10 @@ const Dashboard = () => {
   }, [t]);
 
   // Função para carregar tags disponíveis
-  const loadAvailableTags = useCallback(() => {
+  const loadAvailableTags = useCallback(async () => {
     try {
-      const globalTags = tagService.getAllTags();
+      console.log('Dashboard - Carregando tags globais...');
+      const globalTags = await tagService.getAllTags();
       console.log('Dashboard - Tags globais carregadas:', globalTags);
       
       // Garantir que a estrutura está correta
@@ -79,12 +80,18 @@ const Dashboard = () => {
       setAvailableTags(safeTags);
     } catch (error) {
       console.error('Erro ao carregar tags disponíveis:', error);
-      // Fallback para estrutura vazia
-      setAvailableTags({
-        regiao: [],
-        material: [],
-        outros: []
-      });
+      // Fallback para localStorage
+      try {
+        const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[]}');
+        setAvailableTags(localGlobalTags);
+      } catch (fallbackError) {
+        console.error('Erro no fallback localStorage:', fallbackError);
+        setAvailableTags({
+          regiao: [],
+          material: [],
+          outros: []
+        });
+      }
     }
   }, []);
 
