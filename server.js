@@ -80,6 +80,45 @@ const upload = multer({
   }
 });
 
+// Configuração do multer para upload de áudio
+const audioStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = '/tmp/uploads/audio/';
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+        console.log('Created audio upload directory:', uploadDir);
+      }
+      cb(null, uploadDir);
+    } catch (error) {
+      console.error('Error creating audio upload directory:', error);
+      cb(error, null);
+    }
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 8);
+    const extension = path.extname(file.originalname);
+    const filename = `audio_${timestamp}_${randomString}${extension}`;
+    console.log('Generated audio filename:', filename);
+    cb(null, filename);
+  }
+});
+
+const audioUpload = multer({ 
+  storage: audioStorage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB para áudio
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas arquivos de áudio são permitidos'), false);
+    }
+  }
+});
+
 // Configuração do FTP
 const ftpConfig = {
   host: '46.202.90.62',
@@ -206,7 +245,7 @@ app.post('/api/upload-image', (req, res) => {
 
 // Rota para upload de áudio
 app.post('/api/upload-audio', (req, res) => {
-  upload.single('audio')(req, res, async (err) => {
+  audioUpload.single('audio')(req, res, async (err) => {
     try {
       console.log('Audio upload request received:', req.file ? 'File present' : 'No file');
       console.log('Multer error:', err);
