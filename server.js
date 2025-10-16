@@ -801,6 +801,198 @@ if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
   });
 }
 
+// ===== ROTAS DE TAGS =====
+
+// Rota para criar tag
+app.post('/api/firestore/create/tags', async (req, res) => {
+  try {
+    console.log('Creating tag in Firebase:', req.body);
+    console.log('Firebase environment variables:', {
+      FB_PROJECT_ID: process.env.FB_PROJECT_ID ? 'SET' : 'NOT SET',
+      FB_CLIENT_EMAIL: process.env.FB_CLIENT_EMAIL ? 'SET' : 'NOT SET',
+      FB_PRIVATE_KEY: process.env.FB_PRIVATE_KEY ? 'SET' : 'NOT SET'
+    });
+
+    if (!db) {
+      console.error('Firebase not initialized');
+      return res.status(500).json({ 
+        error: 'Firebase not initialized',
+        details: 'Firebase Admin SDK not properly configured'
+      });
+    }
+
+    const { tagData, factoryId } = req.body;
+
+    if (!tagData || !factoryId) {
+      return res.status(400).json({ error: 'tagData and factoryId are required' });
+    }
+
+    // Criar documento da tag
+    const tagRef = await db.collection('tags').add({
+      ...tagData,
+      factoryId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('Tag created successfully:', tagRef.id);
+
+    res.status(200).json({
+      success: true,
+      id: tagRef.id,
+      message: 'Tag criada com sucesso'
+    });
+
+  } catch (error) {
+    console.error('Error creating tag:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
+  }
+});
+
+// Rota para buscar tags
+app.get('/api/firestore/get/tags', async (req, res) => {
+  try {
+    console.log('Getting tags from Firebase');
+    console.log('Firebase environment variables:', {
+      FB_PROJECT_ID: process.env.FB_PROJECT_ID ? 'SET' : 'NOT SET',
+      FB_CLIENT_EMAIL: process.env.FB_CLIENT_EMAIL ? 'SET' : 'NOT SET',
+      FB_PRIVATE_KEY: process.env.FB_PRIVATE_KEY ? 'SET' : 'NOT SET'
+    });
+
+    if (!db) {
+      console.error('Firebase not initialized');
+      return res.status(500).json({ 
+        error: 'Firebase not initialized',
+        details: 'Firebase Admin SDK not properly configured'
+      });
+    }
+
+    const { factoryId, division } = req.query;
+
+    let query = db.collection('tags');
+
+    // Filtrar por fábrica se especificado
+    if (factoryId) {
+      query = query.where('factoryId', '==', factoryId);
+    }
+
+    // Filtrar por divisão se especificado
+    if (division) {
+      query = query.where('division', '==', division);
+    }
+
+    // Ordenar por data de criação
+    query = query.orderBy('createdAt', 'desc');
+
+    const snapshot = await query.get();
+    const tags = [];
+
+    snapshot.forEach(doc => {
+      tags.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    console.log(`Found ${tags.length} tags`);
+
+    res.status(200).json({
+      success: true,
+      data: tags,
+      count: tags.length
+    });
+
+  } catch (error) {
+    console.error('Error getting tags:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
+  }
+});
+
+// Rota para atualizar tag
+app.put('/api/firestore/update/tags', async (req, res) => {
+  try {
+    console.log('Updating tag in Firebase:', req.body);
+
+    if (!db) {
+      console.error('Firebase not initialized');
+      return res.status(500).json({ 
+        error: 'Firebase not initialized',
+        details: 'Firebase Admin SDK not properly configured'
+      });
+    }
+
+    const { tagId, tagData } = req.body;
+
+    if (!tagId || !tagData) {
+      return res.status(400).json({ error: 'tagId and tagData are required' });
+    }
+
+    // Atualizar documento da tag
+    await db.collection('tags').doc(tagId).update({
+      ...tagData,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('Tag updated successfully:', tagId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Tag atualizada com sucesso'
+    });
+
+  } catch (error) {
+    console.error('Error updating tag:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
+  }
+});
+
+// Rota para deletar tag
+app.delete('/api/firestore/delete/tags', async (req, res) => {
+  try {
+    console.log('Deleting tag from Firebase:', req.body);
+
+    if (!db) {
+      console.error('Firebase not initialized');
+      return res.status(500).json({ 
+        error: 'Firebase not initialized',
+        details: 'Firebase Admin SDK not properly configured'
+      });
+    }
+
+    const { tagId } = req.body;
+
+    if (!tagId) {
+      return res.status(400).json({ error: 'tagId is required' });
+    }
+
+    // Deletar documento da tag
+    await db.collection('tags').doc(tagId).delete();
+
+    console.log('Tag deleted successfully:', tagId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Tag deletada com sucesso'
+    });
+
+  } catch (error) {
+    console.error('Error deleting tag:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: error.message 
+    });
+  }
+});
+
 // Para Vercel, exportar o app como módulo
 if (process.env.VERCEL) {
   module.exports = app;
