@@ -1,6 +1,9 @@
+import tagServiceFirebase from './tagServiceFirebase';
+
 class TagService {
   constructor() {
     this.storageKey = 'global_tags';
+    this.useFirebase = true; // Tentar usar Firebase primeiro
   }
 
   // Obter todas as tags globais
@@ -26,8 +29,21 @@ class TagService {
   }
 
   // Adicionar uma nova tag global
-  addTag(tag) {
+  async addTag(tag, factoryId = null) {
     try {
+      // Tentar usar Firebase primeiro
+      if (this.useFirebase) {
+        try {
+          const result = await tagServiceFirebase.createTag(tag, factoryId);
+          console.log('Tag adicionada ao Firebase:', result);
+          return { success: true, message: 'Tag adicionada com sucesso', id: result.id };
+        } catch (firebaseError) {
+          console.warn('Erro ao salvar no Firebase, usando localStorage:', firebaseError);
+          this.useFirebase = false; // Desabilitar Firebase temporariamente
+        }
+      }
+
+      // Fallback para localStorage
       const allTags = this.getAllTags();
       
       // Verificar se a tag já existe
@@ -91,8 +107,21 @@ class TagService {
   }
 
   // Obter tags de uma fábrica específica
-  getFactoryTags(factoryId) {
+  async getFactoryTags(factoryId) {
     try {
+      // Tentar usar Firebase primeiro
+      if (this.useFirebase) {
+        try {
+          const tags = await tagServiceFirebase.getFactoryTags(factoryId);
+          console.log('Tags carregadas do Firebase:', tags);
+          return tags;
+        } catch (firebaseError) {
+          console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
+          this.useFirebase = false; // Desabilitar Firebase temporariamente
+        }
+      }
+
+      // Fallback para localStorage
       const factoryTags = localStorage.getItem(`tags_${factoryId}`);
       return factoryTags ? JSON.parse(factoryTags) : { regiao: [], material: [], outros: [] };
     } catch (error) {
@@ -102,9 +131,22 @@ class TagService {
   }
 
   // Adicionar tag a uma fábrica específica
-  addTagToFactory(factoryId, tag) {
+  async addTagToFactory(factoryId, tag) {
     try {
-      const factoryTags = this.getFactoryTags(factoryId);
+      // Tentar usar Firebase primeiro
+      if (this.useFirebase) {
+        try {
+          const result = await tagServiceFirebase.createTag(tag, factoryId);
+          console.log('Tag adicionada à fábrica no Firebase:', result);
+          return { success: true, message: 'Tag adicionada à fábrica', id: result.id };
+        } catch (firebaseError) {
+          console.warn('Erro ao salvar no Firebase, usando localStorage:', firebaseError);
+          this.useFirebase = false; // Desabilitar Firebase temporariamente
+        }
+      }
+
+      // Fallback para localStorage
+      const factoryTags = await this.getFactoryTags(factoryId);
       
       // Verificar se a tag já existe na fábrica
       const existingTag = factoryTags[tag.division].find(t => t.id === tag.id);

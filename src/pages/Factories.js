@@ -220,7 +220,7 @@ const Factories = () => {
     }));
   };
 
-  const addNewTagToFactory = (division) => {
+  const addNewTagToFactory = async (division) => {
     const tagName = newTagInputs[division].trim();
     if (!tagName) return;
 
@@ -232,9 +232,10 @@ const Factories = () => {
       updatedAt: new Date()
     };
 
-    // Adicionar ao serviço global de tags
-    const result = tagService.addTag(newTag);
+    // Adicionar ao serviço global de tags (usando Firebase se disponível)
+    const result = await tagService.addTag(newTag, editingFactory?.id);
     if (result.success) {
+      console.log('Tag adicionada com sucesso:', result);
       // Adicionar à fábrica atual
       addTagToFactory(newTag, division);
       
@@ -277,18 +278,29 @@ const Factories = () => {
   };
 
   // Função para renderizar tags da fábrica
-  const renderFactoryTags = (factory) => {
+  const renderFactoryTags = async (factory) => {
     try {
       console.log('renderFactoryTags - Factory ID:', factory.id);
-      const savedTags = localStorage.getItem(`tags_${factory.id}`);
-      console.log('renderFactoryTags - Saved tags:', savedTags);
       
-      if (!savedTags) {
-        console.log('renderFactoryTags - No saved tags found');
-        return null;
+      // Tentar carregar tags do Firebase primeiro
+      let factoryTags;
+      try {
+        factoryTags = await tagService.getFactoryTags(factory.id);
+        console.log('renderFactoryTags - Tags carregadas do Firebase:', factoryTags);
+      } catch (firebaseError) {
+        console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
+        // Fallback para localStorage
+        const savedTags = localStorage.getItem(`tags_${factory.id}`);
+        console.log('renderFactoryTags - Saved tags (localStorage):', savedTags);
+        
+        if (!savedTags) {
+          console.log('renderFactoryTags - No saved tags found');
+          return null;
+        }
+        
+        factoryTags = JSON.parse(savedTags);
       }
       
-      const factoryTags = JSON.parse(savedTags);
       console.log('renderFactoryTags - Parsed tags:', factoryTags);
       const allFactoryTags = [];
       
@@ -384,6 +396,35 @@ const Factories = () => {
     }
   };
 
+  // Função de debug para testar upload de imagens
+  const testImageUpload = async () => {
+    try {
+      console.log('Testando upload de imagem...');
+      const result = await imageService.testUpload();
+      console.log('Upload de teste bem-sucedido:', result);
+      alert(`Upload de teste bem-sucedido! URL: ${result}`);
+    } catch (error) {
+      console.error('Erro no upload de teste:', error);
+      alert(`Erro no upload de teste: ${error.message}`);
+    }
+  };
+
+  // Função de debug para testar conexão com Firebase
+  const testFirebaseConnection = async () => {
+    try {
+      console.log('Testando conexão com Firebase...');
+      const result = await tagService.testConnection();
+      if (result) {
+        alert('Conexão com Firebase OK!');
+      } else {
+        alert('Erro na conexão com Firebase');
+      }
+    } catch (error) {
+      console.error('Erro no teste de Firebase:', error);
+      alert(`Erro no teste de Firebase: ${error.message}`);
+    }
+  };
+
   if (loading && !refreshing) {
     return (
       <div className="text-center py-5">
@@ -406,6 +447,24 @@ const Factories = () => {
             >
               <i className="bi bi-bug me-1"></i>
               Debug Tags
+            </Button>
+            <Button 
+              variant="outline-info"
+              size="sm"
+              onClick={testImageUpload}
+              className="d-flex align-items-center"
+            >
+              <i className="bi bi-image me-1"></i>
+              Test Upload
+            </Button>
+            <Button 
+              variant="outline-success"
+              size="sm"
+              onClick={testFirebaseConnection}
+              className="d-flex align-items-center"
+            >
+              <i className="bi bi-database me-1"></i>
+              Test Firebase
             </Button>
             <Button 
               variant="light"
