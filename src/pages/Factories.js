@@ -72,6 +72,14 @@ const Factories = () => {
       
       setFactories(factoriesWithProducts);
       setError(null);
+      
+      // Debug: verificar tags no localStorage
+      console.log('=== DEBUG TAGS ===');
+      factoriesWithProducts.forEach(factory => {
+        const savedTags = localStorage.getItem(`tags_${factory.id}`);
+        console.log(`Factory ${factory.name} (${factory.id}):`, savedTags);
+      });
+      console.log('=== FIM DEBUG TAGS ===');
     } catch (err) {
       setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
       console.error(err);
@@ -348,6 +356,34 @@ const Factories = () => {
     setPreviewVisible(true);
   };
 
+  // Função de debug para criar tags de teste
+  const createTestTags = () => {
+    console.log('Criando tags de teste...');
+    const testTags = {
+      regiao: [
+        { id: '1', name: 'Teste Região', division: 'regiao', createdAt: new Date(), updatedAt: new Date() }
+      ],
+      material: [
+        { id: '2', name: 'Teste Material', division: 'material', createdAt: new Date(), updatedAt: new Date() }
+      ],
+      outros: [
+        { id: '3', name: 'Teste Outros', division: 'outros', createdAt: new Date(), updatedAt: new Date() }
+      ]
+    };
+    
+    // Salvar tags para a primeira fábrica
+    if (factories.length > 0) {
+      const firstFactory = factories[0];
+      localStorage.setItem(`tags_${firstFactory.id}`, JSON.stringify(testTags));
+      console.log(`Tags de teste salvas para ${firstFactory.name} (${firstFactory.id})`);
+      
+      // Recarregar fábricas para ver o resultado
+      loadFactories();
+    } else {
+      console.log('Nenhuma fábrica encontrada para testar');
+    }
+  };
+
   if (loading && !refreshing) {
     return (
       <div className="text-center py-5">
@@ -361,15 +397,26 @@ const Factories = () => {
       <div className="bg-primary text-white p-3 rounded mb-3">
         <div className="d-flex justify-content-between align-items-center">
           <h2 className="mb-0 fs-5 fw-semibold">{t('Fábricas/Lojas', '工厂/商店')}</h2>
-          <Button 
-            variant="light"
-            size="sm"
-            onClick={handleNewFactory}
-            className="d-flex align-items-center"
-          >
-            <i className="bi bi-plus-circle me-1"></i>
-            {t('Nova', '新建')}
-          </Button>
+          <div className="d-flex gap-2">
+            <Button 
+              variant="outline-warning"
+              size="sm"
+              onClick={createTestTags}
+              className="d-flex align-items-center"
+            >
+              <i className="bi bi-bug me-1"></i>
+              Debug Tags
+            </Button>
+            <Button 
+              variant="light"
+              size="sm"
+              onClick={handleNewFactory}
+              className="d-flex align-items-center"
+            >
+              <i className="bi bi-plus-circle me-1"></i>
+              {t('Nova', '新建')}
+            </Button>
+          </div>
         </div>
       </div>
       
