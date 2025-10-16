@@ -68,7 +68,9 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     console.error('Detalhes do erro:', {
       error: error.nativeEvent?.error,
       code: error.nativeEvent?.error?.code,
-      message: error.nativeEvent?.error?.message
+      message: error.nativeEvent?.error?.message,
+      target: error.target,
+      src: error.target?.src
     });
     
     let errorMessage = 'Erro ao carregar áudio';
@@ -91,10 +93,58 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
         default:
           errorMessage = `Erro de áudio: ${audioError.message || 'Desconhecido'}`;
       }
+    } else {
+      // Se não há código de erro específico, pode ser problema de formato
+      const url = error.target?.src;
+      if (url && url.includes('.m4a')) {
+        errorMessage = 'Formato M4A pode não ser suportado neste navegador';
+      } else {
+        errorMessage = 'Erro ao carregar arquivo de áudio';
+      }
     }
     
     setAudioErrors(prev => ({ ...prev, [index]: errorMessage }));
     setPlayingIndex(null);
+  };
+
+  // Tentar recarregar áudio
+  const retryAudio = async (index, url) => {
+    const audio = audioRefs.current[index];
+    if (audio) {
+      try {
+        console.log(`Tentando recarregar áudio ${index}:`, url);
+        
+        // Limpar erro anterior
+        setAudioErrors(prev => ({ ...prev, [index]: null }));
+        
+        // Aguardar um pouco antes de recarregar
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Forçar reload do áudio
+        audio.load();
+        
+        // Aguardar carregamento
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Timeout')), 5000);
+          
+          audio.addEventListener('canplaythrough', () => {
+            clearTimeout(timeout);
+            resolve();
+          }, { once: true });
+          
+          audio.addEventListener('error', () => {
+            clearTimeout(timeout);
+            reject(new Error('Erro ao carregar'));
+          }, { once: true });
+        });
+        
+        console.log(`Áudio ${index} recarregado com sucesso`);
+        
+      } catch (error) {
+        console.error(`Erro ao recarregar áudio ${index}:`, error);
+        setAudioErrors(prev => ({ ...prev, [index]: 'Falha ao recarregar áudio' }));
+      }
+    }
   };
 
   const handleDelete = (index) => {
@@ -199,6 +249,18 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                   >
                     <i className="bi bi-bug"></i>
                   </Button>
+                  {hasError && (
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      className="me-2"
+                      onClick={() => retryAudio(index, url)}
+                      disabled={disabled}
+                      title="Tentar recarregar áudio"
+                    >
+                      <i className="bi bi-arrow-clockwise"></i>
+                    </Button>
+                  )}
                   <Button
                     variant="outline-danger"
                     size="sm"
@@ -212,12 +274,17 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                 {/* Audio element */}
                 <audio
                   ref={el => audioRefs.current[index] = el}
-                  src={url}
                   onEnded={() => handleAudioEnded(index)}
                   onError={(e) => handleAudioError(index, e)}
                   preload="metadata"
                   style={{ display: 'none' }}
-                />
+                >
+                  <source src={url} type="audio/mp4" />
+                  <source src={url} type="audio/mpeg" />
+                  <source src={url} type="audio/webm" />
+                  <source src={url} type="audio/ogg" />
+                  Seu navegador não suporta o elemento de áudio.
+                </audio>
               </ListGroup.Item>
             );
           })}
