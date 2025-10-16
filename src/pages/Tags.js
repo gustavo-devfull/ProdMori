@@ -20,8 +20,6 @@ const Tags = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
-  const [factories, setFactories] = useState([]);
-  const [selectedFactory, setSelectedFactory] = useState('');
   const [tags, setTags] = useState({
     regiao: [],
     material: [],
@@ -38,21 +36,9 @@ const Tags = () => {
     material: [],
     outros: []
   });
-  const [showGlobalTags, setShowGlobalTags] = useState(false);
 
-  console.log('Tags component rendering, loading:', loading, 'factories:', factories.length);
+  console.log('Tags component rendering, loading:', loading);
 
-  const loadFactories = useCallback(async () => {
-    try {
-      const factoriesData = await factoryServiceAPI.getAllFactories();
-      setFactories(factoriesData);
-    } catch (err) {
-      setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
 
   // Função para carregar tags globais do Firebase
   const loadGlobalTags = useCallback(async () => {
@@ -74,36 +60,22 @@ const Tags = () => {
     }
   }, []);
 
-  // Função para sincronizar tags globais com todas as fábricas
-  const syncGlobalTags = useCallback(() => {
-    try {
-      tagService.syncGlobalTags();
-      loadGlobalTags();
-    } catch (err) {
-      console.error('Erro ao sincronizar tags globais:', err);
-    }
-  }, [loadGlobalTags]);
 
   const loadTags = useCallback(async () => {
-    if (!selectedFactory) {
-      setTags({ regiao: [], material: [], outros: [] });
-      return;
-    }
-
     try {
       setLoading(true);
-      console.log('Carregando tags da fábrica:', selectedFactory);
+      console.log('Carregando tags globais...');
       
-      // Tentar carregar do Firebase primeiro
-      const factoryTags = await tagService.getFactoryTags(selectedFactory);
-      console.log('Tags da fábrica carregadas:', factoryTags);
-      setTags(factoryTags);
+      // Carregar tags globais do Firebase
+      const globalTagsData = await tagService.getAllTags();
+      console.log('Tags globais carregadas:', globalTagsData);
+      setTags(globalTagsData);
       
     } catch (err) {
-      console.error('Erro ao carregar tags do Firebase:', err);
+      console.error('Erro ao carregar tags globais:', err);
       // Fallback para localStorage
       try {
-        const savedTags = localStorage.getItem(`tags_${selectedFactory}`);
+        const savedTags = localStorage.getItem('globalTags');
         if (savedTags) {
           setTags(JSON.parse(savedTags));
         } else {
@@ -117,24 +89,12 @@ const Tags = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedFactory, t]);
+  }, [t]);
 
   useEffect(() => {
-    loadFactories();
     loadGlobalTags();
-  }, [loadFactories, loadGlobalTags]);
-
-  useEffect(() => {
-    if (factories.length > 0) {
-      syncGlobalTags();
-    }
-  }, [factories, syncGlobalTags]);
-
-  useEffect(() => {
-    if (selectedFactory) {
-      loadTags();
-    }
-  }, [selectedFactory, loadTags]);
+    loadTags();
+  }, [loadGlobalTags, loadTags]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -152,29 +112,18 @@ const Tags = () => {
         updatedAt: new Date()
       };
 
-      console.log('Salvando tag:', newTag, 'Factory:', selectedFactory);
+      console.log('Salvando tag global:', newTag);
 
-      if (selectedFactory) {
-        // Modo fábrica selecionada - criar tag para fábrica específica
-        const result = await tagService.addTagToFactory(selectedFactory, newTag);
-        
-        if (!result.success) {
-          setError(result.message);
-          return;
-        }
-        
-        // Recarregar tags da fábrica
-        await loadTags();
-      } else {
-        // Modo global - criar tag global diretamente
-        const result = await tagService.addTag(newTag);
-        if (!result.success) {
-          setError(result.message);
-          return;
-        }
+      // Criar tag global
+      const result = await tagService.addTag(newTag);
+      
+      if (!result.success) {
+        setError(result.message);
+        return;
       }
       
       // Recarregar tags globais
+      await loadTags();
       await loadGlobalTags();
       
       setModalVisible(false);
@@ -200,7 +149,6 @@ const Tags = () => {
     console.log('=== HANDLE DELETE TAG ===');
     console.log('Tag ID:', tagId);
     console.log('Division:', division);
-    console.log('Selected Factory:', selectedFactory);
     console.log('Function called successfully!');
     
     if (!window.confirm(t('Tem certeza que deseja excluir esta tag?', '确定要删除这个标签吗？'))) {
@@ -209,39 +157,22 @@ const Tags = () => {
     }
 
     try {
-      console.log('Starting tag deletion...');
+      console.log('Starting global tag deletion...');
 
-      if (selectedFactory) {
-        // Modo fábrica selecionada - deletar tag da fábrica
-        console.log('Deleting tag from factory:', selectedFactory);
-        const result = await tagService.removeTagFromFactory(selectedFactory, tagId, division);
-        console.log('Remove from factory result:', result);
-        
-        if (!result.success) {
-          console.error('Failed to remove tag from factory:', result.message);
-          setError(result.message);
-          return;
-        }
-        
-        // Recarregar tags da fábrica
-        console.log('Reloading factory tags...');
-        await loadTags();
-        console.log('Factory tags reloaded');
-      } else {
-        // Modo global - deletar tag global diretamente
-        console.log('Deleting global tag');
-        const result = await tagService.removeTag(tagId, division);
-        console.log('Remove global tag result:', result);
-        
-        if (!result.success) {
-          console.error('Failed to remove global tag:', result.message);
-          setError(result.message);
-          return;
-        }
+      // Deletar tag global
+      console.log('Deleting global tag');
+      const result = await tagService.removeTag(tagId, division);
+      console.log('Remove global tag result:', result);
+      
+      if (!result.success) {
+        console.error('Failed to remove global tag:', result.message);
+        setError(result.message);
+        return;
       }
       
       // Recarregar tags globais
       console.log('Reloading global tags...');
+      await loadTags();
       await loadGlobalTags();
       console.log('Global tags reloaded');
       
@@ -260,44 +191,8 @@ const Tags = () => {
     setError(null);
   };
 
-  const handleCreateNewTag = () => {
-    setEditingTag(null);
-    setNewTagName('');
-    setSelectedDivision('regiao');
-    setError(null);
-    setModalVisible(true);
-  };
 
-  const handleFactoryChange = (factoryId) => {
-    setSelectedFactory(factoryId);
-    setError(null);
-  };
 
-  const getDivisionLabel = (division) => {
-    switch (division) {
-      case 'regiao':
-        return t('Tags Região', '地区标签');
-      case 'material':
-        return t('Tags Material', '材料标签');
-      case 'outros':
-        return t('Tags Outros', '其他标签');
-      default:
-        return division;
-    }
-  };
-
-  const getDivisionIcon = (division) => {
-    switch (division) {
-      case 'regiao':
-        return 'bi-geo-alt';
-      case 'material':
-        return 'bi-box';
-      case 'outros':
-        return 'bi-tag';
-      default:
-        return 'bi-tag';
-    }
-  };
 
   if (loading) {
     return (
@@ -330,25 +225,6 @@ const Tags = () => {
         </Alert>
       )}
 
-      {/* Seletor de Fábrica */}
-      <Card className="mb-3">
-        <Card.Body>
-          <Form.Group>
-            <Form.Label>{t('Selecionar Fábrica', '选择工厂')}</Form.Label>
-            <Form.Select
-              value={selectedFactory}
-              onChange={(e) => handleFactoryChange(e.target.value)}
-            >
-              <option value="">{t('Escolha uma fábrica...', '选择工厂...')}</option>
-              {factories.map(factory => (
-                <option key={factory.id} value={factory.id}>
-                  {factory.name} - {factory.segment || t('Sem segmento', '无行业')}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-        </Card.Body>
-      </Card>
 
       {/* Tags Globais */}
       <Card className="mb-3">
@@ -356,15 +232,15 @@ const Tags = () => {
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="mb-0">{t('Tags Globais', '全局标签')}</h5>
             <Button 
-              variant="outline-primary" 
+              variant="primary" 
               size="sm"
-              onClick={() => setShowGlobalTags(!showGlobalTags)}
+              onClick={handleNewTag}
             >
-              {showGlobalTags ? t('Ocultar', '隐藏') : t('Mostrar', '显示')}
+              <i className="bi bi-plus"></i> {t('Nova Tag', '新建标签')}
             </Button>
           </div>
           
-          {showGlobalTags && (
+          {/* Exibir todas as tags por divisão */}
             <div>
               {/* Tags Região Globais */}
               {globalTags.regiao.length > 0 && (
@@ -487,93 +363,16 @@ const Tags = () => {
                 <p className="text-muted text-center">{t('Nenhuma tag global encontrada', '没有找到全局标签')}</p>
               )}
             </div>
-          )}
         </Card.Body>
       </Card>
 
-      <div className="d-flex justify-content-end mb-3">
-        <Button 
-          variant="success"
-          onClick={handleCreateNewTag}
-          className="d-flex align-items-center"
-        >
-          <i className="bi bi-plus-circle me-1"></i>
-          {selectedFactory ? t('Nova Tag', '新建标签') : t('Nova Tag Global', '新建全局标签')}
-        </Button>
-      </div>
 
-      {selectedFactory ? (
-        <Row className="g-3">
-          {Object.entries(tags).map(([division, divisionTags]) => (
-            <Col xs={12} md={4} key={division}>
-              <Card className="h-100">
-                <Card.Header className="d-flex align-items-center">
-                  <i className={`bi ${getDivisionIcon(division)} me-2`}></i>
-                  <span className="fw-medium">{getDivisionLabel(division)}</span>
-                  <Badge bg="secondary" className="ms-auto">
-                    {divisionTags.length}
-                  </Badge>
-                </Card.Header>
-                <Card.Body>
-                  {divisionTags.length === 0 ? (
-                    <div className="text-center py-3">
-                      <i className="bi bi-tag text-muted fs-1"></i>
-                      <p className="text-muted mt-2 small">
-                        {t('Nenhuma tag cadastrada', '没有注册标签')}
-                      </p>
-                    </div>
-                  ) : (
-                    <ListGroup variant="flush">
-                      {divisionTags.map((tag) => (
-                        <ListGroup.Item key={tag.id} className="d-flex justify-content-between align-items-center px-0">
-                          <span className="text-truncate">{tag.name}</span>
-                          <div className="d-flex gap-1">
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm"
-                              onClick={() => handleEdit(tag)}
-                              title={t('Editar tag', '编辑标签')}
-                            >
-                              <i className="bi bi-pencil"></i>
-                            </Button>
-                            <Button 
-                              variant="outline-danger" 
-                              size="sm"
-                              onClick={() => handleDelete(tag.id, division)}
-                              title={t('Excluir tag', '删除标签')}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </Button>
-                          </div>
-                        </ListGroup.Item>
-                      ))}
-                    </ListGroup>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      ) : (
-        <Card>
-          <Card.Body className="text-center py-5">
-            <i className="bi bi-building text-muted fs-1"></i>
-            <h5 className="mt-3 text-muted">{t('Selecione uma fábrica', '选择工厂')}</h5>
-            <p className="text-muted">{t('Escolha uma fábrica acima para gerenciar suas tags', '选择上面的工厂来管理其标签')}</p>
-          </Card.Body>
-        </Card>
-      )}
 
       {/* Modal para cadastrar/editar tag */}
       <Modal show={modalVisible} onHide={handleModalClose}>
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingTag ? t('Editar Tag', '编辑标签') : t('Nova Tag', '新建标签')}
-            {!selectedFactory && (
-              <small className="text-muted d-block">
-                {t('Tag Global', '全局标签')}
-              </small>
-            )}
+            {editingTag ? t('Editar Tag', '编辑标签') : t('Nova Tag Global', '新建全局标签')}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
