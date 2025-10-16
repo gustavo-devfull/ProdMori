@@ -176,11 +176,13 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
     const extension = url.split('.').pop().toLowerCase();
     const audio = document.createElement('audio');
     const supportedFormats = {
-      'mp3': 'audio/mpeg',
+      'mp3': 'audio/mpeg',      // MP3 primeiro
+      'm4a': 'audio/mp4',
+      'mp4': 'audio/mp4',
       'wav': 'audio/wav',
       'ogg': 'audio/ogg',
       'webm': 'audio/webm',
-      'm4a': 'audio/mp4'
+      'aac': 'audio/aac'
     };
     
     if (supportedFormats[extension]) {
@@ -279,8 +281,8 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                   preload="metadata"
                   style={{ display: 'none' }}
                 >
-                  <source src={url} type="audio/mp4" />
                   <source src={url} type="audio/mpeg" />
+                  <source src={url} type="audio/mp4" />
                   <source src={url} type="audio/webm" />
                   <source src={url} type="audio/ogg" />
                   Seu navegador não suporta o elemento de áudio.

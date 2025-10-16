@@ -77,9 +77,10 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     try {
       const stream = streamRef.current;
       
-      // Tentar formatos em ordem de compatibilidade
+      // Tentar formatos em ordem de compatibilidade (MP3 primeiro)
       const mimeTypes = [
-        'audio/mp4',
+        'audio/mpeg',           // MP3 - melhor compatibilidade
+        'audio/mp4',            // M4A
         'audio/webm;codecs=opus',
         'audio/webm',
         'audio/ogg;codecs=opus',

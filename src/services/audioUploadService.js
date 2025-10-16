@@ -19,6 +19,7 @@ class AudioUploadService {
     
     // Determinar extensão baseada no MIME type
     let extension = 'webm';
+    if (mimeType.includes('mpeg')) extension = 'mp3';  // MP3 primeiro
     if (mimeType.includes('mp4')) extension = 'm4a';
     if (mimeType.includes('ogg')) extension = 'ogg';
     if (mimeType.includes('wav')) extension = 'wav';
