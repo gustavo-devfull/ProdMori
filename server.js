@@ -467,22 +467,38 @@ app.get('/api/audio', async (req, res) => {
   try {
     const filename = req.query.filename;
     
+    console.log('=== AUDIO PROXY REQUEST ===');
+    console.log('Filename:', filename);
+    console.log('Request URL:', req.url);
+    
     if (!filename) {
+      console.log('ERROR: Nome do arquivo não fornecido');
       return res.status(400).json({ error: 'Nome do arquivo de áudio não fornecido' });
     }
     
-    console.log(`Fetching audio from FTP: ${filename}`);
+    console.log(`Conectando ao FTP para buscar: ${filename}`);
     const client = new ftp.Client();
     
-    await client.access(ftpConfig);
+    try {
+      await client.access(ftpConfig);
+      console.log('Conexão FTP estabelecida');
+    } catch (ftpError) {
+      console.error('Erro ao conectar ao FTP:', ftpError);
+      return res.status(500).json({ error: 'Erro ao conectar ao servidor FTP' });
+    }
     
     // Verificar se o arquivo existe
     try {
+      console.log('Listando arquivos na pasta audio/');
       const fileList = await client.list('audio/');
+      console.log('Arquivos encontrados:', fileList.map(f => f.name));
+      
       const fileExists = fileList.some(file => file.name === filename);
+      console.log(`Arquivo ${filename} existe:`, fileExists);
       
       if (!fileExists) {
         await client.close();
+        console.log('ERROR: Arquivo não encontrado no FTP');
         return res.status(404).json({ error: 'Arquivo de áudio não encontrado' });
       }
     } catch (listError) {
@@ -491,16 +507,47 @@ app.get('/api/audio', async (req, res) => {
       return res.status(500).json({ error: 'Erro ao verificar arquivo de áudio' });
     }
     
+    // Criar diretório temp se não existir
+    const tempDir = 'temp';
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+      console.log('Diretório temp criado');
+    }
+    
     // Baixar áudio do FTP
-    const tempPath = `temp/${filename}`;
-    await client.downloadTo(tempPath, `audio/${filename}`);
+    const tempPath = `${tempDir}/${filename}`;
+    console.log(`Baixando arquivo para: ${tempPath}`);
+    
+    try {
+      await client.downloadTo(tempPath, `audio/${filename}`);
+      console.log('Download concluído');
+    } catch (downloadError) {
+      console.error('Erro no download:', downloadError);
+      await client.close();
+      return res.status(500).json({ error: 'Erro ao baixar arquivo de áudio' });
+    }
+    
     await client.close();
+    console.log('Conexão FTP fechada');
+    
+    // Verificar se o arquivo foi baixado
+    if (!fs.existsSync(tempPath)) {
+      console.log('ERROR: Arquivo não foi baixado');
+      return res.status(500).json({ error: 'Arquivo não foi baixado do FTP' });
+    }
     
     // Ler o arquivo para buffer
+    console.log('Lendo arquivo para buffer');
     const audioBuffer = fs.readFileSync(tempPath);
+    console.log(`Arquivo lido, tamanho: ${audioBuffer.length} bytes`);
     
     // Limpar arquivo temporário
-    fs.unlinkSync(tempPath);
+    try {
+      fs.unlinkSync(tempPath);
+      console.log('Arquivo temporário removido');
+    } catch (cleanupError) {
+      console.error('Erro ao limpar arquivo temporário:', cleanupError);
+    }
     
     // Determinar tipo de conteúdo baseado na extensão
     const extension = filename.split('.').pop().toLowerCase();
@@ -515,6 +562,7 @@ app.get('/api/audio', async (req, res) => {
     };
     
     const contentType = contentTypeMap[extension] || 'audio/mpeg';
+    console.log(`Content-Type definido como: ${contentType}`);
     
     // Configurar headers
     res.setHeader('Content-Type', contentType);
@@ -523,11 +571,18 @@ app.get('/api/audio', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     
+    console.log('Enviando resposta com sucesso');
     res.status(200).send(audioBuffer);
     
   } catch (error) {
-    console.error('Erro no proxy de áudio:', error);
-    res.status(500).json({ error: 'Erro ao carregar áudio do FTP' });
+    console.error('=== ERRO NO PROXY DE ÁUDIO ===');
+    console.error('Erro completo:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      error: 'Erro ao carregar áudio do FTP',
+      details: error.message,
+      filename: req.query.filename
+    });
   }
 });
 
