@@ -208,6 +208,8 @@ const FactoryDetail = () => {
     console.log('=== HANDLE DELETE PRODUCT ===');
     console.log('Product ID:', productId);
     console.log('Current editingProduct:', editingProduct);
+    console.log('Current modalVisible:', modalVisible);
+    console.log('Current submitting:', submitting);
     
     if (!window.confirm(t('Tem certeza que deseja excluir este produto?', '确定要删除这个产品吗？'))) {
       console.log('User cancelled deletion');
@@ -228,16 +230,13 @@ const FactoryDetail = () => {
       
       setError(null);
       
-      console.log('Closing modal...');
-      handleModalClose();
-      console.log('Modal close called');
+      // Fechar modal imediatamente após sucesso
+      console.log('Force closing modal immediately...');
+      setModalVisible(false);
+      setEditingProduct(null);
+      setSubmitting(false);
       
-      // Garantir que o modal feche mesmo se houver algum problema
-      setTimeout(() => {
-        console.log('Force closing modal after timeout');
-        setModalVisible(false);
-        setEditingProduct(null);
-      }, 100);
+      console.log('Modal should be closed now');
       
     } catch (err) {
       console.error('Error deleting product:', err);
@@ -245,9 +244,8 @@ const FactoryDetail = () => {
       
       // Fechar modal mesmo em caso de erro
       console.log('Closing modal due to error...');
-      handleModalClose();
-    } finally {
-      console.log('Setting submitting to false');
+      setModalVisible(false);
+      setEditingProduct(null);
       setSubmitting(false);
     }
   };
@@ -911,7 +909,14 @@ const FactoryDetail = () => {
             {editingProduct && (
               <Button 
                 variant="danger" 
-                onClick={() => handleDeleteProduct(editingProduct.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Delete button clicked, submitting:', submitting);
+                  if (!submitting) {
+                    handleDeleteProduct(editingProduct.id);
+                  }
+                }}
                 disabled={submitting}
                 className="me-auto"
               >
