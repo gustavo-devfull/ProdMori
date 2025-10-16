@@ -462,6 +462,75 @@ app.get('/api/image', async (req, res) => {
   }
 });
 
+// Rota para servir áudios via proxy com cache
+app.get('/api/audio', async (req, res) => {
+  try {
+    const filename = req.query.filename;
+    
+    if (!filename) {
+      return res.status(400).json({ error: 'Nome do arquivo de áudio não fornecido' });
+    }
+    
+    console.log(`Fetching audio from FTP: ${filename}`);
+    const client = new ftp.Client();
+    
+    await client.access(ftpConfig);
+    
+    // Verificar se o arquivo existe
+    try {
+      const fileList = await client.list('audio/');
+      const fileExists = fileList.some(file => file.name === filename);
+      
+      if (!fileExists) {
+        await client.close();
+        return res.status(404).json({ error: 'Arquivo de áudio não encontrado' });
+      }
+    } catch (listError) {
+      console.error('Erro ao listar arquivos de áudio:', listError);
+      await client.close();
+      return res.status(500).json({ error: 'Erro ao verificar arquivo de áudio' });
+    }
+    
+    // Baixar áudio do FTP
+    const tempPath = `temp/${filename}`;
+    await client.downloadTo(tempPath, `audio/${filename}`);
+    await client.close();
+    
+    // Ler o arquivo para buffer
+    const audioBuffer = fs.readFileSync(tempPath);
+    
+    // Limpar arquivo temporário
+    fs.unlinkSync(tempPath);
+    
+    // Determinar tipo de conteúdo baseado na extensão
+    const extension = filename.split('.').pop().toLowerCase();
+    const contentTypeMap = {
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'ogg': 'audio/ogg',
+      'webm': 'audio/webm',
+      'm4a': 'audio/mp4',
+      'mp4': 'audio/mp4',
+      'aac': 'audio/aac'
+    };
+    
+    const contentType = contentTypeMap[extension] || 'audio/mpeg';
+    
+    // Configurar headers
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hora
+    res.setHeader('Content-Length', audioBuffer.length);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    
+    res.status(200).send(audioBuffer);
+    
+  } catch (error) {
+    console.error('Erro no proxy de áudio:', error);
+    res.status(500).json({ error: 'Erro ao carregar áudio do FTP' });
+  }
+});
+
 // Rota para servir imagens via proxy com cache (path parameter)
 app.get('/api/image/:filename', async (req, res) => {
   try {

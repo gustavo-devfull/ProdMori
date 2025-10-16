@@ -26,6 +26,20 @@ class AudioUploadService {
     return `audio_${timestamp}_${random}.${extension}`;
   }
 
+  // Converter URL do FTP para URL do proxy
+  convertToProxyUrl(ftpUrl) {
+    if (!ftpUrl) return null;
+    
+    // Extrair nome do arquivo da URL do FTP
+    // Ex: https://ideolog.ia.br/audio/audio_1760580747344_qpqk4a.m4a
+    const filename = ftpUrl.split('/').pop();
+    
+    if (!filename) return ftpUrl; // Fallback para URL original
+    
+    // Retornar URL do proxy
+    return `${this.apiUrl}/audio?filename=${encodeURIComponent(filename)}`;
+  }
+
   // Upload de áudio via API
   async uploadAudio(audioBlob, productId) {
     try {
@@ -98,9 +112,13 @@ class AudioUploadService {
 
       console.log('AudioUploadService.uploadAudio - Upload realizado com sucesso:', result);
       
+      // Converter URL do FTP para URL do proxy
+      const proxyUrl = this.convertToProxyUrl(result.audioUrl);
+      console.log('AudioUploadService.uploadAudio - URL convertida:', { original: result.audioUrl, proxy: proxyUrl });
+      
       return {
         success: true,
-        audioUrl: result.audioUrl,
+        audioUrl: proxyUrl, // Usar URL do proxy em vez da URL do FTP
         fileName: result.fileName,
         duration: result.duration
       };
