@@ -375,6 +375,40 @@ class ImageService {
   }
 
   // Método para verificar se a imagem existe no servidor
+  // Método para testar upload com arquivo de teste
+  async testUpload() {
+    try {
+      console.log('ImageService.testUpload - Iniciando teste de upload...');
+      
+      // Criar um arquivo de teste (1x1 pixel PNG)
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, 1, 1);
+      
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(async (blob) => {
+          try {
+            const testFile = new File([blob], 'test-image.png', { type: 'image/png' });
+            console.log('ImageService.testUpload - Arquivo de teste criado:', testFile);
+            
+            const result = await this.uploadFile(testFile);
+            console.log('ImageService.testUpload - Upload de teste bem-sucedido:', result);
+            resolve(result);
+          } catch (error) {
+            console.error('ImageService.testUpload - Erro no upload de teste:', error);
+            reject(error);
+          }
+        }, 'image/png');
+      });
+    } catch (error) {
+      console.error('ImageService.testUpload - Erro ao criar arquivo de teste:', error);
+      throw error;
+    }
+  }
+
   async checkImageExists(imageUrl) {
     try {
       const response = await fetch(imageUrl, { method: 'HEAD' });
