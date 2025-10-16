@@ -30,6 +30,7 @@ const Factories = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState(new Set());
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [factoryTagsMap, setFactoryTagsMap] = useState({});
   const [previewImage, setPreviewImage] = useState('');
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
   const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
@@ -92,6 +93,15 @@ const Factories = () => {
   useEffect(() => {
     loadFactories();
   }, [loadFactories]);
+
+  // Carregar tags das fábricas quando as fábricas forem carregadas
+  useEffect(() => {
+    if (factories.length > 0) {
+      factories.forEach(factory => {
+        loadFactoryTags(factory.id);
+      });
+    }
+  }, [factories]);
 
   // Carregar tags globais
   useEffect(() => {
@@ -277,31 +287,31 @@ const Factories = () => {
     });
   };
 
-  // Função para renderizar tags da fábrica
-  const renderFactoryTags = async (factory) => {
+  // Função para carregar tags de uma fábrica
+  const loadFactoryTags = async (factoryId) => {
     try {
-      console.log('renderFactoryTags - Factory ID:', factory.id);
+      console.log('loadFactoryTags - Factory ID:', factoryId);
       
       // Tentar carregar tags do Firebase primeiro
       let factoryTags;
       try {
-        factoryTags = await tagService.getFactoryTags(factory.id);
-        console.log('renderFactoryTags - Tags carregadas do Firebase:', factoryTags);
+        factoryTags = await tagService.getFactoryTags(factoryId);
+        console.log('loadFactoryTags - Tags carregadas do Firebase:', factoryTags);
       } catch (firebaseError) {
         console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
         // Fallback para localStorage
-        const savedTags = localStorage.getItem(`tags_${factory.id}`);
-        console.log('renderFactoryTags - Saved tags (localStorage):', savedTags);
+        const savedTags = localStorage.getItem(`tags_${factoryId}`);
+        console.log('loadFactoryTags - Saved tags (localStorage):', savedTags);
         
         if (!savedTags) {
-          console.log('renderFactoryTags - No saved tags found');
-          return null;
+          console.log('loadFactoryTags - No saved tags found');
+          return;
         }
         
         factoryTags = JSON.parse(savedTags);
       }
       
-      console.log('renderFactoryTags - Parsed tags:', factoryTags);
+      console.log('loadFactoryTags - Parsed tags:', factoryTags);
       const allFactoryTags = [];
       
       // Combinar todas as tags da fábrica
@@ -317,40 +327,50 @@ const Factories = () => {
         allFactoryTags.push(...factoryTags.outros.map(tag => ({ ...tag, type: 'outros' })));
       }
       
-      console.log('renderFactoryTags - All factory tags:', allFactoryTags);
+      console.log('loadFactoryTags - All factory tags:', allFactoryTags);
       
-      if (allFactoryTags.length === 0) {
-        console.log('renderFactoryTags - No tags to display');
-        return null;
-      }
+      // Atualizar o estado com as tags da fábrica
+      setFactoryTagsMap(prev => ({
+        ...prev,
+        [factoryId]: allFactoryTags
+      }));
       
-      return (
-        <div className="mt-3" style={{ minHeight: '30px' }}>
-          <div className="d-flex flex-wrap gap-1" style={{ width: '100%' }}>
-            {allFactoryTags.map(tag => (
-              <Badge 
-                key={tag.id} 
-                bg={tag.type === 'regiao' ? 'primary' : tag.type === 'material' ? 'success' : 'danger'}
-                className="d-flex align-items-center gap-1"
-                style={{ 
-                  fontSize: '14px',
-                  minHeight: '24px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <i className={`bi ${tag.type === 'regiao' ? 'bi-geo-alt' : tag.type === 'material' ? 'bi-box' : 'bi-tag'}`}></i>
-                {tag.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      );
     } catch (error) {
       console.error('Erro ao carregar tags da fábrica:', error);
+    }
+  };
+
+  // Função para renderizar tags da fábrica
+  const renderFactoryTags = (factory) => {
+    const factoryTags = factoryTagsMap[factory.id] || [];
+    
+    if (factoryTags.length === 0) {
       return null;
     }
+    
+    return (
+      <div className="mt-3" style={{ minHeight: '30px' }}>
+        <div className="d-flex flex-wrap gap-1" style={{ width: '100%' }}>
+          {factoryTags.map(tag => (
+            <Badge 
+              key={tag.id} 
+              bg={tag.type === 'regiao' ? 'primary' : tag.type === 'material' ? 'success' : 'danger'}
+              className="d-flex align-items-center gap-1"
+              style={{ 
+                fontSize: '14px',
+                minHeight: '24px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <i className={`bi ${tag.type === 'regiao' ? 'bi-geo-alt' : tag.type === 'material' ? 'bi-box' : 'bi-tag'}`}></i>
+              {tag.name}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const toggleProductsExpansion = (factoryId) => {
