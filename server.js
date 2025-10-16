@@ -479,6 +479,75 @@ app.get('/api/image', async (req, res) => {
   }
 });
 
+// Rota OPTIONS para CORS
+app.options('/api/audio', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Range');
+  res.status(200).end();
+});
+
+// Rota HEAD para metadados de áudio (usado pelo iOS)
+app.head('/api/audio', async (req, res) => {
+  try {
+    const filename = req.query.filename;
+    
+    console.log('=== AUDIO HEAD REQUEST ===');
+    console.log('Filename:', filename);
+    
+    if (!filename) {
+      return res.status(400).end();
+    }
+    
+    const client = new ftp.Client();
+    await client.access(ftpConfig);
+    
+    try {
+      await client.ensureDir('audio/');
+    } catch (dirError) {
+      // Ignorar erro de diretório
+    }
+    
+    const fileList = await client.list('audio/');
+    const fileExists = fileList.some(file => file.name === filename);
+    
+    await client.close();
+    
+    if (!fileExists) {
+      return res.status(404).end();
+    }
+    
+    const extension = filename.split('.').pop().toLowerCase();
+    const contentTypeMap = {
+      'mp3': 'audio/mpeg',
+      'wav': 'audio/wav',
+      'ogg': 'audio/ogg',
+      'webm': 'audio/webm',
+      'm4a': 'audio/mp4',
+      'mp4': 'audio/mp4',
+      'aac': 'audio/aac'
+    };
+    
+    const contentType = contentTypeMap[extension] || 'audio/mpeg';
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Range');
+    
+    if (extension === 'm4a' || extension === 'mp4') {
+      res.setHeader('Accept-Ranges', 'bytes');
+    }
+    
+    console.log('HEAD response sent for:', filename);
+    res.status(200).end();
+    
+  } catch (error) {
+    console.error('Erro no HEAD request:', error);
+    res.status(500).end();
+  }
+});
+
 // Rota para servir áudios via proxy com cache (versão simplificada para produção)
 app.get('/api/audio', async (req, res) => {
   try {
@@ -618,13 +687,29 @@ app.get('/api/audio', async (req, res) => {
     
     const contentType = contentTypeMap[extension] || 'audio/mpeg';
     console.log(`Content-Type definido como: ${contentType}`);
+    console.log(`Arquivo: ${filename}, Extensão: ${extension}`);
     
-    // Configurar headers
+    // Configurar headers para melhor compatibilidade com iOS
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hora
     res.setHeader('Content-Length', audioBuffer.length);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Range');
+    
+    // Headers específicos para iOS e M4A
+    if (extension === 'm4a' || extension === 'mp4') {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      console.log('Headers específicos para M4A/MP4 aplicados');
+    }
+    
+    // Log dos headers para debug
+    console.log('Headers configurados:', {
+      'Content-Type': contentType,
+      'Content-Length': audioBuffer.length,
+      'Accept-Ranges': extension === 'm4a' || extension === 'mp4' ? 'bytes' : 'n/a'
+    });
     
     console.log('Enviando resposta com sucesso');
     res.status(200).send(audioBuffer);
