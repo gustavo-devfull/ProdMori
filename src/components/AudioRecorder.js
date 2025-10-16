@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button, Card, ProgressBar, Alert } from 'react-bootstrap';
+import { Button, Card, Alert } from 'react-bootstrap';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
@@ -7,7 +7,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(initialAudioUrl || '');
   const [error, setError] = useState(null);
   const [hasPermission, setHasPermission] = useState(null);
