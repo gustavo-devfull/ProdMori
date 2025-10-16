@@ -371,7 +371,7 @@ const FactoryDetail = () => {
     }));
   };
 
-  const addNewTagToFactory = (division) => {
+  const addNewTagToFactory = async (division) => {
     const tagName = factoryNewTagInputs[division].trim();
     if (!tagName) return;
 
