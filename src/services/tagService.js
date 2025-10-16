@@ -162,7 +162,17 @@ class TagService {
 
       // Fallback para localStorage
       const factoryTags = localStorage.getItem(`tags_${factoryId}`);
-      return factoryTags ? JSON.parse(factoryTags) : { regiao: [], material: [], outros: [] };
+      if (factoryTags) {
+        const parsedTags = JSON.parse(factoryTags);
+        // Garantir que a estrutura está correta
+        return {
+          regiao: Array.isArray(parsedTags.regiao) ? parsedTags.regiao : [],
+          material: Array.isArray(parsedTags.material) ? parsedTags.material : [],
+          outros: Array.isArray(parsedTags.outros) ? parsedTags.outros : []
+        };
+      }
+      
+      return { regiao: [], material: [], outros: [] };
     } catch (error) {
       console.error('Erro ao carregar tags da fábrica:', error);
       return { regiao: [], material: [], outros: [] };
@@ -207,10 +217,27 @@ class TagService {
   }
 
   // Remover tag de uma fábrica específica
-  removeTagFromFactory(factoryId, tagId, division) {
+  async removeTagFromFactory(factoryId, tagId, division) {
     try {
-      const factoryTags = this.getFactoryTags(factoryId);
+      console.log('=== REMOVE TAG FROM FACTORY ===');
+      console.log('Factory ID:', factoryId);
+      console.log('Tag ID:', tagId);
+      console.log('Division:', division);
+      
+      const factoryTags = await this.getFactoryTags(factoryId);
+      console.log('Factory tags before removal:', factoryTags);
+      
+      // Verificar se a divisão existe e é um array
+      if (!factoryTags || !factoryTags[division] || !Array.isArray(factoryTags[division])) {
+        console.error('Division not found or not an array:', division);
+        return { success: false, message: 'Divisão não encontrada na fábrica' };
+      }
+      
+      const originalLength = factoryTags[division].length;
       factoryTags[division] = factoryTags[division].filter(tag => tag.id !== tagId);
+      const newLength = factoryTags[division].length;
+      
+      console.log('Tags removed from factory:', originalLength - newLength);
       
       localStorage.setItem(`tags_${factoryId}`, JSON.stringify(factoryTags));
       
