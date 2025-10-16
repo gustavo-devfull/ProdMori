@@ -1366,6 +1366,51 @@ app.delete('/api/firestore/delete/products/:id', async (req, res) => {
   }
 });
 
+// Rota de teste para verificar status do Firebase
+app.get('/api/firestore/test', async (req, res) => {
+  try {
+    console.log('=== FIREBASE TEST ===');
+    console.log('Admin apps:', admin.apps.length);
+    console.log('DB available:', !!db);
+    console.log('Environment variables:', {
+      FB_PROJECT_ID: !!process.env.FB_PROJECT_ID,
+      FB_CLIENT_EMAIL: !!process.env.FB_CLIENT_EMAIL,
+      FB_PRIVATE_KEY: !!process.env.FB_PRIVATE_KEY
+    });
+    
+    if (!db) {
+      return res.status(500).json({
+        error: 'Firebase not initialized',
+        adminApps: admin.apps.length,
+        environment: {
+          FB_PROJECT_ID: !!process.env.FB_PROJECT_ID,
+          FB_CLIENT_EMAIL: !!process.env.FB_CLIENT_EMAIL,
+          FB_PRIVATE_KEY: !!process.env.FB_PRIVATE_KEY
+        }
+      });
+    }
+    
+    // Testar uma query simples
+    const testSnapshot = await db.collection('tags').limit(1).get();
+    console.log('Test query successful, size:', testSnapshot.size);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Firebase is working',
+      adminApps: admin.apps.length,
+      testQuerySize: testSnapshot.size
+    });
+    
+  } catch (error) {
+    console.error('Firebase test error:', error);
+    res.status(500).json({
+      error: 'Firebase test failed',
+      message: error.message,
+      code: error.code
+    });
+  }
+});
+
 // Rota para buscar tags
 app.get('/api/firestore/get/tags', async (req, res) => {
   try {
