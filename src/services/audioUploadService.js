@@ -9,7 +9,7 @@ class AudioUploadService {
     
     this.apiUrl = this.isVercel 
       ? '/api'  // Vercel Functions
-      : 'http://localhost:3001/api';  // Servidor local
+      : '/api';  // Servidor local - usar URL relativa para evitar mixed content
     
     console.log('AudioUploadService initialized:', {
       isVercel: this.isVercel,
