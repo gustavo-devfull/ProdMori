@@ -510,7 +510,7 @@ app.get('/api/audio', async (req, res) => {
       return res.status(500).json({ error: 'Erro ao conectar ao servidor FTP' });
     }
     
-    // Verificar se o arquivo existe
+    // Verificar se o arquivo existe (opcional - tentar download direto se falhar)
     try {
       console.log('Listando arquivos na pasta audio/');
       const fileList = await client.list('audio/');
@@ -526,8 +526,8 @@ app.get('/api/audio', async (req, res) => {
       }
     } catch (listError) {
       console.error('Erro ao listar arquivos de áudio:', listError);
-      await client.close();
-      return res.status(500).json({ error: 'Erro ao verificar arquivo de áudio' });
+      console.log('Continuando sem verificação - tentando download direto...');
+      // Continuar sem verificação - tentar download direto
     }
     
     // Criar diretório temp se não existir
@@ -542,8 +542,30 @@ app.get('/api/audio', async (req, res) => {
     console.log(`Baixando arquivo para: ${tempPath}`);
     
     try {
-      await client.downloadTo(tempPath, `audio/${filename}`);
-      console.log('Download concluído');
+      // Tentar diferentes caminhos
+      let downloadSuccess = false;
+      
+      try {
+        await client.downloadTo(tempPath, `audio/${filename}`);
+        console.log('Download concluído com caminho audio/');
+        downloadSuccess = true;
+      } catch (downloadError1) {
+        console.log('Erro com caminho audio/, tentando caminho direto:', downloadError1.message);
+        
+        try {
+          await client.downloadTo(tempPath, filename);
+          console.log('Download concluído com caminho direto');
+          downloadSuccess = true;
+        } catch (downloadError2) {
+          console.error('Erro com caminho direto:', downloadError2.message);
+          throw downloadError2;
+        }
+      }
+      
+      if (!downloadSuccess) {
+        throw new Error('Falha em todos os métodos de download');
+      }
+      
     } catch (downloadError) {
       console.error('Erro no download:', downloadError);
       await client.close();
