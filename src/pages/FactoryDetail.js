@@ -724,14 +724,14 @@ const FactoryDetail = () => {
             </Form.Group>
 
             {/* Áudio (substitui REMARK) */}
-            <AudioPlayer 
-              audioUrls={audioUrls}
-              onDelete={handleDeleteAudio}
+            <AudioRecorder 
+              onAudioReady={handleAudioReady}
               disabled={uploadingAudio}
             />
             
-            <AudioRecorder 
-              onAudioReady={handleAudioReady}
+            <AudioPlayer 
+              audioUrls={audioUrls}
+              onDelete={handleDeleteAudio}
               disabled={uploadingAudio}
             />
             
