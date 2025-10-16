@@ -11,7 +11,6 @@ import {
   ListGroup,
   Badge
 } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
@@ -20,7 +19,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const Factories = () => {
   const { t } = useLanguage();
-  const navigate = useNavigate();
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -211,9 +209,43 @@ const Factories = () => {
   const handleNewFactory = () => {
     setEditingFactory(null);
     setModalVisible(true);
+    // Limpar tags da fábrica para nova fábrica
+    resetFactoryTags();
     // Recarregar tags globais
     const globalTagsData = tagService.getAllTags();
     setGlobalTags(globalTagsData);
+  };
+
+  const handleEditFactory = async (factory) => {
+    setEditingFactory(factory);
+    setModalVisible(true);
+    
+    // Carregar tags da fábrica existente
+    try {
+      const factoryTagsData = await tagService.getFactoryTags(factory.id);
+      console.log('handleEditFactory - Tags carregadas:', factoryTagsData);
+      
+      // Garantir que a estrutura está correta
+      const safeTags = {
+        regiao: Array.isArray(factoryTagsData?.regiao) ? factoryTagsData.regiao : [],
+        material: Array.isArray(factoryTagsData?.material) ? factoryTagsData.material : [],
+        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : []
+      };
+      
+      setFactoryTags(safeTags);
+      console.log('handleEditFactory - Tags definidas no estado:', safeTags);
+    } catch (error) {
+      console.error('Erro ao carregar tags da fábrica:', error);
+      resetFactoryTags();
+    }
+    
+    // Recarregar tags globais
+    try {
+      const globalTagsData = await tagService.getAllTags();
+      setGlobalTags(globalTagsData);
+    } catch (error) {
+      console.error('Erro ao carregar tags globais:', error);
+    }
   };
 
   // Funções para gerenciar tags
@@ -545,8 +577,8 @@ const Factories = () => {
                     <Button 
                       variant="outline-primary"
                       size="sm"
-                      onClick={() => navigate(`/factory/${factory.id}`)}
-                      title={t('Ver detalhes da fábrica', '查看工厂详情')}
+                      onClick={() => handleEditFactory(factory)}
+                      title={t('Editar fábrica', '编辑工厂')}
                     >
                       <i className="bi bi-pencil"></i>
                     </Button>
