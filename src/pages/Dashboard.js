@@ -8,12 +8,14 @@ import {
   Button,
   Form,
   Modal,
-  Badge
+  Badge,
+  Pagination
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import factoryServiceAPI from '../services/factoryServiceAPI';
+import optimizedFirebaseService from '../services/optimizedFirebaseService';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
+import factoryServiceAPI from '../services/factoryServiceAPI';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Dashboard = () => {
@@ -21,7 +23,6 @@ const Dashboard = () => {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [allFactories, setAllFactories] = useState([]);
-  const [selectedFactory, setSelectedFactory] = useState('');
   const [error, setError] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -45,45 +46,179 @@ const Dashboard = () => {
     outros: []
   });
   const [showAvailableTags, setShowAvailableTags] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [filteredFactories, setFilteredFactories] = useState([]);
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
 
-  const loadFactories = useCallback(async () => {
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalFactories, setTotalFactories] = useState(0);
+  const [pageSize] = useState(12); // Fábricas por página
+
+  // Cache duration: 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000;
+
+  const loadFactories = useCallback(async (page = currentPage) => {
     try {
       setLoading(true);
-      const factories = await factoryServiceAPI.getAllFactories();
       
-      // Verificar se os dados são arrays válidos
-      const validFactories = Array.isArray(factories) ? factories : [];
-      setAllFactories(validFactories);
+      console.log('Carregando fábricas com paginação...');
+      const result = await optimizedFirebaseService.getFactories(page, pageSize, {});
+      
+      if (result.success) {
+        if (result.fallback && result.data.length === 0) {
+          // Firebase indisponível, usar dados de exemplo
+          console.log('Firebase indisponível, usando dados de exemplo...');
+          const exampleFactories = [
+            { id: '1', name: 'Fábrica Exemplo 1', contactName: 'João Silva', phone: '123-456-7890', wechat: 'joao123', email: 'joao@exemplo.com', location: 'Shanghai', imageUrl1: '', imageUrl2: '' },
+            { id: '2', name: 'Fábrica Exemplo 2', contactName: 'Maria Santos', phone: '987-654-3210', wechat: 'maria456', email: 'maria@exemplo.com', location: 'Guangzhou', imageUrl1: '', imageUrl2: '' },
+            { id: '3', name: 'Fábrica Exemplo 3', contactName: 'Pedro Costa', phone: '555-123-4567', wechat: 'pedro789', email: 'pedro@exemplo.com', location: 'Shenzhen', imageUrl1: '', imageUrl2: '' }
+          ];
+          setAllFactories(exampleFactories);
+          setTotalPages(1);
+          setTotalFactories(exampleFactories.length);
+          setCurrentPage(1);
+          console.log(`Fábricas de exemplo carregadas: ${exampleFactories.length}`);
+        } else {
+          setAllFactories(result.data);
+          setTotalPages(result.pagination.pages);
+          setTotalFactories(result.pagination.total);
+          setCurrentPage(result.pagination.page);
+          console.log(`Fábricas carregadas: ${result.data.length} de ${result.pagination.total}`);
+        }
+      } else {
+        throw new Error(result.error || 'Erro ao carregar fábricas');
+      }
+      
     } catch (err) {
+      console.error('Erro ao carregar fábricas:', err);
       setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
-      console.error(err);
       setAllFactories([]);
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [currentPage, pageSize, t]);
 
   // Função para carregar tags disponíveis
   const loadAvailableTags = useCallback(async () => {
     try {
       console.log('Dashboard - Carregando tags globais...');
-      const globalTags = await tagService.getAllTags();
-      console.log('Dashboard - Tags globais carregadas:', globalTags);
       
-      // Garantir que a estrutura está correta
-      const safeTags = {
-        regiao: Array.isArray(globalTags?.regiao) ? globalTags.regiao : [],
-        material: Array.isArray(globalTags?.material) ? globalTags.material : [],
-        outros: Array.isArray(globalTags?.outros) ? globalTags.outros : []
+      // Debug: Verificar localStorage
+      const globalTagsFromStorage = localStorage.getItem('globalTags');
+      console.log('Dashboard - globalTags do localStorage:', globalTagsFromStorage);
+      
+      // Verificar cache primeiro
+      const cachedTags = localStorage.getItem('globalTagsCache');
+      const cacheTime = localStorage.getItem('globalTagsCacheTime');
+      
+      if (cachedTags && cacheTime && (Date.now() - parseInt(cacheTime)) < CACHE_DURATION) {
+        console.log('Carregando tags do cache...');
+        const cachedGlobalTags = JSON.parse(cachedTags);
+        const safeTags = {
+          regiao: Array.isArray(cachedGlobalTags?.regiao) ? cachedGlobalTags.regiao : [],
+          material: Array.isArray(cachedGlobalTags?.material) ? cachedGlobalTags.material : [],
+          outros: Array.isArray(cachedGlobalTags?.outros) ? cachedGlobalTags.outros : []
+        };
+        console.log('Dashboard - Tags do cache:', safeTags);
+        setAvailableTags(safeTags);
+        return;
+      }
+      
+      console.log('Carregando tags do Firebase...');
+      // Forçar carregamento direto do Firebase, ignorando cache temporariamente
+      const response = await fetch('http://localhost:3001/api/firestore/get/tags');
+      const result = await response.json();
+      console.log('Dashboard - Resposta direta do Firebase:', result);
+      
+      const tags = result.data || [];
+      console.log('Dashboard - Tags globais carregadas:', tags);
+      
+      // Processar tags do Firebase - extrair tagData e remover duplicatas
+      const processedTags = [];
+      const seenTags = new Set();
+      
+      tags.forEach(tag => {
+        if (tag.tagData) {
+          const tagKey = `${tag.tagData.name}_${tag.tagData.division}`;
+          if (!seenTags.has(tagKey)) {
+            seenTags.add(tagKey);
+            processedTags.push({
+              id: tag.tagData.id,
+              name: tag.tagData.name,
+              division: tag.tagData.division,
+              createdAt: tag.tagData.createdAt
+            });
+          }
+        }
+      });
+      
+      console.log('Dashboard - Tags processadas (sem duplicatas):', processedTags);
+      
+      // Organizar tags por divisão
+      let safeTags = {
+        regiao: processedTags.filter(tag => tag.division === 'regiao'),
+        material: processedTags.filter(tag => tag.division === 'material'),
+        outros: processedTags.filter(tag => tag.division === 'outros')
       };
       
+      // Se não há tags do Firebase, usar localStorage como fallback
+      if (safeTags.regiao.length === 0 && safeTags.material.length === 0 && safeTags.outros.length === 0) {
+        console.log('Nenhuma tag do Firebase, usando localStorage...');
+        const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[]}');
+        safeTags = {
+          regiao: Array.isArray(localGlobalTags?.regiao) ? localGlobalTags.regiao : [],
+          material: Array.isArray(localGlobalTags?.material) ? localGlobalTags.material : [],
+          outros: Array.isArray(localGlobalTags?.outros) ? localGlobalTags.outros : []
+        };
+      }
+      
+      console.log('Dashboard - Tags organizadas por divisão:', safeTags);
       setAvailableTags(safeTags);
+      
+      // Salvar no cache
+      localStorage.setItem('globalTagsCache', JSON.stringify(safeTags));
+      localStorage.setItem('globalTagsCacheTime', Date.now().toString());
+      
     } catch (error) {
       console.error('Erro ao carregar tags disponíveis:', error);
       // Fallback para localStorage
       try {
         const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[]}');
-        setAvailableTags(localGlobalTags);
+        
+        // Se não há tags no localStorage, criar algumas de exemplo
+        if (localGlobalTags.regiao.length === 0 && localGlobalTags.material.length === 0 && localGlobalTags.outros.length === 0) {
+          console.log('Criando tags de exemplo no localStorage...');
+          const exampleTags = {
+            regiao: [
+              { id: '1', name: 'Norte', division: 'regiao', createdAt: new Date() },
+              { id: '2', name: 'Sul', division: 'regiao', createdAt: new Date() },
+              { id: '3', name: 'Leste', division: 'regiao', createdAt: new Date() },
+              { id: '4', name: 'Oeste', division: 'regiao', createdAt: new Date() },
+              { id: '5', name: 'Centro', division: 'regiao', createdAt: new Date() }
+            ],
+            material: [
+              { id: '6', name: 'Alumínio', division: 'material', createdAt: new Date() },
+              { id: '7', name: 'Aço', division: 'material', createdAt: new Date() },
+              { id: '8', name: 'Plástico', division: 'material', createdAt: new Date() },
+              { id: '9', name: 'Madeira', division: 'material', createdAt: new Date() },
+              { id: '10', name: 'Vidro', division: 'material', createdAt: new Date() }
+            ],
+            outros: [
+              { id: '11', name: 'Premium', division: 'outros', createdAt: new Date() },
+              { id: '12', name: 'Econômico', division: 'outros', createdAt: new Date() },
+              { id: '13', name: 'Exportação', division: 'outros', createdAt: new Date() },
+              { id: '14', name: 'Certificado', division: 'outros', createdAt: new Date() }
+            ]
+          };
+          localStorage.setItem('globalTags', JSON.stringify(exampleTags));
+          localStorage.setItem('globalTagsCache', JSON.stringify(exampleTags));
+          localStorage.setItem('globalTagsCacheTime', Date.now().toString());
+          setAvailableTags(exampleTags);
+        } else {
+          setAvailableTags(localGlobalTags);
+        }
       } catch (fallbackError) {
         console.error('Erro no fallback localStorage:', fallbackError);
         setAvailableTags({
@@ -93,15 +228,139 @@ const Dashboard = () => {
         });
       }
     }
-  }, []);
+  }, [CACHE_DURATION]);
+
+  // Função para mudar de página
+  const handlePageChange = useCallback((page) => {
+    setCurrentPage(page);
+    loadFactories(page);
+  }, [loadFactories]);
+
+  // Função para filtrar fábricas por tags selecionadas
+  const filterFactoriesByTags = useCallback(async () => {
+    if (selectedTags.length === 0) {
+      setFilteredFactories(allFactories);
+      return;
+    }
+
+    try {
+      console.log('=== FILTRO DE FÁBRICAS POR TAGS ===');
+      console.log('Tags selecionadas:', selectedTags);
+      console.log('Total de fábricas:', allFactories.length);
+      
+      const filtered = [];
+      for (const factory of allFactories) {
+        // Verificar cache para tags da fábrica
+        const cacheKey = `factoryTags_${factory.id}`;
+        const cachedFactoryTags = localStorage.getItem(cacheKey);
+        const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+        
+        let factoryTags;
+        if (cachedFactoryTags && cacheTime && (Date.now() - parseInt(cacheTime)) < CACHE_DURATION) {
+          console.log(`Usando cache para tags da fábrica ${factory.name}`);
+          factoryTags = JSON.parse(cachedFactoryTags);
+        } else {
+          console.log(`Carregando tags da fábrica ${factory.name} do Firebase`);
+          try {
+            factoryTags = await tagService.getFactoryTags(factory.id);
+            // Salvar no cache
+            localStorage.setItem(cacheKey, JSON.stringify(factoryTags));
+            localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+          } catch (error) {
+            console.error(`Erro ao carregar tags da fábrica ${factory.name}:`, error);
+            // Usar cache expirado se disponível
+            if (cachedFactoryTags) {
+              factoryTags = JSON.parse(cachedFactoryTags);
+            } else {
+              factoryTags = { regiao: [], material: [], outros: [] };
+            }
+          }
+        }
+        
+        const allFactoryTags = [
+          ...(factoryTags?.regiao || []),
+          ...(factoryTags?.material || []),
+          ...(factoryTags?.outros || [])
+        ];
+        
+        console.log(`Fábrica ${factory.name} (${factory.id}):`, {
+          factoryTags: factoryTags,
+          allFactoryTags: allFactoryTags,
+          allFactoryTagIds: allFactoryTags.map(t => t.id)
+        });
+        
+        // Verificar se a fábrica tem TODAS as tags selecionadas (AND)
+        const hasAllSelectedTags = selectedTags.every(selectedTag => {
+          const found = allFactoryTags.some(factoryTag => {
+            const match = factoryTag.id === selectedTag.id || factoryTag.name === selectedTag.name;
+            if (match) {
+              console.log(`✓ Tag encontrada: ${factoryTag.name} (${factoryTag.id}) === ${selectedTag.name} (${selectedTag.id})`);
+            }
+            return match;
+          });
+          if (!found) {
+            console.log(`✗ Tag não encontrada: ${selectedTag.name} (${selectedTag.id})`);
+          }
+          return found;
+        });
+        
+        console.log(`Fábrica ${factory.name} tem todas as tags selecionadas:`, hasAllSelectedTags);
+        
+        if (hasAllSelectedTags) {
+          filtered.push(factory);
+        }
+      }
+      
+      console.log('Fábricas filtradas:', filtered.length, filtered.map(f => f.name));
+      setFilteredFactories(filtered);
+    } catch (error) {
+      console.error('Erro ao filtrar fábricas por tags:', error);
+      setFilteredFactories(allFactories);
+    }
+  }, [selectedTags, allFactories, CACHE_DURATION]);
+
+  // Função para alternar seleção de tag
+  const toggleTagSelection = (tag) => {
+    console.log('=== TOGGLE TAG SELECTION ===');
+    console.log('Tag clicada:', tag);
+    
+    setSelectedTags(prev => {
+      const isSelected = prev.some(selectedTag => selectedTag.id === tag.id);
+      console.log('Tag já selecionada:', isSelected);
+      console.log('Tags atuais:', prev);
+      
+      if (isSelected) {
+        const newTags = prev.filter(selectedTag => selectedTag.id !== tag.id);
+        console.log('Removendo tag. Novas tags:', newTags);
+        return newTags;
+      } else {
+        const newTags = [...prev, tag];
+        console.log('Adicionando tag. Novas tags:', newTags);
+        return newTags;
+      }
+    });
+    
+    // Debounce para evitar múltiplas consultas
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      console.log('Executando filtro após debounce...');
+      filterFactoriesByTags();
+    }, 500); // 500ms de debounce
+    
+    setDebounceTimeout(timeout);
+  };
 
   useEffect(() => {
     loadFactories();
-  }, [loadFactories]);
+    loadAvailableTags();
+  }, [loadFactories, loadAvailableTags]);
 
   useEffect(() => {
-    loadAvailableTags();
-  }, [loadAvailableTags]);
+    setFilteredFactories(allFactories);
+  }, [allFactories]);
 
   const handleFactorySelect = (factoryId) => {
     if (factoryId) {
@@ -128,6 +387,7 @@ const Dashboard = () => {
         imageUrl2: imageUrls.image2 || values.imageUrl2
       };
       
+      // Criar fábrica usando o serviço
       const newFactory = await factoryServiceAPI.createFactory(finalValues);
       
       // Salvar as tags da fábrica usando o serviço
@@ -150,6 +410,12 @@ const Dashboard = () => {
       setModalVisible(false);
       await loadFactories();
       setError(null);
+      
+      // Redirecionar para a página da fábrica individual
+      if (newFactory && newFactory.id) {
+        console.log('Redirecionando para fábrica:', newFactory.id);
+        navigate(`/factory/${newFactory.id}`);
+      }
     } catch (err) {
       setError(t('Erro ao salvar fábrica', '保存工厂时出错'));
       console.error(err);
@@ -249,6 +515,55 @@ const Dashboard = () => {
     });
   };
 
+  // Componente para exibir tags da fábrica
+  const FactoryTagsDisplay = ({ factoryId }) => {
+    const [factoryTags, setFactoryTags] = useState({ regiao: [], material: [], outros: [] });
+    const [loadingTags, setLoadingTags] = useState(true);
+
+    useEffect(() => {
+      const loadTags = async () => {
+        try {
+          const tags = await tagService.getFactoryTags(factoryId);
+          setFactoryTags(tags || { regiao: [], material: [], outros: [] });
+        } catch (error) {
+          console.error('Erro ao carregar tags da fábrica:', error);
+          setFactoryTags({ regiao: [], material: [], outros: [] });
+        } finally {
+          setLoadingTags(false);
+        }
+      };
+      loadTags();
+    }, [factoryId]);
+
+    if (loadingTags) {
+      return <Spinner animation="border" size="sm" />;
+    }
+
+    const allTags = [
+      ...(factoryTags.regiao || []),
+      ...(factoryTags.material || []),
+      ...(factoryTags.outros || [])
+    ];
+
+    if (allTags.length === 0) {
+      return <small className="text-muted">{t('Sem tags', '无标签')}</small>;
+    }
+
+    return (
+      <div className="d-flex flex-wrap gap-1">
+        {allTags.map(tag => (
+          <Badge 
+            key={tag.id} 
+            bg={tag.division === 'regiao' ? 'primary' : tag.division === 'material' ? 'success' : 'danger'}
+            style={{ fontSize: '12px' }}
+          >
+            {tag.name}
+          </Badge>
+        ))}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -263,6 +578,67 @@ const Dashboard = () => {
         <h2 className="mb-0 fs-5 fw-semibold">{t('ProductMobile Ravi', '产品移动端拉维')}</h2>
       </div>
       
+      {/* Botão Cadastrar Fábrica */}
+      <Button 
+        variant="success" 
+        className="w-100 mb-3"
+        size="lg"
+        onClick={() => setModalVisible(true)}
+      >
+        <i className="bi bi-plus-circle me-2"></i>
+        {t('Cadastrar Fábrica', '注册工厂')}
+      </Button>
+
+      {/* Filtro de Tags */}
+      <Card className="mb-3 bg-light">
+        <Card.Header className="bg-light">
+          <h6 className="mb-0">{t('Filtrar por Tags', '按标签筛选')}</h6>
+        </Card.Header>
+        <Card.Body className="bg-light">
+          {console.log('Dashboard - Renderizando filtro. availableTags:', availableTags)}
+          <div className="d-flex flex-wrap gap-2">
+            {/* Tags de Região */}
+            {availableTags.regiao.map(tag => (
+              <Badge
+                key={tag.id}
+                bg={selectedTags.some(st => st.id === tag.id) ? 'primary' : 'secondary'}
+                className="cursor-pointer"
+                onClick={() => toggleTagSelection(tag)}
+                style={{ cursor: 'pointer' }}
+              >
+                {tag.name}
+              </Badge>
+            ))}
+
+            {/* Tags de Material */}
+            {availableTags.material.map(tag => (
+              <Badge
+                key={tag.id}
+                bg={selectedTags.some(st => st.id === tag.id) ? 'success' : 'secondary'}
+                className="cursor-pointer"
+                onClick={() => toggleTagSelection(tag)}
+                style={{ cursor: 'pointer' }}
+              >
+                {tag.name}
+              </Badge>
+            ))}
+
+            {/* Tags de Outros */}
+            {availableTags.outros.map(tag => (
+              <Badge
+                key={tag.id}
+                bg={selectedTags.some(st => st.id === tag.id) ? 'danger' : 'secondary'}
+                className="cursor-pointer"
+                onClick={() => toggleTagSelection(tag)}
+                style={{ cursor: 'pointer' }}
+              >
+                {tag.name}
+              </Badge>
+            ))}
+          </div>
+        </Card.Body>
+      </Card>
+      
       {error && (
         <Alert variant="danger" className="mb-3">
           <Alert.Heading>{t('Erro', '错误')}</Alert.Heading>
@@ -270,73 +646,86 @@ const Dashboard = () => {
         </Alert>
       )}
 
-      <Row className="g-3">
-        <Col xs={12}>
-          <Card className="h-100">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-shop me-2 text-success fs-5"></i>
-                  <span className="fw-medium">{t('Fábricas Cadastradas', '已注册工厂')}</span>
-                </div>
-                <div className="fs-3 fw-bold text-success">
-                  {allFactories.length}
-                </div>
-              </div>
-              
-              {/* Caixa de seleção de fábricas */}
-              <div className="mb-3">
-                <div className="d-flex align-items-center mb-2 text-muted small">
-                  <i className="bi bi-list-ul me-1"></i>
-                  {t('Selecionar Fábrica:', '选择工厂:')}
-                </div>
-                <Form.Select
-                  value={selectedFactory}
-                  onChange={(e) => {
-                    const factoryId = e.target.value;
-                    setSelectedFactory(factoryId);
-                    if (factoryId) {
-                      // Redirecionar automaticamente para a página da fábrica
-                      handleFactorySelect(factoryId);
-                    }
-                  }}
-                  size="sm"
-                >
-                  <option value="">{t('Escolha uma fábrica...', '选择工厂...')}</option>
-                  {allFactories.map((factory) => (
-                    <option key={factory.id} value={factory.id}>
-                      {factory.name} - {factory.segment || t('Sem segmento', '无行业')}
-                    </option>
-                  ))}
-                </Form.Select>
-              </div>
 
-              <div className="d-flex gap-2">
-                <Button 
-                  variant="primary"
-                  onClick={() => setModalVisible(true)}
-                  className="flex-grow-1"
-                  size="lg"
-                  style={{ fontSize: '18px' }}
-                >
-                  <i className="bi bi-plus-circle me-2"></i>
-                  {t('Fábrica', '工厂/商店')}
-                </Button>
-                <Button 
-                  variant="outline-secondary"
-                  onClick={() => navigate('/tags')}
-                  className="flex-grow-1"
-                  size="lg"
-                  style={{ fontSize: '18px' }}
-                >
-                  <i className="bi bi-tags me-2"></i>
-                  {t('Gerenciar Tags', '管理标签')}
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+      {/* Cards das Fábricas Filtradas */}
+      <Row className="g-3">
+        {filteredFactories.map((factory) => (
+          <Col key={factory.id} xs={12} sm={6} md={4} lg={3}>
+            <Card className="h-100 shadow-sm">
+              <Card.Body className="d-flex flex-column">
+                {/* Nome da Fábrica | Botão Fábrica */}
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="card-title mb-0 flex-grow-1 me-2" title={factory.name}>
+                    {factory.name}
+                  </h6>
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm"
+                    onClick={() => handleFactorySelect(factory.id)}
+                    title={t('Ver Fábrica', '查看工厂')}
+                  >
+                    <i className="bi bi-shop"></i>
+                  </Button>
+                </div>
+                
+                {/* Tags da Fábrica */}
+                <div className="mt-auto">
+                  <FactoryTagsDisplay factoryId={factory.id} />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
       </Row>
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center mt-4">
+          <Pagination>
+            <Pagination.First 
+              onClick={() => handlePageChange(1)} 
+              disabled={currentPage === 1}
+            />
+            <Pagination.Prev 
+              onClick={() => handlePageChange(currentPage - 1)} 
+              disabled={currentPage === 1}
+            />
+            
+            {/* Mostrar páginas próximas */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const startPage = Math.max(1, currentPage - 2);
+              const page = startPage + i;
+              if (page > totalPages) return null;
+              
+              return (
+                <Pagination.Item
+                  key={page}
+                  active={page === currentPage}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </Pagination.Item>
+              );
+            })}
+            
+            <Pagination.Next 
+              onClick={() => handlePageChange(currentPage + 1)} 
+              disabled={currentPage === totalPages}
+            />
+            <Pagination.Last 
+              onClick={() => handlePageChange(totalPages)} 
+              disabled={currentPage === totalPages}
+            />
+          </Pagination>
+        </div>
+      )}
+
+      {/* Informações de paginação */}
+      <div className="text-center mt-2 text-muted">
+        <small>
+          {t('Mostrando', '显示')} {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalFactories)} {t('de', '共')} {totalFactories} {t('fábricas', '工厂')}
+        </small>
+      </div>
 
       {/* Modal para cadastrar fábrica */}
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
