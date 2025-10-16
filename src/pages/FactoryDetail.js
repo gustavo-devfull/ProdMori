@@ -92,16 +92,38 @@ const FactoryDetail = () => {
   }, [factoryId, t]);
 
   // Função para carregar tags da fábrica para exibição
-  const loadFactoryTagsForDisplay = useCallback(() => {
+  const loadFactoryTagsForDisplay = useCallback(async () => {
     try {
-      const savedTags = localStorage.getItem(`tags_${factoryId}`);
-      if (savedTags) {
-        setFactoryTagsDisplay(JSON.parse(savedTags));
-      } else {
-        setFactoryTagsDisplay({ regiao: [], material: [], outros: [] });
-      }
+      console.log('=== CARREGANDO TAGS PARA EXIBIÇÃO ===');
+      console.log('Factory ID:', factoryId);
+      
+      // Carregar tags do Firebase primeiro
+      const factoryTagsData = await tagService.getFactoryTags(factoryId);
+      console.log('Tags carregadas do Firebase:', factoryTagsData);
+      
+      // Garantir que a estrutura está correta
+      const safeTags = {
+        regiao: Array.isArray(factoryTagsData?.regiao) ? factoryTagsData.regiao : [],
+        material: Array.isArray(factoryTagsData?.material) ? factoryTagsData.material : [],
+        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : []
+      };
+      
+      setFactoryTagsDisplay(safeTags);
+      console.log('Tags definidas para exibição:', safeTags);
     } catch (error) {
       console.error('Erro ao carregar tags da fábrica para exibição:', error);
+      // Fallback para localStorage
+      try {
+        const savedTags = localStorage.getItem(`tags_${factoryId}`);
+        if (savedTags) {
+          setFactoryTagsDisplay(JSON.parse(savedTags));
+        } else {
+          setFactoryTagsDisplay({ regiao: [], material: [], outros: [] });
+        }
+      } catch (fallbackError) {
+        console.error('Erro no fallback localStorage:', fallbackError);
+        setFactoryTagsDisplay({ regiao: [], material: [], outros: [] });
+      }
     }
   }, [factoryId]);
 
@@ -457,8 +479,12 @@ const FactoryDetail = () => {
 
   // Função para renderizar tags da fábrica
   const renderFactoryTags = () => {
+    console.log('=== RENDER FACTORY TAGS ===');
+    console.log('factoryTagsDisplay:', factoryTagsDisplay);
+    
     // Verificar se factoryTagsDisplay é válido
     if (!factoryTagsDisplay || typeof factoryTagsDisplay !== 'object') {
+      console.log('factoryTagsDisplay não é válido, retornando null');
       return null;
     }
     
@@ -466,18 +492,27 @@ const FactoryDetail = () => {
     
     // Combinar todas as tags da fábrica
     if (factoryTagsDisplay.regiao && Array.isArray(factoryTagsDisplay.regiao) && factoryTagsDisplay.regiao.length > 0) {
+      console.log('Adicionando tags de região:', factoryTagsDisplay.regiao);
       allFactoryTags.push(...factoryTagsDisplay.regiao.map(tag => ({ ...tag, type: 'regiao' })));
     }
     
     if (factoryTagsDisplay.material && Array.isArray(factoryTagsDisplay.material) && factoryTagsDisplay.material.length > 0) {
+      console.log('Adicionando tags de material:', factoryTagsDisplay.material);
       allFactoryTags.push(...factoryTagsDisplay.material.map(tag => ({ ...tag, type: 'material' })));
     }
     
     if (factoryTagsDisplay.outros && Array.isArray(factoryTagsDisplay.outros) && factoryTagsDisplay.outros.length > 0) {
+      console.log('Adicionando tags de outros:', factoryTagsDisplay.outros);
       allFactoryTags.push(...factoryTagsDisplay.outros.map(tag => ({ ...tag, type: 'outros' })));
     }
     
-    if (allFactoryTags.length === 0) return null;
+    console.log('Total de tags para renderizar:', allFactoryTags.length);
+    console.log('allFactoryTags:', allFactoryTags);
+    
+    if (allFactoryTags.length === 0) {
+      console.log('Nenhuma tag encontrada, retornando null');
+      return null;
+    }
     
     return (
       <div className="mb-4">
