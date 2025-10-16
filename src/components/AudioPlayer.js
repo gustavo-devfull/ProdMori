@@ -14,21 +14,6 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   };
 
-  // Testar compatibilidade de formato no iOS
-  const testFormatCompatibility = (url) => {
-    if (!isIOS()) return true;
-    
-    const extension = url.split('.').pop().toLowerCase();
-    console.log(`Testando compatibilidade de ${extension} no iOS`);
-    
-    // iOS tem problemas conhecidos com M4A
-    if (extension === 'm4a') {
-      console.log('M4A detectado - iOS pode ter problemas');
-      return false;
-    }
-    
-    return true;
-  };
 
   const handlePlay = async (index, url) => {
     console.log(`=== TENTATIVA DE REPRODUÇÃO ${index} ===`);
