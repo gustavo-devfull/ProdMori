@@ -12,7 +12,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
   const [audioUrl, setAudioUrl] = useState(initialAudioUrl || '');
   const [error, setError] = useState(null);
   const [hasPermission, setHasPermission] = useState(null);
-  const [hasRecorded, setHasRecorded] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedAudios, setUploadedAudios] = useState([]);
   const [savingToFirebase, setSavingToFirebase] = useState(false);
