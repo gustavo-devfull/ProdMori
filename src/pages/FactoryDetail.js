@@ -623,8 +623,8 @@ const FactoryDetail = () => {
                   <Col xs={12} md={6} lg={4} key={product.id}>
                     <Card className="h-100">
                       <Card.Body className="p-3">
-                        <Row className="align-items-center">
-                          {/* Foto do produto */}
+                        <Row className="align-items-start">
+                          {/* Foto do produto - 150x150px */}
                           <Col xs={4}>
                             <div className="d-flex justify-content-center">
                               {product.imageUrl ? (
@@ -633,8 +633,8 @@ const FactoryDetail = () => {
                                   alt={product.name}
                                   className="img-fluid rounded"
                                   style={{ 
-                                    width: '120px', 
-                                    height: '120px', 
+                                    width: '150px', 
+                                    height: '150px', 
                                     objectFit: 'cover',
                                     cursor: 'pointer'
                                   }}
@@ -645,8 +645,8 @@ const FactoryDetail = () => {
                                 <div 
                                   className="d-flex align-items-center justify-content-center rounded bg-light"
                                   style={{ 
-                                    width: '120px', 
-                                    height: '120px',
+                                    width: '150px', 
+                                    height: '150px',
                                     cursor: 'pointer'
                                   }}
                                   onClick={() => handlePreview('')}
@@ -660,53 +660,52 @@ const FactoryDetail = () => {
                           {/* Informações do produto */}
                           <Col xs={8}>
                             <div className="d-flex flex-column h-100">
-                              <div className="mb-2">
-                                <div className="fw-medium text-truncate">
-                                  {product.name || t('Sem nome', '无名称')}
+                              {/* REF e U.PRICE na mesma linha */}
+                              <div className="mb-3">
+                                <div className="d-flex justify-content-between align-items-center mb-1">
+                                  <span className="fw-medium text-muted small">REF:</span>
+                                  <span className="text-primary fw-bold">
+                                    ¥ {product.uPrice || t('Sob consulta', '咨询价格')}
+                                  </span>
                                 </div>
-                                <div className="text-primary fw-bold">
-                                  ¥ {product.uPrice || t('Sob consulta', '咨询价格')}
+                                <div className="text-truncate fw-medium">
+                                  {product.name || t('Sem nome', '无名称')}
                                 </div>
                               </div>
                               
-                              {/* Segmento e botões de ação */}
-                              <div className="mt-auto d-flex align-items-center justify-content-between">
-                                <div className="text-muted small">
-                                  {product.segment || t('Sem segmento', '无行业')}
-                                </div>
-                                <div className="d-flex gap-1">
-                                  <Button 
-                                    variant="outline-primary" 
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      console.log('Edit button clicked from card');
-                                      setEditingProduct(product);
-                                      setModalVisible(true);
-                                      setImageUrl(product.imageUrl || '');
-                                    }}
-                                    title={t('Editar produto', '编辑产品')}
-                                  >
-                                    <i className="bi bi-pencil"></i>
-                                  </Button>
-                                  <Button 
-                                    variant="outline-danger" 
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      console.log('Delete button clicked from card, submitting:', submitting);
-                                      if (!submitting) {
-                                        handleDeleteProduct(product.id);
-                                      }
-                                    }}
-                                    disabled={submitting}
-                                    title={t('Excluir produto', '删除产品')}
-                                  >
-                                    <i className="bi bi-trash"></i>
-                                  </Button>
-                                </div>
+                              {/* Ícones de ação na linha abaixo */}
+                              <div className="mt-auto d-flex justify-content-end gap-2">
+                                <Button 
+                                  variant="outline-primary" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Edit button clicked from card');
+                                    setEditingProduct(product);
+                                    setModalVisible(true);
+                                    setImageUrl(product.imageUrl || '');
+                                  }}
+                                  title={t('Editar produto', '编辑产品')}
+                                >
+                                  <i className="bi bi-pencil"></i>
+                                </Button>
+                                <Button 
+                                  variant="outline-danger" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Delete button clicked from card, submitting:', submitting);
+                                    if (!submitting) {
+                                      handleDeleteProduct(product.id);
+                                    }
+                                  }}
+                                  disabled={submitting}
+                                  title={t('Excluir produto', '删除产品')}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </Button>
                               </div>
                             </div>
                           </Col>
