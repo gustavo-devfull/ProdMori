@@ -312,18 +312,25 @@ const Factories = () => {
       }
       
       console.log('loadFactoryTags - Parsed tags:', factoryTags);
+      
+      // Verificar se factoryTags é válido
+      if (!factoryTags || typeof factoryTags !== 'object') {
+        console.log('loadFactoryTags - Invalid factoryTags, skipping');
+        return;
+      }
+      
       const allFactoryTags = [];
       
       // Combinar todas as tags da fábrica
-      if (factoryTags.regiao && factoryTags.regiao.length > 0) {
+      if (factoryTags.regiao && Array.isArray(factoryTags.regiao) && factoryTags.regiao.length > 0) {
         allFactoryTags.push(...factoryTags.regiao.map(tag => ({ ...tag, type: 'regiao' })));
       }
       
-      if (factoryTags.material && factoryTags.material.length > 0) {
+      if (factoryTags.material && Array.isArray(factoryTags.material) && factoryTags.material.length > 0) {
         allFactoryTags.push(...factoryTags.material.map(tag => ({ ...tag, type: 'material' })));
       }
       
-      if (factoryTags.outros && factoryTags.outros.length > 0) {
+      if (factoryTags.outros && Array.isArray(factoryTags.outros) && factoryTags.outros.length > 0) {
         allFactoryTags.push(...factoryTags.outros.map(tag => ({ ...tag, type: 'outros' })));
       }
       
@@ -344,7 +351,7 @@ const Factories = () => {
   const renderFactoryTags = (factory) => {
     const factoryTags = factoryTagsMap[factory.id] || [];
     
-    if (factoryTags.length === 0) {
+    if (!factoryTags || factoryTags.length === 0) {
       return null;
     }
     
