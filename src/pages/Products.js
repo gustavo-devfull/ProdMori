@@ -93,8 +93,6 @@ const Products = () => {
       
       const productData = {
         ...values,
-        imageUrl: imageUrl || values.imageUrl,
-        audioUrls: audioUrls,
         factoryId: values.factoryId
       };
 
