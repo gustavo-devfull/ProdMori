@@ -7,12 +7,16 @@ import {
   Row,
   Col,
   Alert,
-  Spinner
+  Spinner,
+  Badge
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
+import AudioRecorder from '../components/AudioRecorder';
+import AudioPlayer from '../components/AudioPlayer';
 import productServiceAPI from '../services/productServiceAPI';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
+import audioUploadService from '../services/audioUploadService';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Products = () => {
@@ -27,7 +31,9 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [audioUrls, setAudioUrls] = useState([]);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [lastUploadedAudioUrl, setLastUploadedAudioUrl] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -51,9 +57,6 @@ const Products = () => {
 
   useEffect(() => {
     loadData();
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, [loadData]);
 
   const handleImageUpload = async (file) => {
@@ -71,48 +74,40 @@ const Products = () => {
     setPreviewVisible(true);
   };
 
-  const handleEdit = (product) => {
-    setEditingProduct(product);
-    setModalVisible(true);
+  // Função para lidar com áudio gravado
+  const handleAudioReady = async (blob, url) => {
+    if (blob && editingProduct) {
+      try {
+        setUploadingAudio(true);
+        const result = await audioUploadService.uploadAudio(blob, editingProduct.id);
+        
+        if (result.success) {
+          // Adicionar novo áudio à lista
+          setAudioUrls(prev => [...prev, result.audioUrl]);
+          setLastUploadedAudioUrl(result.audioUrl);
+          console.log('Áudio enviado com sucesso:', result);
+        }
+      } catch (error) {
+        console.error('Erro ao enviar áudio:', error);
+        setError(t('Erro ao enviar áudio', '发送音频时出错'));
+      } finally {
+        setUploadingAudio(false);
+      }
+    }
   };
 
-  const handleDeleteProduct = async (productId) => {
-    console.log('=== HANDLE DELETE PRODUCT (Products page) ===');
-    console.log('Product ID:', productId);
-    console.log('Current submitting:', submitting);
-    
-    if (!window.confirm(t('Tem certeza que deseja excluir este produto?', '确定要删除这个产品吗？'))) {
-      console.log('User cancelled deletion');
-      return;
-    }
-
-    try {
-      console.log('Starting product deletion...');
-      setSubmitting(true);
-      
-      console.log('Calling productServiceAPI.deleteProduct...');
-      await productServiceAPI.deleteProduct(productId);
-      console.log('Product deleted successfully');
-      
-      console.log('Reloading products data...');
-      await loadData();
-      console.log('Products data reloaded');
-      
-      setError(null);
-      console.log('Product deletion completed');
-      
-    } catch (err) {
-      console.error('Error deleting product:', err);
-      setError(t('Erro ao excluir produto', '删除产品时出错'));
-    } finally {
-      console.log('Setting submitting to false');
-      setSubmitting(false);
-    }
+  // Função para deletar áudio da lista
+  const handleDeleteAudio = (index) => {
+    setAudioUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleModalClose = () => {
     setModalVisible(false);
     setEditingProduct(null);
+    setError(null);
+    setAudioUrls([]);
+    setUploadingAudio(false);
+    setLastUploadedAudioUrl('');
   };
 
   const handleSubmit = async (e) => {
@@ -125,7 +120,8 @@ const Products = () => {
       
       const productData = {
         ...values,
-        factoryId: values.factoryId
+        factoryId: values.factoryId,
+        audioUrls: audioUrls // Incluir lista de URLs de áudio
       };
 
       if (editingProduct) {
@@ -294,40 +290,51 @@ const Products = () => {
                             </div>
                           </div>
                           
-                          {/* Segmento e botão de exclusão */}
+                          {/* Segmento */}
                           <div className="d-flex align-items-center justify-content-between mb-2">
                             <p className="text-muted small mb-0">
                               {product.segment || t('Sem segmento', '无行业')}
                             </p>
-                            <Button 
-                              variant="outline-danger" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Delete button clicked from Products page card, submitting:', submitting);
-                                if (!submitting) {
-                                  handleDeleteProduct(product.id);
-                                }
-                              }}
-                              disabled={submitting}
-                              title={t('Excluir produto', '删除产品')}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </Button>
                           </div>
-                        </div>
-                        
-                        <div className="mt-auto">
-                          <Button 
-                            variant="success" 
-                            className="w-100"
-                            size={isMobile ? 'lg' : 'md'}
-                            style={{ fontSize: '14px' }}
-                            onClick={() => handleEdit(product)}
-                          >
-                            {t('Ver Detalhes', '查看详情')}
-                          </Button>
+                          
+                          {/* Card de Gravações de Áudio */}
+                          <div className="mb-3">
+                            <Card className="bg-light">
+                              <Card.Header className="d-flex align-items-center justify-content-between py-2">
+                                <div className="d-flex align-items-center">
+                                  <i className="bi bi-mic me-2 text-muted"></i>
+                                  <span className="fw-semibold text-dark">{t('Gravações de Áudio', '音频录制')}</span>
+                                </div>
+                                <Badge bg="secondary" className="rounded-pill">
+                                  {(() => {
+                                    const audioCount = (product.audioUrls && product.audioUrls.length > 0) ? product.audioUrls.length : (product.audioUrl ? 1 : 0);
+                                    return audioCount;
+                                  })()}
+                                </Badge>
+                              </Card.Header>
+                              <Card.Body className="py-2">
+                                {(product.audioUrls && product.audioUrls.length > 0) || product.audioUrl ? (
+                                  <div>
+                                    <div className="fw-semibold text-dark mb-2">
+                                      {(() => {
+                                        const audioCount = (product.audioUrls && product.audioUrls.length > 0) ? product.audioUrls.length : (product.audioUrl ? 1 : 0);
+                                        return t(`Gravação #${audioCount}`, `录制 #${audioCount}`);
+                                      })()}
+                                    </div>
+                                    <AudioPlayer 
+                                      audioUrls={product.audioUrls || (product.audioUrl ? [product.audioUrl] : [])} 
+                                      disabled={false}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="text-center text-muted">
+                                    <i className="bi bi-mic-mute fs-4 d-block mb-2"></i>
+                                    <small>{t('Nenhuma gravação disponível', '无可用录制')}</small>
+                                  </div>
+                                )}
+                              </Card.Body>
+                            </Card>
+                          </div>
                         </div>
                       </Card.Body>
                     </Card>
@@ -458,16 +465,25 @@ const Products = () => {
               />
             </Form.Group>
 
-            {/* REMARK */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('REMARK', '备注')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="remark"
-                defaultValue={editingProduct?.remark || ''}
-                placeholder={t('Digite observações', '输入备注')}
-              />
-            </Form.Group>
+            {/* Áudio (substitui REMARK) */}
+            <AudioRecorder 
+              onAudioReady={handleAudioReady}
+              initialAudioUrl={lastUploadedAudioUrl}
+              disabled={uploadingAudio}
+            />
+            
+            <AudioPlayer 
+              audioUrls={audioUrls}
+              onDelete={handleDeleteAudio}
+              disabled={uploadingAudio}
+            />
+            
+            {uploadingAudio && (
+              <div className="text-center mb-3">
+                <Spinner animation="border" size="sm" className="me-2" />
+                <span className="text-muted">{t('Enviando áudio...', '发送音频中...')}</span>
+              </div>
+            )}
 
             {/* U.PRICE | UNIT */}
             <Row className="mb-3">

@@ -55,7 +55,25 @@ const AppHeader = () => {
         >
           {t('DASHBOARD', '仪表板')}
         </Button>
-        {/* Botões de Fábricas e Produtos ocultos conforme solicitado */}
+        
+        <Button
+          variant={location.pathname === '/products' ? 'primary' : 'outline-light'}
+          onClick={() => handleNavigation('/products')}
+          size={isMobile ? 'sm' : 'md'}
+          className="px-3 fw-semibold"
+          style={location.pathname === '/products' ? {
+            backgroundColor: '#0d6efd',
+            borderColor: '#0d6efd',
+            color: 'white'
+          } : {
+            backgroundColor: 'transparent',
+            borderColor: 'white',
+            color: 'white'
+          }}
+          title={t('Produtos', '产品')}
+        >
+          {t('PRODUTOS', '产品')}
+        </Button>
       </Nav>
     </Navbar>
   );

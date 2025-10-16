@@ -5,7 +5,8 @@ class TagServiceFirebase {
       (window.location.protocol === 'https:' || 
        window.location.hostname.includes('vercel.app') || 
        window.location.hostname.includes('vercel.com') ||
-       window.location.hostname.includes('gpreto.space'));
+       window.location.hostname.includes('gpreto.space') ||
+       window.location.hostname !== 'localhost');
     
     // URL base da API
     this.apiUrl = this.isVercel 
