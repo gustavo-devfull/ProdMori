@@ -10,6 +10,13 @@ class AudioUploadService {
     this.apiUrl = this.isVercel 
       ? '/api'  // Vercel Functions
       : 'http://localhost:3001/api';  // Servidor local
+    
+    console.log('AudioUploadService initialized:', {
+      isVercel: this.isVercel,
+      apiUrl: this.apiUrl,
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
+      protocol: typeof window !== 'undefined' ? window.location.protocol : 'server'
+    });
   }
 
   // Gerar nome de arquivo único
@@ -41,6 +48,13 @@ class AudioUploadService {
   convertToProxyUrl(ftpUrl) {
     if (!ftpUrl) return null;
     
+    console.log('AudioUploadService.convertToProxyUrl - Input:', ftpUrl);
+    console.log('AudioUploadService.convertToProxyUrl - Environment:', {
+      isVercel: this.isVercel,
+      apiUrl: this.apiUrl,
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'server'
+    });
+    
     // Extrair nome do arquivo da URL do FTP
     // Ex: https://ideolog.ia.br/audio/audio_1760580747344_qpqk4a.m4a
     const filename = ftpUrl.split('/').pop();
@@ -48,7 +62,9 @@ class AudioUploadService {
     if (!filename) return ftpUrl; // Fallback para URL original
     
     // Retornar URL do proxy
-    return `${this.apiUrl}/audio?filename=${encodeURIComponent(filename)}`;
+    const proxyUrl = `${this.apiUrl}/audio?filename=${encodeURIComponent(filename)}`;
+    console.log('AudioUploadService.convertToProxyUrl - Output:', proxyUrl);
+    return proxyUrl;
   }
 
   // Upload de áudio via API
