@@ -290,6 +290,28 @@ const FactoryDetail = () => {
     }
   };
 
+  const handleDeleteFactory = async () => {
+    if (!factoryId) return;
+    
+    const confirmMessage = t(
+      'Tem certeza que deseja excluir esta fábrica? Esta ação não pode ser desfeita.',
+      '确定要删除这个工厂吗？此操作无法撤销。'
+    );
+    
+    if (window.confirm(confirmMessage)) {
+      try {
+        await factoryServiceAPI.deleteFactory(factoryId);
+        console.log('Fábrica excluída com sucesso');
+        
+        // Redirecionar para a página de fábricas
+        navigate('/factories');
+      } catch (error) {
+        console.error('Erro ao excluir fábrica:', error);
+        alert(t('Erro ao excluir fábrica', '删除工厂时出错'));
+      }
+    }
+  };
+
   // Funções para gerenciar tags da fábrica
   const addTagToFactory = (tag, division) => {
     setFactoryTags(prev => ({
@@ -1253,6 +1275,14 @@ const FactoryDetail = () => {
           <Modal.Footer>
             <Button variant="secondary" onClick={handleFactoryModalClose}>
               {t('Cancelar', '取消')}
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleDeleteFactory}
+              className="me-auto"
+            >
+              <i className="bi bi-trash me-1"></i>
+              {t('Excluir Fábrica', '删除工厂')}
             </Button>
             <Button 
               variant="primary" 

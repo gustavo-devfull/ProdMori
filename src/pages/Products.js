@@ -10,9 +10,12 @@ import {
   Spinner
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
+import AudioRecorder from '../components/AudioRecorder';
+import AudioPlayer from '../components/AudioPlayer';
 import productServiceAPI from '../services/productServiceAPI';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
+import audioUploadService from '../services/audioUploadService';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Products = () => {
@@ -30,6 +33,11 @@ const Products = () => {
   const [previewImage, setPreviewImage] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [searchTerm, setSearchTerm] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [audioUrls, setAudioUrls] = useState([]);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [lastUploadedAudioUrl, setLastUploadedAudioUrl] = useState(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -75,12 +83,55 @@ const Products = () => {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+    setImageUrl(product.imageUrl || '');
+    
+    // Carregar áudios existentes
+    if (product.audioUrls) {
+      if (Array.isArray(product.audioUrls)) {
+        setAudioUrls(product.audioUrls);
+      } else {
+        setAudioUrls([product.audioUrls]);
+      }
+    } else {
+      setAudioUrls([]);
+    }
+    
     setModalVisible(true);
   };
 
   const handleModalClose = () => {
     setModalVisible(false);
     setEditingProduct(null);
+    setImageUrl('');
+    setAudioUrls([]);
+    setUploadingAudio(false);
+    setLastUploadedAudioUrl(null);
+  };
+
+  const handleAudioReady = async (audioBlob) => {
+    if (!audioBlob) return;
+    
+    try {
+      setUploadingAudio(true);
+      console.log('Áudio pronto para upload:', audioBlob);
+      
+      const result = await audioUploadService.uploadAudio(audioBlob, editingProduct?.id || 'temp');
+      console.log('Áudio enviado com sucesso:', result);
+      
+      if (result.success) {
+        setLastUploadedAudioUrl(result.audioUrl);
+        setAudioUrls(prev => [...prev, result.audioUrl]);
+      }
+    } catch (error) {
+      console.error('Erro no upload do áudio:', error);
+      setError(t('Erro no upload do áudio', '音频上传时出错'));
+    } finally {
+      setUploadingAudio(false);
+    }
+  };
+
+  const handleDeleteAudio = (index) => {
+    setAudioUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -93,6 +144,8 @@ const Products = () => {
       
       const productData = {
         ...values,
+        imageUrl: imageUrl || values.imageUrl,
+        audioUrls: audioUrls,
         factoryId: values.factoryId
       };
 
