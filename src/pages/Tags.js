@@ -183,6 +183,14 @@ const Tags = () => {
     }
   };
 
+  const handleNewTag = () => {
+    setEditingTag(null);
+    setNewTagName('');
+    setSelectedDivision('regiao');
+    setError(null);
+    setModalVisible(true);
+  };
+
   const handleModalClose = () => {
     setModalVisible(false);
     setEditingTag(null);
@@ -254,27 +262,23 @@ const Tags = () => {
                         className="d-flex align-items-center gap-1"
                       >
                         {tag.name}
-                        {!selectedFactory && (
-                          <>
-                            <i 
-                              className="bi bi-pencil text-white" 
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => handleEdit(tag)}
-                              title={t('Editar', '编辑')}
-                            ></i>
-                            <i 
-                              className="bi bi-trash text-white" 
-                              style={{ cursor: 'pointer' }}
-                              onClick={(e) => {
-                                console.log('Delete button clicked for regiao tag:', tag.id);
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDelete(tag.id, 'regiao');
-                              }}
-                              title={t('Excluir', '删除')}
-                            ></i>
-                          </>
-                        )}
+                        <i 
+                          className="bi bi-pencil text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleEdit(tag)}
+                          title={t('Editar', '编辑')}
+                        ></i>
+                        <i 
+                          className="bi bi-trash text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={(e) => {
+                            console.log('Delete button clicked for regiao tag:', tag.id);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(tag.id, 'regiao');
+                          }}
+                          title={t('Excluir', '删除')}
+                        ></i>
                       </Badge>
                     ))}
                   </div>
@@ -293,27 +297,23 @@ const Tags = () => {
                         className="d-flex align-items-center gap-1"
                       >
                         {tag.name}
-                        {!selectedFactory && (
-                          <>
-                            <i 
-                              className="bi bi-pencil text-white" 
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => handleEdit(tag)}
-                              title={t('Editar', '编辑')}
-                            ></i>
-                            <i 
-                              className="bi bi-trash text-white" 
-                              style={{ cursor: 'pointer' }}
-                              onClick={(e) => {
-                                console.log('Delete button clicked for material tag:', tag.id);
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDelete(tag.id, 'material');
-                              }}
-                              title={t('Excluir', '删除')}
-                            ></i>
-                          </>
-                        )}
+                        <i 
+                          className="bi bi-pencil text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleEdit(tag)}
+                          title={t('Editar', '编辑')}
+                        ></i>
+                        <i 
+                          className="bi bi-trash text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={(e) => {
+                            console.log('Delete button clicked for material tag:', tag.id);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(tag.id, 'material');
+                          }}
+                          title={t('Excluir', '删除')}
+                        ></i>
                       </Badge>
                     ))}
                   </div>
@@ -332,27 +332,23 @@ const Tags = () => {
                         className="d-flex align-items-center gap-1"
                       >
                         {tag.name}
-                        {!selectedFactory && (
-                          <>
-                            <i 
-                              className="bi bi-pencil text-white" 
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => handleEdit(tag)}
-                              title={t('Editar', '编辑')}
-                            ></i>
-                            <i 
-                              className="bi bi-trash text-white" 
-                              style={{ cursor: 'pointer' }}
-                              onClick={(e) => {
-                                console.log('Delete button clicked for outros tag:', tag.id);
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDelete(tag.id, 'outros');
-                              }}
-                              title={t('Excluir', '删除')}
-                            ></i>
-                          </>
-                        )}
+                        <i 
+                          className="bi bi-pencil text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleEdit(tag)}
+                          title={t('Editar', '编辑')}
+                        ></i>
+                        <i 
+                          className="bi bi-trash text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={(e) => {
+                            console.log('Delete button clicked for outros tag:', tag.id);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(tag.id, 'outros');
+                          }}
+                          title={t('Excluir', '删除')}
+                        ></i>
                       </Badge>
                     ))}
                   </div>
