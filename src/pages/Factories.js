@@ -49,6 +49,7 @@ const Factories = () => {
     material: [],
     outros: []
   });
+  const [selectedTags, setSelectedTags] = useState([]);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
 
   const loadFactories = useCallback(async (showRefresh = false) => {
@@ -458,6 +459,55 @@ const Factories = () => {
         </Button>
       </div>
 
+      {/* Filtro de Tags */}
+      <Card className="mb-4">
+        <Card.Body>
+          <Row>
+            <Col md={12}>
+              <Form.Group>
+                <Form.Label>{t('Filtrar por Tags', '按标签筛选')}</Form.Label>
+                <div className="d-flex flex-wrap gap-2 mt-2">
+                  {[...new Set(Object.values(globalTags).flat().map(tag => tag.name))].map(tagName => (
+                    <Badge
+                      key={tagName}
+                      bg={selectedTags.includes(tagName) ? "primary" : "secondary"}
+                      style={{ cursor: 'pointer', fontSize: '14px' }}
+                      onClick={() => {
+                        if (selectedTags.includes(tagName)) {
+                          setSelectedTags(selectedTags.filter(t => t !== tagName));
+                        } else {
+                          setSelectedTags([...selectedTags, tagName]);
+                        }
+                      }}
+                    >
+                      {tagName}
+                      {selectedTags.includes(tagName) && (
+                        <i className="bi bi-x ms-1"></i>
+                      )}
+                    </Badge>
+                  ))}
+                  {selectedTags.length > 0 && (
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => setSelectedTags([])}
+                      className="ms-2"
+                    >
+                      {t('Limpar', '清除')}
+                    </Button>
+                  )}
+                </div>
+                {selectedTags.length > 0 && (
+                  <small className="text-muted d-block mt-1">
+                    {t('Tags selecionadas', '已选标签')}: {selectedTags.join(', ')}
+                  </small>
+                )}
+              </Form.Group>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
@@ -474,7 +524,18 @@ const Factories = () => {
         </Card>
       ) : (
         <Row className="g-3">
-          {factories.map(factory => (
+          {factories.filter(factory => {
+            // Se não há tags selecionadas, mostrar todas as fábricas
+            if (selectedTags.length === 0) return true;
+            
+            // Verificar se a fábrica tem alguma das tags selecionadas
+            const factoryTags = factoryTagsMap[factory.id] || { regiao: [], material: [], outros: [] };
+            const allFactoryTags = [...factoryTags.regiao, ...factoryTags.material, ...factoryTags.outros];
+            
+            return selectedTags.some(selectedTag => 
+              allFactoryTags.some(factoryTag => factoryTag.name === selectedTag)
+            );
+          }).map(factory => (
             <Col xs={12} md={6} lg={4} key={factory.id}>
               <Card className="h-100 shadow-lg">
                 <Card.Body>
