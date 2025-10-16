@@ -134,9 +134,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
         const blob = new Blob(chunks, { type: selectedMimeType });
         const url = URL.createObjectURL(blob);
         
-        // Marcar que há um áudio gravado
-        setHasRecorded(true);
-        
         // Chamar callback com o áudio
         if (onAudioReady) {
           onAudioReady(blob, url);
@@ -260,7 +257,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
     setAudioUrl('');
     setRecordingTime(0);
     setError(null);
-    setHasRecorded(false);
     setIsUploading(false);
     setSavingToFirebase(false);
     
@@ -295,7 +291,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
     setAudioUrl('');
     setRecordingTime(0);
     setError(null);
-    setHasRecorded(false);
     setIsUploading(false);
     setSavingToFirebase(false);
     
