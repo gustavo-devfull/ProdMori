@@ -409,6 +409,54 @@ const Factories = () => {
     }
   };
 
+  // Função de debug para testar URLs de imagens
+  const testImageUrls = async () => {
+    try {
+      console.log('Testando URLs de imagens...');
+      
+      // Coletar todas as URLs de imagens das fábricas
+      const imageUrls = [];
+      factories.forEach(factory => {
+        if (factory.imageUrl1) imageUrls.push(factory.imageUrl1);
+        if (factory.imageUrl2) imageUrls.push(factory.imageUrl2);
+      });
+      
+      if (imageUrls.length === 0) {
+        alert('Nenhuma imagem encontrada para testar');
+        return;
+      }
+      
+      console.log('URLs encontradas:', imageUrls);
+      const results = await imageService.testImageUrls(imageUrls);
+      
+      // Mostrar resultados
+      const okCount = results.filter(r => r.status === 'ok').length;
+      const errorCount = results.filter(r => r.status === 'error').length;
+      const invalidCount = results.filter(r => r.status === 'invalid').length;
+      
+      let message = `Teste de URLs concluído:\n`;
+      message += `✅ OK: ${okCount}\n`;
+      message += `❌ Erro: ${errorCount}\n`;
+      message += `⚠️ Inválidas: ${invalidCount}\n\n`;
+      
+      // Mostrar detalhes dos erros
+      const errors = results.filter(r => r.status !== 'ok');
+      if (errors.length > 0) {
+        message += 'Detalhes dos erros:\n';
+        errors.forEach(error => {
+          message += `• ${error.url}: ${error.error}\n`;
+        });
+      }
+      
+      alert(message);
+      console.log('Resultados do teste de URLs:', results);
+      
+    } catch (error) {
+      console.error('Erro no teste de URLs:', error);
+      alert(`Erro no teste de URLs: ${error.message}`);
+    }
+  };
+
   // Função de debug para testar conexão com Firebase
   const testFirebaseConnection = async () => {
     try {
@@ -465,6 +513,15 @@ const Factories = () => {
             >
               <i className="bi bi-database me-1"></i>
               Test Firebase
+            </Button>
+            <Button 
+              variant="outline-warning"
+              size="sm"
+              onClick={testImageUrls}
+              className="d-flex align-items-center"
+            >
+              <i className="bi bi-link-45deg me-1"></i>
+              Test URLs
             </Button>
             <Button 
               variant="light"

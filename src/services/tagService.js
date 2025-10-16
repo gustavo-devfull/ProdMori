@@ -278,6 +278,20 @@ class TagService {
       return { regiao: [], material: [], outros: [] };
     }
   }
+
+  // Testar conexão com Firebase
+  async testConnection() {
+    try {
+      if (this.useFirebase) {
+        const result = await tagServiceFirebase.testConnection();
+        return result;
+      }
+      return false;
+    } catch (error) {
+      console.error('Erro ao testar conexão:', error);
+      return false;
+    }
+  }
 }
 
 const tagService = new TagService();

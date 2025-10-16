@@ -222,38 +222,37 @@ class ImageService {
     return null;
   }
 
-  // Método para testar upload com arquivo de teste
-  async testUpload() {
-    try {
-      console.log('ImageService.testUpload - Iniciando teste de upload...');
-      
-      // Criar um arquivo de teste (1x1 pixel PNG)
-      const canvas = document.createElement('canvas');
-      canvas.width = 1;
-      canvas.height = 1;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, 1, 1);
-      
-      return new Promise((resolve, reject) => {
-        canvas.toBlob(async (blob) => {
-          try {
-            const testFile = new File([blob], 'test-image.png', { type: 'image/png' });
-            console.log('ImageService.testUpload - Arquivo de teste criado:', testFile);
-            
-            const result = await this.uploadFile(testFile);
-            console.log('ImageService.testUpload - Upload de teste bem-sucedido:', result);
-            resolve(result);
-          } catch (error) {
-            console.error('ImageService.testUpload - Erro no upload de teste:', error);
-            reject(error);
-          }
-        }, 'image/png');
-      });
-    } catch (error) {
-      console.error('ImageService.testUpload - Erro ao criar arquivo de teste:', error);
-      throw error;
+  // Método para testar URLs de imagens
+  async testImageUrls(imageUrls) {
+    const results = [];
+    
+    for (const url of imageUrls) {
+      try {
+        console.log('ImageService.testImageUrls - Testing URL:', url);
+        
+        const processedUrl = this.getImageUrl(url);
+        console.log('ImageService.testImageUrls - Processed URL:', processedUrl);
+        
+        if (!processedUrl) {
+          results.push({ url, processedUrl: null, status: 'invalid', error: 'URL inválida' });
+          continue;
+        }
+        
+        // Testar se a imagem carrega
+        const response = await fetch(processedUrl, { method: 'HEAD' });
+        const status = response.ok ? 'ok' : 'error';
+        const error = response.ok ? null : `HTTP ${response.status}: ${response.statusText}`;
+        
+        results.push({ url, processedUrl, status, error });
+        console.log('ImageService.testImageUrls - Result:', { url, processedUrl, status, error });
+        
+      } catch (error) {
+        console.error('ImageService.testImageUrls - Error testing URL:', url, error);
+        results.push({ url, processedUrl: null, status: 'error', error: error.message });
+      }
     }
+    
+    return results;
   }
 
   // Método para obter URL de imagem otimizada
