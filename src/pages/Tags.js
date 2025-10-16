@@ -201,6 +201,7 @@ const Tags = () => {
     console.log('Tag ID:', tagId);
     console.log('Division:', division);
     console.log('Selected Factory:', selectedFactory);
+    console.log('Function called successfully!');
     
     if (!window.confirm(t('Tem certeza que deseja excluir esta tag?', '确定要删除这个标签吗？'))) {
       console.log('User cancelled deletion');
@@ -388,7 +389,12 @@ const Tags = () => {
                             <i 
                               className="bi bi-trash text-white" 
                               style={{ cursor: 'pointer' }}
-                              onClick={() => handleDelete(tag.id, 'regiao')}
+                              onClick={(e) => {
+                                console.log('Delete button clicked for regiao tag:', tag.id);
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDelete(tag.id, 'regiao');
+                              }}
                               title={t('Excluir', '删除')}
                             ></i>
                           </>
@@ -422,7 +428,12 @@ const Tags = () => {
                             <i 
                               className="bi bi-trash text-white" 
                               style={{ cursor: 'pointer' }}
-                              onClick={() => handleDelete(tag.id, 'material')}
+                              onClick={(e) => {
+                                console.log('Delete button clicked for material tag:', tag.id);
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDelete(tag.id, 'material');
+                              }}
                               title={t('Excluir', '删除')}
                             ></i>
                           </>
@@ -456,7 +467,12 @@ const Tags = () => {
                             <i 
                               className="bi bi-trash text-white" 
                               style={{ cursor: 'pointer' }}
-                              onClick={() => handleDelete(tag.id, 'outros')}
+                              onClick={(e) => {
+                                console.log('Delete button clicked for outros tag:', tag.id);
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDelete(tag.id, 'outros');
+                              }}
                               title={t('Excluir', '删除')}
                             ></i>
                           </>
