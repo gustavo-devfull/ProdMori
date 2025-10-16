@@ -7,8 +7,21 @@ class TagService {
   }
 
   // Obter todas as tags globais
-  getAllTags() {
+  async getAllTags() {
     try {
+      // Tentar usar Firebase primeiro
+      if (this.useFirebase) {
+        try {
+          const globalTags = await tagServiceFirebase.getAllGlobalTags();
+          console.log('Tags globais carregadas do Firebase:', globalTags);
+          return globalTags;
+        } catch (firebaseError) {
+          console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
+          this.useFirebase = false; // Desabilitar Firebase temporariamente
+        }
+      }
+
+      // Fallback para localStorage
       const tags = localStorage.getItem(this.storageKey);
       return tags ? JSON.parse(tags) : { regiao: [], material: [], outros: [] };
     } catch (error) {

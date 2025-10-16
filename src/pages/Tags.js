@@ -54,13 +54,23 @@ const Tags = () => {
     }
   }, [t]);
 
-  // Função para carregar tags globais
-  const loadGlobalTags = useCallback(() => {
+  // Função para carregar tags globais do Firebase
+  const loadGlobalTags = useCallback(async () => {
     try {
-      const globalTagsData = tagService.getAllTags();
+      console.log('Carregando tags globais do Firebase...');
+      const globalTagsData = await tagService.getAllTags();
+      console.log('Tags globais carregadas:', globalTagsData);
       setGlobalTags(globalTagsData);
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
+      // Fallback para localStorage se Firebase falhar
+      try {
+        const fallbackTags = tagService.getAllTags();
+        setGlobalTags(fallbackTags);
+      } catch (fallbackError) {
+        console.error('Erro no fallback:', fallbackError);
+        setGlobalTags({ regiao: [], material: [], outros: [] });
+      }
     }
   }, []);
 
@@ -82,16 +92,28 @@ const Tags = () => {
 
     try {
       setLoading(true);
-      // Carregar tags específicas da fábrica do localStorage
-      const savedTags = localStorage.getItem(`tags_${selectedFactory}`);
-      if (savedTags) {
-        setTags(JSON.parse(savedTags));
-      } else {
+      console.log('Carregando tags da fábrica:', selectedFactory);
+      
+      // Tentar carregar do Firebase primeiro
+      const factoryTags = await tagService.getFactoryTags(selectedFactory);
+      console.log('Tags da fábrica carregadas:', factoryTags);
+      setTags(factoryTags);
+      
+    } catch (err) {
+      console.error('Erro ao carregar tags do Firebase:', err);
+      // Fallback para localStorage
+      try {
+        const savedTags = localStorage.getItem(`tags_${selectedFactory}`);
+        if (savedTags) {
+          setTags(JSON.parse(savedTags));
+        } else {
+          setTags({ regiao: [], material: [], outros: [] });
+        }
+      } catch (fallbackError) {
+        console.error('Erro no fallback localStorage:', fallbackError);
         setTags({ regiao: [], material: [], outros: [] });
       }
-    } catch (err) {
       setError(t('Erro ao carregar tags', '加载标签时出错'));
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -130,43 +152,22 @@ const Tags = () => {
         updatedAt: new Date()
       };
 
+      console.log('Salvando tag:', newTag, 'Factory:', selectedFactory);
+
       if (selectedFactory) {
         // Modo fábrica selecionada - criar tag para fábrica específica
-        const updatedTags = { ...tags };
+        const result = await tagService.addTagToFactory(selectedFactory, newTag);
         
-        if (editingTag) {
-          // Remover da divisão antiga se mudou
-          if (editingTag.division !== newTag.division) {
-            updatedTags[editingTag.division] = updatedTags[editingTag.division].filter(t => t.id !== editingTag.id);
-          }
-          // Atualizar tag
-          const divisionTags = updatedTags[newTag.division] || [];
-          const existingIndex = divisionTags.findIndex(t => t.id === editingTag.id);
-          if (existingIndex >= 0) {
-            divisionTags[existingIndex] = newTag;
-          } else {
-            divisionTags.push(newTag);
-          }
-          updatedTags[newTag.division] = divisionTags;
-        } else {
-          // Adicionar nova tag
-          const divisionTags = updatedTags[newTag.division] || [];
-          divisionTags.push(newTag);
-          updatedTags[newTag.division] = divisionTags;
+        if (!result.success) {
+          setError(result.message);
+          return;
         }
-
-        setTags(updatedTags);
-        localStorage.setItem(`tags_${selectedFactory}`, JSON.stringify(updatedTags));
         
-        // Usar o serviço de tags para sincronizar
-        if (editingTag) {
-          tagService.updateTag(editingTag.id, editingTag.division, newTag);
-        } else {
-          tagService.addTag(newTag);
-        }
+        // Recarregar tags da fábrica
+        await loadTags();
       } else {
         // Modo global - criar tag global diretamente
-        const result = tagService.addTag(newTag);
+        const result = await tagService.addTag(newTag);
         if (!result.success) {
           setError(result.message);
           return;
@@ -174,7 +175,7 @@ const Tags = () => {
       }
       
       // Recarregar tags globais
-      loadGlobalTags();
+      await loadGlobalTags();
       
       setModalVisible(false);
       setEditingTag(null);
@@ -182,7 +183,7 @@ const Tags = () => {
       setError(null);
     } catch (err) {
       setError(t('Erro ao salvar tag', '保存标签时出错'));
-      console.error(err);
+      console.error('Erro ao salvar tag:', err);
     } finally {
       setSubmitting(false);
     }
@@ -201,19 +202,22 @@ const Tags = () => {
     }
 
     try {
+      console.log('Deletando tag:', tagId, 'Division:', division, 'Factory:', selectedFactory);
+
       if (selectedFactory) {
         // Modo fábrica selecionada - deletar tag da fábrica
-        const updatedTags = { ...tags };
-        updatedTags[division] = updatedTags[division].filter(t => t.id !== tagId);
+        const result = await tagService.removeTagFromFactory(selectedFactory, tagId, division);
         
-        setTags(updatedTags);
-        localStorage.setItem(`tags_${selectedFactory}`, JSON.stringify(updatedTags));
+        if (!result.success) {
+          setError(result.message);
+          return;
+        }
         
-        // Usar o serviço de tags para remover
-        tagService.removeTag(tagId, division);
+        // Recarregar tags da fábrica
+        await loadTags();
       } else {
         // Modo global - deletar tag global diretamente
-        const result = tagService.removeTag(tagId, division);
+        const result = await tagService.removeTag(tagId, division);
         if (!result.success) {
           setError(result.message);
           return;
@@ -221,10 +225,10 @@ const Tags = () => {
       }
       
       // Recarregar tags globais
-      loadGlobalTags();
+      await loadGlobalTags();
     } catch (err) {
       setError(t('Erro ao excluir tag', '删除标签时出错'));
-      console.error(err);
+      console.error('Erro ao excluir tag:', err);
     }
   };
 
