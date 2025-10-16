@@ -46,10 +46,62 @@ class TagServiceFirebase {
     }
   }
 
+  // Buscar tags do localStorage como fallback
+  getTagsFromLocalStorage(factoryId = null, division = null) {
+    try {
+      let tags = [];
+      
+      if (factoryId) {
+        // Buscar tags específicas da fábrica
+        const savedTags = localStorage.getItem(`tags_${factoryId}`);
+        if (savedTags) {
+          const factoryTags = JSON.parse(savedTags);
+          tags = [
+            ...(factoryTags.regiao || []),
+            ...(factoryTags.material || []),
+            ...(factoryTags.outros || [])
+          ];
+        }
+      } else {
+        // Buscar todas as tags globais
+        const globalTags = localStorage.getItem('globalTags');
+        if (globalTags) {
+          const parsedGlobalTags = JSON.parse(globalTags);
+          tags = [
+            ...(parsedGlobalTags.regiao || []),
+            ...(parsedGlobalTags.material || []),
+            ...(parsedGlobalTags.outros || [])
+          ];
+        }
+      }
+      
+      // Filtrar por divisão se especificado
+      if (division) {
+        tags = tags.filter(tag => tag.division === division);
+      }
+      
+      return {
+        success: true,
+        data: tags,
+        count: tags.length,
+        fallback: true
+      };
+    } catch (error) {
+      console.error('Erro ao buscar tags do localStorage:', error);
+      return {
+        success: true,
+        data: [],
+        count: 0,
+        fallback: true,
+        error: error.message
+      };
+    }
+  }
+
   // Buscar tags do Firebase
   async getTags(factoryId = null, division = null) {
     try {
-      console.log('TagServiceFirebase.getTags - Getting tags:', { factoryId, division });
+      // Buscar tags do Firebase (log removido para reduzir poluição do console)
 
       let url = `${this.apiUrl}/firestore/get/tags`;
       const params = new URLSearchParams();
@@ -68,13 +120,12 @@ class TagServiceFirebase {
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao buscar tags');
-      }
-
       const result = await response.json();
-      console.log('TagServiceFirebase.getTags - Tags found:', result);
+      
+      // Se houver erro de quota ou Firebase indisponível, usar localStorage
+      if (!response.ok || result.fallback || result.error) {
+        return this.getTagsFromLocalStorage(factoryId, division);
+      }
       
       // Extrair os dados das tags do formato Firebase
       const extractedTags = result.data.map(item => ({
@@ -86,11 +137,11 @@ class TagServiceFirebase {
         factoryId: item.factoryId
       }));
       
-      console.log('TagServiceFirebase.getTags - Extracted tags:', extractedTags);
       return extractedTags;
     } catch (error) {
       console.error('TagServiceFirebase.getTags - Error:', error);
-      throw error;
+      console.log('Erro no Firebase, usando localStorage como fallback');
+      return this.getTagsFromLocalStorage(factoryId, division);
     }
   }
 
@@ -166,7 +217,6 @@ class TagServiceFirebase {
         }
       });
 
-      console.log('TagServiceFirebase.getFactoryTags - Organized tags:', organizedTags);
       return organizedTags;
     } catch (error) {
       console.error('TagServiceFirebase.getFactoryTags - Error:', error);
@@ -178,7 +228,6 @@ class TagServiceFirebase {
   async getAllGlobalTags() {
     try {
       const tags = await this.getTags();
-      console.log('TagServiceFirebase.getAllGlobalTags - Raw tags from Firebase:', tags);
       
       // Organizar tags por divisão
       const organizedTags = {

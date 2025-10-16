@@ -15,8 +15,7 @@ class TagService {
       // Criar uma chave única baseada no nome e divisão
       const key = `${tag.name.toLowerCase()}_${tag.division}`;
       if (seen.has(key)) {
-        console.log('Tag duplicada removida:', tag.name, 'na divisão:', tag.division);
-        return false;
+        return false; // Tag duplicada removida silenciosamente
       }
       seen.add(key);
       return true;
@@ -30,7 +29,6 @@ class TagService {
       if (this.useFirebase) {
         try {
           const globalTags = await tagServiceFirebase.getAllGlobalTags();
-          console.log('Tags globais carregadas do Firebase:', globalTags);
           
           // Remover duplicatas de cada divisão
           const cleanedTags = {
@@ -38,8 +36,6 @@ class TagService {
             material: this.removeDuplicateTags(globalTags.material || []),
             outros: this.removeDuplicateTags(globalTags.outros || [])
           };
-          
-          console.log('Tags após remoção de duplicatas:', cleanedTags);
           return cleanedTags;
         } catch (firebaseError) {
           console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
@@ -191,8 +187,6 @@ class TagService {
       if (this.useFirebase) {
         try {
           const tags = await tagServiceFirebase.getFactoryTags(factoryId);
-          console.log('Tags carregadas do Firebase:', tags);
-          
           // Remover duplicatas de cada divisão
           const cleanedTags = {
             regiao: this.removeDuplicateTags(tags.regiao || []),
@@ -200,7 +194,6 @@ class TagService {
             outros: this.removeDuplicateTags(tags.outros || [])
           };
           
-          console.log('Tags da fábrica após remoção de duplicatas:', cleanedTags);
           return cleanedTags;
         } catch (firebaseError) {
           console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);

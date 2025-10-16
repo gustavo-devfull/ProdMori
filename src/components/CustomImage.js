@@ -65,33 +65,43 @@ const CustomImage = ({
       img.onerror = (e) => {
         if (isMounted) {
           console.log('CustomImage - Erro no pré-carregamento:', imageUrl, e);
-          // Tentar novamente após um pequeno delay se for uma URL local
-          if (imageUrl.includes('localhost:3001') && retryCount < 2) {
-            console.log('CustomImage - Tentando novamente após erro...');
-            setTimeout(() => {
-              if (isMounted) {
-                const retryImg = new Image();
-                retryImg.onload = () => {
-                  if (isMounted) {
-                    console.log('CustomImage - Retry bem-sucedido:', imageUrl);
-                    setLoading(false);
-                    setError(false);
-                  }
-                };
-                retryImg.onerror = () => {
-                  if (isMounted) {
-                    console.log('CustomImage - Retry falhou:', imageUrl);
-                    setLoading(false);
-                    setError(true);
-                  }
-                };
-                retryImg.src = imageUrl;
-              }
-            }, 500);
-          } else {
-            setLoading(false);
-            setError(true);
+          
+          // Tentar usar URL direta do FTP se for uma URL de proxy que falhou
+          if (imageUrl.includes('localhost:3001/api/image') && retryCount < 1) {
+            console.log('CustomImage - Tentando URL direta do FTP...');
+            const filename = imageUrl.split('filename=')[1];
+            if (filename) {
+              const directUrl = `https://ideolog.ia.br/${filename}`;
+              console.log('CustomImage - Tentando URL direta:', directUrl);
+              
+              setTimeout(() => {
+                if (isMounted) {
+                  const retryImg = new Image();
+                  retryImg.onload = () => {
+                    if (isMounted) {
+                      console.log('CustomImage - URL direta bem-sucedida:', directUrl);
+                      setImageUrl(directUrl);
+                      setLoading(false);
+                      setError(false);
+                    }
+                  };
+                  retryImg.onerror = () => {
+                    if (isMounted) {
+                      console.log('CustomImage - URL direta falhou:', directUrl);
+                      setLoading(false);
+                      setError(true);
+                    }
+                  };
+                  retryImg.src = directUrl;
+                }
+              }, 500);
+              return;
+            }
           }
+          
+          // Fallback padrão
+          setLoading(false);
+          setError(true);
         }
       };
       img.src = imageUrl;

@@ -7,8 +7,7 @@ import {
   Row,
   Col,
   Alert,
-  Spinner,
-  Badge
+  Spinner
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
 import AudioRecorder from '../components/AudioRecorder';
@@ -34,14 +33,6 @@ const Products = () => {
   const [audioUrls, setAudioUrls] = useState([]);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [lastUploadedAudioUrl, setLastUploadedAudioUrl] = useState('');
-  const [expandedAudioSections, setExpandedAudioSections] = useState({});
-
-  const toggleAudioSection = (productId) => {
-    setExpandedAudioSections(prev => ({
-      ...prev,
-      [productId]: !prev[productId]
-    }));
-  };
 
   const loadData = useCallback(async () => {
     try {
@@ -305,57 +296,17 @@ const Products = () => {
                             </p>
                           </div>
                           
-                          {/* Card de Gravações de Áudio */}
+                          {/* Gravação de Áudio */}
                           <div className="mb-3">
-                            <Card className="bg-light">
-                              <Card.Header className="d-flex align-items-center justify-content-between py-2">
-                                <div className="d-flex align-items-center">
-                                  <i className="bi bi-mic me-2 text-muted"></i>
-                                  <span className="fw-semibold text-dark">{t('Gravações de Áudio', '音频录制')}</span>
-                                </div>
-                                <Badge bg="secondary" className="rounded-pill">
-                                  {(() => {
-                                    const audioCount = (product.audioUrls && product.audioUrls.length > 0) ? product.audioUrls.length : (product.audioUrl ? 1 : 0);
-                                    return audioCount;
-                                  })()}
-                                </Badge>
-                              </Card.Header>
-                              <Card.Body className="py-2">
-                                {/* Botão para expandir/recolher seção de áudio */}
-                                <div 
-                                  className="d-flex justify-content-between align-items-center mb-2 cursor-pointer"
-                                  onClick={() => toggleAudioSection(product.id)}
-                                  style={{ cursor: 'pointer' }}
-                                >
-                                  <div className="fw-semibold text-dark">
-                                    {t('Gravações de Áudio', '音频录制')}
-                                  </div>
-                                  <i className={`bi ${expandedAudioSections[product.id] ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
-                                </div>
-                                
-                                {/* Conteúdo colapsável */}
-                                {expandedAudioSections[product.id] && (
-                                  <div>
-                                    {(product.audioUrls && product.audioUrls.length > 0) || product.audioUrl ? (
-                                      <AudioPlayer 
-                                        audioUrls={product.audioUrls || (product.audioUrl ? [product.audioUrl] : [])} 
-                                        disabled={false}
-                                      />
-                                    ) : (
-                                      <AudioRecorder 
-                                        onAudioReady={(blob, url) => {
-                                          if (blob && url) {
-                                            // Aqui você pode implementar a lógica para salvar o áudio
-                                            console.log('Áudio gravado:', blob, url);
-                                          }
-                                        }}
-                                        disabled={false}
-                                      />
-                                    )}
-                                  </div>
-                                )}
-                              </Card.Body>
-                            </Card>
+                            <AudioRecorder 
+                              onAudioReady={(blob, url) => {
+                                console.log('Áudio gravado:', blob, url);
+                              }}
+                              productId={product.id}
+                              initialAudioUrl={product.audioUrls?.[0]?.url || product.audioUrl}
+                              collapsed={true}
+                              disabled={false}
+                            />
                           </div>
                         </div>
                       </Card.Body>
@@ -488,11 +439,11 @@ const Products = () => {
             </Form.Group>
 
             {/* Áudio (substitui REMARK) */}
-            <AudioRecorder 
-              onAudioReady={handleAudioReady}
-              initialAudioUrl={lastUploadedAudioUrl}
-              disabled={uploadingAudio}
-            />
+              <AudioRecorder 
+                onAudioReady={handleAudioReady}
+                initialAudioUrl={lastUploadedAudioUrl}
+                disabled={uploadingAudio}
+              />
             
             <AudioPlayer 
               audioUrls={audioUrls}
@@ -604,6 +555,18 @@ const Products = () => {
                 name="gW"
                 defaultValue={editingProduct?.gW || ''}
                 placeholder={t('Digite o peso bruto', '输入毛重')}
+              />
+            </Form.Group>
+
+            {/* Gravação de Áudio */}
+            <Form.Group className="mb-3">
+              <AudioRecorder 
+                onAudioReady={(blob, url) => {
+                  console.log('Áudio gravado:', blob, url);
+                }}
+                productId={editingProduct?.id || 'new'}
+                initialAudioUrl={editingProduct?.audioUrls?.[0]?.url || editingProduct?.audioUrl}
+                disabled={submitting}
               />
             </Form.Group>
           </Modal.Body>

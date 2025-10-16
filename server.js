@@ -1411,6 +1411,115 @@ app.get('/api/firestore/test', async (req, res) => {
   }
 });
 
+// Rota otimizada para buscar dados com paginação
+app.get('/api/firestore/get/paginated', async (req, res) => {
+  try {
+    console.log('=== GET PAGINATED DATA REQUEST ===');
+    console.log('Query params:', req.query);
+
+    if (!db) {
+      console.error('Firebase not initialized');
+      return res.status(200).json({ 
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 20, total: 0, pages: 0 },
+        fallback: true
+      });
+    }
+
+    const { 
+      col, 
+      page = 1, 
+      limit = 20, 
+      orderBy = 'createdAt', 
+      orderDirection = 'desc',
+      ...filters 
+    } = req.query;
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const offset = (pageNum - 1) * limitNum;
+
+    console.log('Collection:', col, 'Page:', pageNum, 'Limit:', limitNum, 'Filters:', filters);
+
+    let query = db.collection(col);
+
+    // Aplicar filtros
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value && value !== 'null' && value !== 'undefined') {
+        console.log(`Adding filter: ${key} = ${value}`);
+        query = query.where(key, '==', value);
+      }
+    });
+
+    // Aplicar ordenação apenas se não há filtros complexos
+    try {
+      query = query.orderBy(orderBy, orderDirection);
+    } catch (orderError) {
+      console.warn('Cannot apply orderBy, continuing without:', orderError.message);
+    }
+
+    // Aplicar paginação
+    query = query.limit(limitNum).offset(offset);
+
+    console.log('Executing paginated query...');
+    const snapshot = await query.get();
+    
+    const data = [];
+    snapshot.forEach(doc => {
+      data.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // Contar total de documentos (apenas se necessário)
+    let totalCount = 0;
+    if (pageNum === 1) {
+      try {
+        let countQuery = db.collection(col);
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value && value !== 'null' && value !== 'undefined') {
+            countQuery = countQuery.where(key, '==', value);
+          }
+        });
+        const countSnapshot = await countQuery.get();
+        totalCount = countSnapshot.size;
+      } catch (countError) {
+        console.warn('Cannot get total count:', countError.message);
+        totalCount = data.length; // Estimativa baseada na primeira página
+      }
+    }
+
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    console.log(`Found ${data.length} items, total: ${totalCount}, pages: ${totalPages}`);
+
+    res.status(200).json({
+      success: true,
+      data,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalCount,
+        pages: totalPages,
+        hasNext: pageNum < totalPages,
+        hasPrev: pageNum > 1
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro na consulta paginada:', error);
+    res.status(200).json({
+      success: true,
+      data: [],
+      pagination: { page: 1, limit: 20, total: 0, pages: 0 },
+      error: error.message,
+      fallback: true
+    });
+  }
+});
+
 // Rota para buscar tags
 app.get('/api/firestore/get/tags', async (req, res) => {
   try {
@@ -1424,9 +1533,12 @@ app.get('/api/firestore/get/tags', async (req, res) => {
 
     if (!db) {
       console.error('Firebase not initialized');
-      return res.status(500).json({ 
+      return res.status(200).json({ 
+        success: true,
+        data: [],
+        count: 0,
         error: 'Firebase not initialized',
-        details: 'Firebase Admin SDK not properly configured'
+        fallback: true
       });
     }
 
@@ -1447,32 +1559,72 @@ app.get('/api/firestore/get/tags', async (req, res) => {
       query = query.where('division', '==', division);
     }
 
-    // Ordenar por data de criação (apenas se não há filtros específicos)
-    // Nota: orderBy com filtros requer índices compostos no Firestore
-    if (!factoryId && !division) {
-      try {
-        query = query.orderBy('createdAt', 'desc');
-        console.log('Aplicando orderBy para consulta sem filtros');
-      } catch (orderError) {
-        console.warn('Erro ao aplicar orderBy, continuando sem ordenação:', orderError);
-      }
-    } else {
-      console.log('Pulando orderBy devido a filtros específicos (requer índice composto)');
-    }
-
-    console.log('Executing query...');
+    // Não aplicar orderBy quando há filtros específicos para evitar problemas de índice
+    console.log('Executing query without orderBy to avoid composite index issues...');
+    console.log('Query details:', {
+      collection: 'tags',
+      factoryId: factoryId || 'none',
+      division: division || 'none',
+      hasFactoryFilter: !!factoryId,
+      hasDivisionFilter: !!division
+    });
+    
     let snapshot;
     try {
+      // Limitar o número de resultados para evitar timeouts
+      query = query.limit(100);
       snapshot = await query.get();
+      console.log('Query executed successfully, snapshot size:', snapshot.size);
     } catch (queryError) {
       console.error('Erro na query do Firestore:', queryError);
-      return res.status(500).json({ 
+      console.error('Query error details:', {
+        code: queryError.code,
+        message: queryError.message,
+        stack: queryError.stack
+      });
+      
+      // Se for erro de índice, tentar consulta mais simples
+      if (queryError.code === 'FAILED_PRECONDITION') {
+        console.log('Tentando consulta mais simples sem filtros...');
+        try {
+          const simpleSnapshot = await db.collection('tags').limit(100).get();
+          const allTags = [];
+          simpleSnapshot.forEach(doc => {
+            const data = doc.data();
+            // Filtrar manualmente se necessário
+            if (!factoryId || data.factoryId === factoryId) {
+              if (!division || data.division === division) {
+                allTags.push({
+                  id: doc.id,
+                  ...data
+                });
+              }
+            }
+          });
+          
+          console.log(`Found ${allTags.length} tags after manual filtering`);
+          return res.status(200).json({
+            success: true,
+            data: allTags,
+            count: allTags.length,
+            fallback: true
+          });
+        } catch (fallbackError) {
+          console.error('Erro na consulta de fallback:', fallbackError);
+        }
+      }
+      
+      return res.status(200).json({ 
+        success: true,
+        data: [],
+        count: 0,
         error: 'Erro na consulta do Firestore',
         details: queryError.message,
-        query: { factoryId, division }
+        code: queryError.code,
+        query: { factoryId, division },
+        fallback: true
       });
     }
-    console.log('Query executed successfully, snapshot size:', snapshot.size);
     
     const tags = [];
 
@@ -1501,10 +1653,14 @@ app.get('/api/firestore/get/tags', async (req, res) => {
     console.error('Error code:', error.code);
     console.error('Error details:', error.details);
     
-    res.status(500).json({ 
+    res.status(200).json({ 
+      success: true,
+      data: [],
+      count: 0,
       error: 'Erro interno do servidor',
       details: error.message,
-      code: error.code || 'UNKNOWN'
+      code: error.code || 'UNKNOWN',
+      fallback: true
     });
   }
 });

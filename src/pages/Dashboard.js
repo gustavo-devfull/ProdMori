@@ -122,8 +122,14 @@ const Dashboard = () => {
           outros: Array.isArray(cachedGlobalTags?.outros) ? cachedGlobalTags.outros : []
         };
         console.log('Dashboard - Tags do cache:', safeTags);
-        setAvailableTags(safeTags);
-        return;
+        
+        // Se o cache está vazio, ignorar e buscar do Firebase
+        if (safeTags.regiao.length === 0 && safeTags.material.length === 0 && safeTags.outros.length === 0) {
+          console.log('Cache vazio detectado, ignorando cache e buscando do Firebase...');
+        } else {
+          setAvailableTags(safeTags);
+          return;
+        }
       }
       
       console.log('Carregando tags do Firebase...');

@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Card, Alert } from 'react-bootstrap';
 import { useLanguage } from '../contexts/LanguageContext';
+import audioUploadService from '../services/audioUploadService';
+import productServiceAPI from '../services/productServiceAPI';
 
-const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
+const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, productId = null, collapsed = false }) => {
   const { t } = useLanguage();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -11,6 +13,10 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
   const [error, setError] = useState(null);
   const [hasPermission, setHasPermission] = useState(null);
   const [hasRecorded, setHasRecorded] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedAudios, setUploadedAudios] = useState([]);
+  const [savingToFirebase, setSavingToFirebase] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(!collapsed);
   
   const mediaRecorderRef = useRef(null);
   const audioRef = useRef(null);
@@ -136,6 +142,11 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
         if (onAudioReady) {
           onAudioReady(blob, url);
         }
+        
+        // Upload automático se productId estiver disponível
+        if (productId) {
+          uploadAudio(blob);
+        }
       };
 
       mediaRecorder.start(100); // Coletar dados a cada 100ms
@@ -178,22 +189,107 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     }
   };
 
+  // Upload automático do áudio
+  const uploadAudio = async (blob) => {
+    if (!blob || !productId) return;
+    
+    try {
+      setIsUploading(true);
+      setError(null);
+      
+      console.log('Iniciando upload automático do áudio...');
+      const result = await audioUploadService.uploadAudio(blob, productId);
+      
+      if (result.success) {
+        const newAudio = {
+          id: Date.now().toString(),
+          url: result.audioUrl,
+          fileName: result.fileName,
+          uploadedAt: new Date().toISOString()
+        };
+        
+        setUploadedAudios(prev => [...prev, newAudio]);
+        console.log('Upload realizado com sucesso:', result.audioUrl);
+        
+        // Salvar array de áudios no Firebase
+        await saveAudiosToFirebase([...uploadedAudios, newAudio]);
+      }
+    } catch (error) {
+      console.error('Erro no upload automático:', error);
+      setError(`Erro no upload: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Salvar array de áudios no Firebase
+  const saveAudiosToFirebase = async (audios) => {
+    if (!productId || productId === 'new') {
+      console.log('ProductId inválido para salvar no Firebase:', productId);
+      return;
+    }
+
+    try {
+      setSavingToFirebase(true);
+      console.log('Salvando áudios no Firebase para produto:', productId, 'Áudios:', audios);
+      
+      // Atualizar produto no Firebase com o array de áudios
+      const updateData = {
+        audioUrls: audios,
+        audioUpdatedAt: new Date().toISOString()
+      };
+      
+      // Se não há áudios, limpar também o campo audioUrl legado
+      if (audios.length === 0) {
+        updateData.audioUrl = '';
+        updateData.audioUploadedAt = '';
+      }
+      
+      await productServiceAPI.updateProduct(productId, updateData);
+      
+      console.log('Áudios salvos no Firebase com sucesso');
+    } catch (error) {
+      console.error('Erro ao salvar áudios no Firebase:', error);
+      setError(`Erro ao salvar áudios: ${error.message}`);
+    } finally {
+      setSavingToFirebase(false);
+    }
+  };
+
   // Regravar
-  const reRecord = () => {
+  const reRecord = async () => {
     setAudioUrl('');
     setRecordingTime(0);
     setError(null);
     setHasRecorded(false);
+    setIsUploading(false);
+    setSavingToFirebase(false);
     
     // Limpar áudio anterior
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+
+    // Limpar áudio do Firebase se existir
+    if (productId && productId !== 'new') {
+      try {
+        await productServiceAPI.updateProduct(productId, {
+          audioUrls: [],
+          audioUrl: '',
+          audioUploadedAt: '',
+          audioUpdatedAt: new Date().toISOString()
+        });
+        console.log('Áudios removidos do Firebase');
+        setUploadedAudios([]);
+      } catch (error) {
+        console.error('Erro ao remover áudios do Firebase:', error);
+      }
+    }
   };
 
   // Limpar áudio
-  const clearAudio = () => {
+  const clearAudio = async () => {
     if (audioUrl && audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(audioUrl);
     }
@@ -201,6 +297,24 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     setRecordingTime(0);
     setError(null);
     setHasRecorded(false);
+    setIsUploading(false);
+    setSavingToFirebase(false);
+    
+    // Limpar áudio do Firebase se existir
+    if (productId && productId !== 'new') {
+      try {
+        await productServiceAPI.updateProduct(productId, {
+          audioUrls: [],
+          audioUrl: '',
+          audioUploadedAt: '',
+          audioUpdatedAt: new Date().toISOString()
+        });
+        console.log('Áudios removidos do Firebase');
+        setUploadedAudios([]);
+      } catch (error) {
+        console.error('Erro ao remover áudios do Firebase:', error);
+      }
+    }
     
     if (onAudioReady) {
       onAudioReady(null, '');
@@ -214,6 +328,52 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
     const ms = Math.floor((seconds % 1) * 10);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms}`;
   };
+
+  // Carregar áudios existentes quando o componente monta
+  useEffect(() => {
+    const loadExistingAudios = async () => {
+      if (productId && productId !== 'new') {
+        try {
+          console.log('Carregando áudios existentes para produto:', productId);
+          
+          // Buscar dados do produto no Firebase
+          const productData = await productServiceAPI.getProductById(productId);
+          
+          if (productData && productData.audioUrls && Array.isArray(productData.audioUrls)) {
+            console.log('Áudios encontrados no produto:', productData.audioUrls);
+            setUploadedAudios(productData.audioUrls);
+          } else if (productData && productData.audioUrl) {
+            // Fallback para áudio único (compatibilidade com versão anterior)
+            console.log('Áudio único encontrado (fallback):', productData.audioUrl);
+            const singleAudio = {
+              id: 'legacy',
+              url: productData.audioUrl,
+              fileName: 'Áudio existente',
+              uploadedAt: productData.audioUploadedAt || new Date().toISOString()
+            };
+            setUploadedAudios([singleAudio]);
+          } else {
+            console.log('Nenhum áudio encontrado para o produto');
+            setUploadedAudios([]);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar áudios existentes:', error);
+          setUploadedAudios([]);
+        }
+      } else if (initialAudioUrl) {
+        // Se há um áudio inicial mas não há productId válido
+        const existingAudio = {
+          id: 'initial',
+          url: initialAudioUrl,
+          fileName: 'Áudio existente',
+          uploadedAt: new Date().toISOString()
+        };
+        setUploadedAudios([existingAudio]);
+      }
+    };
+
+    loadExistingAudios();
+  }, [productId, initialAudioUrl]);
 
   // Cleanup
   useEffect(() => {
@@ -240,64 +400,60 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
 
   return (
     <Card className="mb-3">
-      <Card.Body>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h6 className="mb-0">{t('Gravação de Áudio', '音频录制')}</h6>
-          {audioUrl && (
+      <Card.Body className="p-2">
+        {/* Título com quantidade de áudios */}
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <div 
+            className="d-flex align-items-center cursor-pointer"
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{ cursor: 'pointer' }}
+          >
+            <h6 className="mb-0 me-2">
+              {t('Áudios', '音频')} | {uploadedAudios.length}
+            </h6>
+            <i className={`bi ${isExpanded ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+          </div>
+          {uploadedAudios.length > 0 && (
             <Button 
               variant="outline-danger" 
               size="sm"
               onClick={clearAudio}
               disabled={disabled}
             >
-              <i className="bi bi-trash"></i> {t('Limpar', '清除')}
+              <i className="bi bi-trash"></i>
             </Button>
           )}
         </div>
 
-        {error && (
-          <Alert variant="danger" className="mb-3">
-            {error}
-            {/* Instruções específicas para iOS */}
-            {error.includes('Permissão de microfone negada') && (
-              <div className="mt-2">
-                <small>
-                  <strong>Instruções para iPhone/iPad:</strong><br/>
-                  1. Toque no ícone "aA" na barra de endereços<br/>
-                  2. Selecione "Configurações do Site"<br/>
-                  3. Ative "Microfone"<br/>
-                  4. Recarregue a página
-                </small>
+        {/* Conteúdo do card - apenas quando expandido */}
+        {isExpanded && (
+          <>
+            {/* Apenas erros críticos */}
+            {error && (
+              <Alert variant="danger" className="mb-2 py-2">
+                <small>{error}</small>
+              </Alert>
+            )}
+
+            {/* Controles de gravação simplificados */}
+            {!audioUrl && !isRecording && (
+              <div className="text-center">
+                <Button 
+                  variant="success" 
+                  size="lg"
+                  onClick={startRecording}
+                  disabled={disabled || hasPermission === false}
+                  className="w-100"
+                >
+                  <i className="bi bi-mic me-2"></i>
+                  {t('Iniciar Gravação', '开始录制')}
+                </Button>
               </div>
             )}
-          </Alert>
-        )}
 
-        {/* Aviso para iOS */}
-        {!hasPermission && !error && (
-          <Alert variant="info" className="mb-3">
-            <small>
-              <strong>📱 iPhone/iPad:</strong> Certifique-se de permitir o acesso ao microfone quando solicitado.
-            </small>
-          </Alert>
-        )}
-
-        {/* Controles de gravação */}
-        {!audioUrl && (
-          <div className="text-center">
-            {!isRecording ? (
-              <Button 
-                variant="success" 
-                size="lg"
-                onClick={startRecording}
-                disabled={disabled || hasPermission === false}
-                className="mb-3"
-              >
-                <i className="bi bi-mic me-2"></i>
-                {t('Iniciar Gravação', '开始录制')}
-              </Button>
-            ) : (
-              <div className="mb-3">
+            {/* Controles durante a gravação */}
+            {isRecording && (
+              <div className="text-center">
                 <div className="mb-2">
                   <span className="badge bg-primary fs-6">
                     {formatTime(recordingTime)}
@@ -324,58 +480,97 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Status de envio */}
-        {hasRecorded && !audioUrl && (
-          <div className="text-center mb-3">
-            <Alert variant="info">
-              <i className="bi bi-cloud-upload me-2"></i>
-              {t('Áudio gravado! Aguardando envio...', '音频已录制！等待上传...')}
-            </Alert>
-          </div>
-        )}
+            {/* Status de upload */}
+            {isUploading && (
+              <div className="text-center mb-2">
+                <Alert variant="info" className="py-2">
+                  <small>
+                    <i className="bi bi-cloud-upload me-1"></i>
+                    {t('Enviando áudio...', '正在上传音频...')}
+                  </small>
+                </Alert>
+              </div>
+            )}
 
-        {/* Player de áudio */}
-        {audioUrl && !audioUrl.startsWith('blob:') && (
-          <div className="text-center">
-            <audio
-              ref={audioRef}
-              controls
-              className="w-100 mb-3"
-              style={{ maxWidth: '400px' }}
-              playsInline={true}
-              preload="metadata"
-            >
-              <source src={audioUrl} type="audio/mpeg" />
-              <source src={audioUrl} type="audio/mp4" />
-              <source src={audioUrl} type="audio/webm" />
-              <source src={audioUrl} type="audio/ogg" />
-              <source src={audioUrl} type="audio/wav" />
-              {t('Seu navegador não suporta o elemento de áudio', '您的浏览器不支持音频元素')}
-            </audio>
-            
-            <div className="d-flex justify-content-center gap-2">
-              <Button 
-                variant="outline-primary"
-                onClick={reRecord}
-                disabled={disabled}
-              >
-                <i className="bi bi-arrow-clockwise me-1"></i>
-                {t('Regravar', '重新录制')}
-              </Button>
-            </div>
-          </div>
-        )}
+            {/* Status de salvamento no Firebase */}
+            {savingToFirebase && (
+              <div className="text-center mb-2">
+                <Alert variant="success" className="py-2">
+                  <small>
+                    <i className="bi bi-database me-1"></i>
+                    {t('Salvando no banco de dados...', '正在保存到数据库...')}
+                  </small>
+                </Alert>
+              </div>
+            )}
 
-        {/* Informações */}
-        <div className="mt-3 text-muted small">
-          <div className="d-flex justify-content-between">
-            <span>{t('Formato:', '格式:')} WebM (Opus)</span>
-            <span>{t('Qualidade:', '质量:')} 44.1kHz</span>
-          </div>
-        </div>
+            {/* Lista de áudios salvos */}
+            {uploadedAudios.length > 0 && (
+              <div className="mb-3">
+                {uploadedAudios.map((audio, index) => (
+                  <div key={audio.id} className="border rounded p-2 mb-2">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <small className="text-muted">
+                        {audio.fileName || `Áudio ${index + 1}`}
+                      </small>
+                      <small className="text-muted">
+                        {new Date(audio.uploadedAt).toLocaleString()}
+                      </small>
+                    </div>
+                    <audio
+                      controls
+                      className="w-100"
+                      style={{ maxWidth: '400px' }}
+                      playsInline={true}
+                      preload="metadata"
+                    >
+                      <source src={audio.url} type="audio/mpeg" />
+                      <source src={audio.url} type="audio/mp4" />
+                      <source src={audio.url} type="audio/webm" />
+                      <source src={audio.url} type="audio/ogg" />
+                      <source src={audio.url} type="audio/wav" />
+                      {t('Seu navegador não suporta o elemento de áudio', '您的浏览器不支持音频元素')}
+                    </audio>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Player de áudio */}
+            {audioUrl && !audioUrl.startsWith('blob:') && (
+              <div className="text-center">
+                <audio
+                  ref={audioRef}
+                  controls
+                  className="w-100 mb-2"
+                  style={{ maxWidth: '400px' }}
+                  playsInline={true}
+                  preload="metadata"
+                >
+                  <source src={audioUrl} type="audio/mpeg" />
+                  <source src={audioUrl} type="audio/mp4" />
+                  <source src={audioUrl} type="audio/webm" />
+                  <source src={audioUrl} type="audio/ogg" />
+                  <source src={audioUrl} type="audio/wav" />
+                  {t('Seu navegador não suporta o elemento de áudio', '您的浏览器不支持音频元素')}
+                </audio>
+                
+                <div className="d-flex justify-content-center gap-2">
+                  <Button 
+                    variant="outline-primary"
+                    onClick={reRecord}
+                    disabled={disabled}
+                    size="sm"
+                  >
+                    <i className="bi bi-arrow-clockwise me-1"></i>
+                    {t('Regravar', '重新录制')}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </Card.Body>
     </Card>
   );

@@ -15,10 +15,8 @@ import factoryServiceAPI from '../services/factoryServiceAPI';
 import productServiceAPI from '../services/productServiceAPI';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
-import AudioRecorder from '../components/AudioRecorder';
-import AudioPlayer from '../components/AudioPlayer';
-import audioUploadService from '../services/audioUploadService';
 import CustomImage from '../components/CustomImage';
+import AudioRecorder from '../components/AudioRecorder';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const FactoryDetail = () => {
@@ -53,17 +51,10 @@ const FactoryDetail = () => {
     material: [],
     outros: []
   });
+  const [factoryDataExpanded, setFactoryDataExpanded] = useState(false);
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
   const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
-  const [factoryTagsDisplay, setFactoryTagsDisplay] = useState({
-    regiao: [],
-    material: [],
-    outros: []
-  });
-  const [audioUrls, setAudioUrls] = useState([]);
-  const [uploadingAudio, setUploadingAudio] = useState(false);
-  const [lastUploadedAudioUrl, setLastUploadedAudioUrl] = useState('');
 
   const loadFactoryData = useCallback(async () => {
     try {
@@ -76,6 +67,7 @@ const FactoryDetail = () => {
         return;
       }
       
+      console.log('Dados da fábrica carregados do Firebase:', factoryData);
       setFactory(factoryData);
       
       // Carregar produtos da fábrica
@@ -91,46 +83,9 @@ const FactoryDetail = () => {
     }
   }, [factoryId, t]);
 
-  // Função para carregar tags da fábrica para exibição
-  const loadFactoryTagsForDisplay = useCallback(async () => {
-    try {
-      console.log('=== CARREGANDO TAGS PARA EXIBIÇÃO ===');
-      console.log('Factory ID:', factoryId);
-      
-      // Carregar tags do Firebase primeiro
-      const factoryTagsData = await tagService.getFactoryTags(factoryId);
-      console.log('Tags carregadas do Firebase:', factoryTagsData);
-      
-      // Garantir que a estrutura está correta
-      const safeTags = {
-        regiao: Array.isArray(factoryTagsData?.regiao) ? factoryTagsData.regiao : [],
-        material: Array.isArray(factoryTagsData?.material) ? factoryTagsData.material : [],
-        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : []
-      };
-      
-      setFactoryTagsDisplay(safeTags);
-      console.log('Tags definidas para exibição:', safeTags);
-    } catch (error) {
-      console.error('Erro ao carregar tags da fábrica para exibição:', error);
-      // Fallback para localStorage
-      try {
-        const savedTags = localStorage.getItem(`tags_${factoryId}`);
-        if (savedTags) {
-          setFactoryTagsDisplay(JSON.parse(savedTags));
-        } else {
-          setFactoryTagsDisplay({ regiao: [], material: [], outros: [] });
-        }
-      } catch (fallbackError) {
-        console.error('Erro no fallback localStorage:', fallbackError);
-        setFactoryTagsDisplay({ regiao: [], material: [], outros: [] });
-      }
-    }
-  }, [factoryId]);
-
   useEffect(() => {
     loadFactoryData();
-    loadFactoryTagsForDisplay();
-  }, [loadFactoryData, loadFactoryTagsForDisplay]);
+  }, [loadFactoryData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -144,19 +99,21 @@ const FactoryDetail = () => {
       const finalValues = {
         ...values,
         imageUrl: imageUrl || values.imageUrl,
-        audioUrls: audioUrls, // Incluir lista de URLs de áudio
         factoryId: factoryId,
         unit: 'PC' // Valor padrão conforme solicitado
       };
       
       if (editingProduct) {
         await productServiceAPI.updateProduct(editingProduct.id, finalValues);
+        setModalVisible(false);
+        setEditingProduct(null);
       } else {
-        await productServiceAPI.createProduct(finalValues);
+        const newProduct = await productServiceAPI.createProduct(finalValues);
+        // Após criar, abrir para editar
+        setEditingProduct(newProduct);
+        // Não fechar o modal, apenas recarregar os dados
       }
       
-      setModalVisible(false);
-      setEditingProduct(null);
       setImageUrl('');
       await loadFactoryData();
     } catch (err) {
@@ -177,9 +134,6 @@ const FactoryDetail = () => {
     setError(null);
     setImageUrl('');
     setUploadingImage(false);
-    setAudioUrls([]);
-    setUploadingAudio(false);
-    setLastUploadedAudioUrl('');
     
     console.log('Modal close states updated');
   };
@@ -188,34 +142,6 @@ const FactoryDetail = () => {
     setPreviewImage(imageUrl);
     setPreviewVisible(true);
   };
-
-  // Função para lidar com áudio gravado
-  const handleAudioReady = async (blob, url) => {
-    if (blob && editingProduct) {
-      try {
-        setUploadingAudio(true);
-        const result = await audioUploadService.uploadAudio(blob, editingProduct.id);
-        
-        if (result.success) {
-          // Adicionar novo áudio à lista
-          setAudioUrls(prev => [...prev, result.audioUrl]);
-          setLastUploadedAudioUrl(result.audioUrl);
-          console.log('Áudio enviado com sucesso:', result);
-        }
-      } catch (error) {
-        console.error('Erro ao enviar áudio:', error);
-        setError(t('Erro ao enviar áudio', '发送音频时出错'));
-      } finally {
-        setUploadingAudio(false);
-      }
-    }
-  };
-
-  // Função para deletar áudio da lista
-  const handleDeleteAudio = (index) => {
-    setAudioUrls(prev => prev.filter((_, i) => i !== index));
-  };
-
 
   const handleDeleteProduct = async (productId) => {
     console.log('=== HANDLE DELETE PRODUCT ===');
@@ -355,7 +281,6 @@ const FactoryDetail = () => {
       
       setFactoryEditModalVisible(false);
       await loadFactoryData();
-      loadFactoryTagsForDisplay();
     } catch (err) {
       setError(t('Erro ao salvar fábrica', '保存工厂时出错'));
       console.error(err);
@@ -477,63 +402,6 @@ const FactoryDetail = () => {
     });
   };
 
-  // Função para renderizar tags da fábrica
-  const renderFactoryTags = () => {
-    console.log('=== RENDER FACTORY TAGS ===');
-    console.log('factoryTagsDisplay:', factoryTagsDisplay);
-    
-    // Verificar se factoryTagsDisplay é válido
-    if (!factoryTagsDisplay || typeof factoryTagsDisplay !== 'object') {
-      console.log('factoryTagsDisplay não é válido, retornando null');
-      return null;
-    }
-    
-    const allFactoryTags = [];
-    
-    // Combinar todas as tags da fábrica
-    if (factoryTagsDisplay.regiao && Array.isArray(factoryTagsDisplay.regiao) && factoryTagsDisplay.regiao.length > 0) {
-      console.log('Adicionando tags de região:', factoryTagsDisplay.regiao);
-      allFactoryTags.push(...factoryTagsDisplay.regiao.map(tag => ({ ...tag, type: 'regiao' })));
-    }
-    
-    if (factoryTagsDisplay.material && Array.isArray(factoryTagsDisplay.material) && factoryTagsDisplay.material.length > 0) {
-      console.log('Adicionando tags de material:', factoryTagsDisplay.material);
-      allFactoryTags.push(...factoryTagsDisplay.material.map(tag => ({ ...tag, type: 'material' })));
-    }
-    
-    if (factoryTagsDisplay.outros && Array.isArray(factoryTagsDisplay.outros) && factoryTagsDisplay.outros.length > 0) {
-      console.log('Adicionando tags de outros:', factoryTagsDisplay.outros);
-      allFactoryTags.push(...factoryTagsDisplay.outros.map(tag => ({ ...tag, type: 'outros' })));
-    }
-    
-    console.log('Total de tags para renderizar:', allFactoryTags.length);
-    console.log('allFactoryTags:', allFactoryTags);
-    
-    if (allFactoryTags.length === 0) {
-      console.log('Nenhuma tag encontrada, retornando null');
-      return null;
-    }
-    
-    return (
-      <div className="mb-4">
-        <div className="d-flex flex-wrap gap-2">
-          {allFactoryTags.map(tag => (
-            <Badge 
-              key={tag.id} 
-              bg={tag.type === 'regiao' ? 'primary' : tag.type === 'material' ? 'success' : 'danger'}
-              className="d-flex align-items-center gap-1"
-              style={{ fontSize: '14px' }}
-            >
-              <i className={`bi ${tag.type === 'regiao' ? 'bi-geo-alt' : tag.type === 'material' ? 'bi-box' : 'bi-tag'}`}></i>
-              {tag.name}
-            </Badge>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -558,40 +426,178 @@ const FactoryDetail = () => {
 
   return (
     <div>
-      <div className="bg-primary text-white p-3 rounded mb-3">
-        <div className="d-flex justify-content-between align-items-center">
-          <div className="d-flex align-items-center gap-3">
-            <Button 
-              variant="outline-light"
-              size="sm"
-              onClick={handleEditFactory}
-              className="d-flex align-items-center"
-              title={t('Editar fábrica', '编辑工厂')}
+      {/* Card azul com nome da fábrica e botões */}
+      <Card className="bg-primary text-white mb-3">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center">
+            <div 
+              className="d-flex align-items-center cursor-pointer"
+              onClick={() => setFactoryDataExpanded(!factoryDataExpanded)}
+              style={{ cursor: 'pointer' }}
             >
-              <i className="bi bi-pencil me-1"></i>
-              {t('Editar', '编辑')}
-            </Button>
-            <Button 
-              variant="danger"
-              size="sm"
-              onClick={() => setModalVisible(true)}
-              className="d-flex align-items-center"
-            >
-              <i className="bi bi-plus-circle me-1"></i>
-              {t('Cadastrar Produto', '注册产品')}
-            </Button>
+              <h4 className="mb-0 text-white me-2">{factory.name}</h4>
+              <i className={`bi ${factoryDataExpanded ? 'bi-chevron-up' : 'bi-chevron-down'} text-white`}></i>
+            </div>
+            <div className="d-flex gap-2">
+              <Button 
+                variant="outline-light"
+                size="sm"
+                onClick={handleEditFactory}
+                title={t('Editar fábrica', '编辑工厂')}
+              >
+                <i className="bi bi-pencil"></i>
+              </Button>
+              <Button 
+                variant="outline-light"
+                size="sm"
+                onClick={() => navigate('/')}
+              >
+                {t('Fechar', '关闭')}
+              </Button>
+            </div>
           </div>
-          <Button 
-            variant="light"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="d-flex align-items-center"
-          >
-            <i className="bi bi-arrow-left me-1"></i>
-            {t('Voltar', '返回')}
-          </Button>
-        </div>
-      </div>
+        </Card.Body>
+      </Card>
+
+      {/* Seção expansível com dados da fábrica */}
+      {factoryDataExpanded && (
+        <Card className="mb-3">
+          <Card.Body>
+            <h5 className="mb-3">{t('Dados da Fábrica', '工厂数据')}</h5>
+            
+            <Row>
+              <Col md={6}>
+                <div className="mb-3">
+                  <strong>{t('Nome:', '名称:')}</strong> {factory.name}
+                </div>
+                <div className="mb-3">
+                  <strong>{t('Contato:', '联系人:')}</strong> {factory.contactName || t('Não informado', '未提供')}
+                </div>
+                <div className="mb-3">
+                  <strong>{t('Telefone:', '电话:')}</strong> {factory.phone || t('Não informado', '未提供')}
+                </div>
+                <div className="mb-3">
+                  <strong>{t('WeChat:', '微信:')}</strong> {factory.wechat || t('Não informado', '未提供')}
+                </div>
+                <div className="mb-3">
+                  <strong>{t('Email:', '邮箱:')}</strong> {factory.email || t('Não informado', '未提供')}
+                </div>
+              </Col>
+              <Col md={6}>
+                <div className="mb-3">
+                  <strong>{t('Localização:', '位置:')}</strong> {factory.location || t('Não informado', '未提供')}
+                </div>
+                <div className="mb-3">
+                  <strong>{t('Segmento:', '行业:')}</strong> {factory.segment || t('Não informado', '未提供')}
+                </div>
+                <div className="mb-3">
+                  <strong>{t('Criado em:', '创建时间:')}</strong> {factory.createdAt ? new Date(factory.createdAt).toLocaleString() : t('Não informado', '未提供')}
+                </div>
+                <div className="mb-3">
+                  <strong>{t('Atualizado em:', '更新时间:')}</strong> {factory.updatedAt ? new Date(factory.updatedAt).toLocaleString() : t('Não informado', '未提供')}
+                </div>
+              </Col>
+            </Row>
+
+            {/* Descrição */}
+            {factory.description && (
+              <div className="mb-3">
+                <strong>{t('Descrição:', '描述:')}</strong>
+                <div className="mt-2 p-3 bg-light rounded">
+                  {factory.description}
+                </div>
+              </div>
+            )}
+
+            {/* Tags da fábrica */}
+            {(factoryTags.regiao.length > 0 || factoryTags.material.length > 0 || factoryTags.outros.length > 0) && (
+              <div className="mt-3">
+                <strong>{t('Tags:', '标签:')}</strong>
+                <div className="mt-2">
+                  {factoryTags.regiao.length > 0 && (
+                    <div className="mb-2">
+                      <small className="text-muted">{t('Região:', '地区:')}</small>
+                      <div>
+                        {factoryTags.regiao.map((tag, index) => (
+                          <Badge key={index} bg="primary" className="me-1 mb-1">
+                            {typeof tag === 'string' ? tag : tag.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {factoryTags.material.length > 0 && (
+                    <div className="mb-2">
+                      <small className="text-muted">{t('Material:', '材料:')}</small>
+                      <div>
+                        {factoryTags.material.map((tag, index) => (
+                          <Badge key={index} bg="success" className="me-1 mb-1">
+                            {typeof tag === 'string' ? tag : tag.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {factoryTags.outros.length > 0 && (
+                    <div className="mb-2">
+                      <small className="text-muted">{t('Outros:', '其他:')}</small>
+                      <div>
+                        {factoryTags.outros.map((tag, index) => (
+                          <Badge key={index} bg="danger" className="me-1 mb-1">
+                            {typeof tag === 'string' ? tag : tag.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Imagens da fábrica */}
+            {(factory.imageUrl1 || factory.imageUrl2) && (
+              <div className="mt-3">
+                <strong>{t('Imagens:', '图片:')}</strong>
+                <div className="mt-2">
+                  <Row>
+                    {factory.imageUrl1 && (
+                      <Col md={6} className="mb-2">
+                        <CustomImage
+                          src={factory.imageUrl1}
+                          alt={`${factory.name} - Imagem 1`}
+                          style={{ width: '100%', height: '200px', objectFit: 'cover' }}
+                          fallback={<div className="bg-light d-flex align-items-center justify-content-center" style={{ height: '200px' }}>Imagem 1</div>}
+                        />
+                      </Col>
+                    )}
+                    {factory.imageUrl2 && (
+                      <Col md={6} className="mb-2">
+                        <CustomImage
+                          src={factory.imageUrl2}
+                          alt={`${factory.name} - Imagem 2`}
+                          style={{ width: '100%', height: '200px', objectFit: 'cover' }}
+                          fallback={<div className="bg-light d-flex align-items-center justify-content-center" style={{ height: '200px' }}>Imagem 2</div>}
+                        />
+                      </Col>
+                    )}
+                  </Row>
+                </div>
+              </div>
+            )}
+          </Card.Body>
+        </Card>
+      )}
+
+      {/* Botão Cadastrar Produto */}
+      <Button 
+        variant="success" 
+        className="w-100 mb-4"
+        size="lg"
+        onClick={() => setModalVisible(true)}
+      >
+        <i className="bi bi-plus-circle me-2"></i>
+        {t('Cadastrar Produto', '注册产品')}
+      </Button>
       
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
@@ -599,52 +605,13 @@ const FactoryDetail = () => {
         </Alert>
       )}
 
-      {/* Card principal da fábrica */}
+      {/* Card dos Produtos Cadastrados */}
       <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">{t('Produtos Cadastrados', '已注册产品')}</h5>
+        </Card.Header>
         <Card.Body>
-          <div className="mb-3">
-            <h4 className="mb-0">{factory.name}</h4>
-          </div>
-
-          {/* Tags da fábrica */}
-          {/* Imagens da fábrica */}
-          {(factory.imageUrl1 || factory.imageUrl2) && (
-            <div className="mb-4">
-              <Row className="g-2">
-                {factory.imageUrl1 && (
-                  <Col xs={6}>
-                    <CustomImage
-                      src={factory.imageUrl1}
-                      alt={`${factory.name} - Imagem 1`}
-                      className="img-fluid rounded"
-                      style={{ height: '180px', objectFit: 'cover', width: '100%' }}
-                      showPreview={true}
-                      onPreview={handlePreview}
-                    />
-                  </Col>
-                )}
-                {factory.imageUrl2 && (
-                  <Col xs={6}>
-                    <CustomImage
-                      src={factory.imageUrl2}
-                      alt={`${factory.name} - Imagem 2`}
-                      className="img-fluid rounded"
-                      style={{ height: '180px', objectFit: 'cover', width: '100%' }}
-                      showPreview={true}
-                      onPreview={handlePreview}
-                    />
-                  </Col>
-                )}
-              </Row>
-            </div>
-          )}
-
-          {/* Tags da fábrica */}
-          {renderFactoryTags()}
-
           {/* Listagem dos produtos */}
-          <div>
-            <h5 className="mb-3">{t('Produtos Cadastrados', '已注册产品')}</h5>
             {!products || products.length === 0 ? (
               <div className="text-center py-4">
                 <i className="bi bi-bag text-muted fs-1"></i>
@@ -718,9 +685,6 @@ const FactoryDetail = () => {
                                       setEditingProduct(product);
                                       setModalVisible(true);
                                       setImageUrl(product.imageUrl || '');
-                                      // Carregar áudios existentes (pode ser array ou string única)
-                                      const existingAudios = product.audioUrls || (product.audioUrl ? [product.audioUrl] : []);
-                                      setAudioUrls(Array.isArray(existingAudios) ? existingAudios : []);
                                     }}
                                     title={t('Editar produto', '编辑产品')}
                                   >
@@ -753,7 +717,6 @@ const FactoryDetail = () => {
                 ))}
               </Row>
             )}
-          </div>
         </Card.Body>
       </Card>
 
@@ -793,9 +756,8 @@ const FactoryDetail = () => {
               </Button>
             </div>
 
-            {/* Nome da Fábrica */}
+            {/* Nome da Fábrica sem Label */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('Nome da Fábrica', '工厂名称')}</Form.Label>
               <Form.Control
                 type="text"
                 value={factory.name}
@@ -845,29 +807,6 @@ const FactoryDetail = () => {
               />
             </Form.Group>
 
-            {/* Nome do produto */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Nome do produto', '产品名称')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                defaultValue={editingProduct?.name || ''}
-                placeholder={t('Digite o nome do produto', '输入产品名称')}
-                required
-              />
-            </Form.Group>
-
-            {/* Segmento */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Segmento', '行业')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="segment"
-                defaultValue={editingProduct?.segment || ''}
-                placeholder={t('Digite o segmento', '输入行业')}
-              />
-            </Form.Group>
-
             {/* REF */}
             <Form.Group className="mb-3">
               <Form.Label>{t('REF', '参考号')}</Form.Label>
@@ -879,36 +818,17 @@ const FactoryDetail = () => {
               />
             </Form.Group>
 
-            {/* Áudio (substitui REMARK) */}
-            <AudioRecorder 
-              onAudioReady={handleAudioReady}
-              initialAudioUrl={lastUploadedAudioUrl}
-              disabled={uploadingAudio}
-            />
-            
-            <AudioPlayer 
-              audioUrls={audioUrls}
-              onDelete={handleDeleteAudio}
-              disabled={uploadingAudio}
-            />
-            
-            {uploadingAudio && (
-              <div className="text-center mb-3">
-                <Spinner animation="border" size="sm" className="me-2" />
-                <span className="text-muted">{t('Enviando áudio...', '发送音频中...')}</span>
-              </div>
-            )}
-
             {/* U.PRICE | UNIT */}
             <Row className="mb-3">
               <Col xs={6}>
                 <Form.Group>
                   <Form.Label>{t('U.PRICE', '单价')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.01"
                     name="uPrice"
                     defaultValue={editingProduct?.uPrice || ''}
-                    placeholder={t('Digite o preço unitário', '输入单价')}
+                    placeholder={t('Preço unitário', '单价')}
                   />
                 </Form.Group>
               </Col>
@@ -918,8 +838,8 @@ const FactoryDetail = () => {
                   <Form.Control
                     type="text"
                     name="unit"
-                    defaultValue={editingProduct?.unit || 'PC'}
-                    placeholder={t('Digite a unidade', '输入单位')}
+                    defaultValue={editingProduct?.unit || ''}
+                    placeholder={t('Unidade', '单位')}
                   />
                 </Form.Group>
               </Col>
@@ -929,59 +849,75 @@ const FactoryDetail = () => {
             <Row className="mb-3">
               <Col xs={6}>
                 <Form.Group>
-                  <Form.Label>{t('UNIT/CTNS', '每箱单位')}</Form.Label>
+                  <Form.Label>{t('UNIT/CTNS', '单位/箱')}</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="unitCtn"
-                    defaultValue={editingProduct?.unitCtn || ''}
-                    placeholder={t('Digite unidades por caixa', '输入每箱单位')}
+                    type="number"
+                    name="unitCtns"
+                    defaultValue={editingProduct?.unitCtns || ''}
+                    placeholder={t('Unidades por caixa', '每箱单位')}
                   />
                 </Form.Group>
               </Col>
               <Col xs={6}>
                 <Form.Group>
-                  <Form.Label>{t('CBM', 'CBM')}</Form.Label>
+                  <Form.Label>{t('CBM', '立方米')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.001"
                     name="cbm"
                     defaultValue={editingProduct?.cbm || ''}
-                    placeholder={t('Digite o CBM', '输入CBM')}
+                    placeholder={t('Volume', '体积')}
                   />
                 </Form.Group>
               </Col>
             </Row>
 
+            {/* Peso unitário (g) */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Peso unitário (g)', '单位重量(克)')}</Form.Label>
+              <Form.Control
+                type="number"
+                step="0.1"
+                name="unitWeight"
+                defaultValue={editingProduct?.unitWeight || ''}
+                placeholder={t('Peso em gramas', '重量(克)')}
+              />
+            </Form.Group>
+
             {/* L | W | H */}
             <Row className="mb-3">
               <Col xs={4}>
                 <Form.Group>
-                  <Form.Label>{t('L', 'L')}</Form.Label>
+                  <Form.Label>{t('L', '长')}</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="l"
-                    defaultValue={editingProduct?.l || ''}
+                    type="number"
+                    step="0.1"
+                    name="length"
+                    defaultValue={editingProduct?.length || ''}
                     placeholder={t('Comprimento', '长度')}
                   />
                 </Form.Group>
               </Col>
               <Col xs={4}>
                 <Form.Group>
-                  <Form.Label>{t('W', 'W')}</Form.Label>
+                  <Form.Label>{t('W', '宽')}</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="w"
-                    defaultValue={editingProduct?.w || ''}
+                    type="number"
+                    step="0.1"
+                    name="width"
+                    defaultValue={editingProduct?.width || ''}
                     placeholder={t('Largura', '宽度')}
                   />
                 </Form.Group>
               </Col>
               <Col xs={4}>
                 <Form.Group>
-                  <Form.Label>{t('H', 'H')}</Form.Label>
+                  <Form.Label>{t('H', '高')}</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="h"
-                    defaultValue={editingProduct?.h || ''}
+                    type="number"
+                    step="0.1"
+                    name="height"
+                    defaultValue={editingProduct?.height || ''}
                     placeholder={t('Altura', '高度')}
                   />
                 </Form.Group>
@@ -990,12 +926,25 @@ const FactoryDetail = () => {
 
             {/* G.W */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('G.W', 'G.W')}</Form.Label>
+              <Form.Label>{t('G.W', '毛重')}</Form.Label>
               <Form.Control
-                type="text"
+                type="number"
+                step="0.1"
                 name="gW"
                 defaultValue={editingProduct?.gW || ''}
                 placeholder={t('Digite o peso bruto', '输入毛重')}
+              />
+            </Form.Group>
+
+            {/* Gravação de Áudio */}
+            <Form.Group className="mb-3">
+              <AudioRecorder 
+                onAudioReady={(blob, url) => {
+                  console.log('Áudio gravado:', blob, url);
+                }}
+                productId={editingProduct?.id || 'new'}
+                initialAudioUrl={editingProduct?.audioUrls?.[0]?.url || editingProduct?.audioUrl}
+                disabled={submitting}
               />
             </Form.Group>
           </Modal.Body>
@@ -1003,24 +952,6 @@ const FactoryDetail = () => {
             <Button variant="secondary" onClick={handleModalClose}>
               {t('Cancelar', '取消')}
             </Button>
-            {editingProduct && (
-              <Button 
-                variant="danger" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('Delete button clicked, submitting:', submitting);
-                  if (!submitting) {
-                    handleDeleteProduct(editingProduct.id);
-                  }
-                }}
-                disabled={submitting}
-                className="me-auto"
-              >
-                <i className="bi bi-trash me-1"></i>
-                {t('Excluir Produto', '删除产品')}
-              </Button>
-            )}
             <Button 
               variant="success" 
               type="submit" 
@@ -1030,11 +961,6 @@ const FactoryDetail = () => {
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
                   {t('Salvando...', '保存中...')}
-                </>
-              ) : uploadingImage ? (
-                <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  {t('Enviando imagem...', '上传图片中...')}
                 </>
               ) : (
                 <>
@@ -1426,6 +1352,43 @@ const FactoryDetail = () => {
                 key={`imageUrl2-${factory?.id || 'new'}`}
               />
             </Form.Group>
+
+            {/* Exibição das imagens da fábrica */}
+            {(factory?.imageUrl1 || factory?.imageUrl2) && (
+              <Form.Group className="mb-3">
+                <Form.Label>{t('Imagens Atuais', '当前图片')}</Form.Label>
+                <Row>
+                  {factory?.imageUrl1 && (
+                    <Col md={6} className="mb-2">
+                      <div className="text-center">
+                        <img
+                          src={factory.imageUrl1}
+                          alt={t('Imagem Principal', '主图片')}
+                          className="img-fluid rounded border"
+                          style={{ maxHeight: '200px', width: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                          onClick={() => handlePreview(factory.imageUrl1)}
+                        />
+                        <small className="text-muted d-block mt-1">{t('Imagem Principal', '主图片')}</small>
+                      </div>
+                    </Col>
+                  )}
+                  {factory?.imageUrl2 && (
+                    <Col md={6} className="mb-2">
+                      <div className="text-center">
+                        <img
+                          src={factory.imageUrl2}
+                          alt={t('Imagem Secundária', '副图片')}
+                          className="img-fluid rounded border"
+                          style={{ maxHeight: '200px', width: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                          onClick={() => handlePreview(factory.imageUrl2)}
+                        />
+                        <small className="text-muted d-block mt-1">{t('Imagem Secundária', '副图片')}</small>
+                      </div>
+                    </Col>
+                  )}
+                </Row>
+              </Form.Group>
+            )}
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleFactoryModalClose}>
