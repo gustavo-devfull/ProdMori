@@ -195,15 +195,6 @@ const FactoryDetail = () => {
   };
 
 
-  const handleEditProduct = (product) => {
-    setEditingProduct(product);
-    setModalVisible(true);
-    setImageUrl(product.imageUrl || '');
-    // Carregar áudios existentes (pode ser array ou string única)
-    const existingAudios = product.audioUrls || (product.audioUrl ? [product.audioUrl] : []);
-    setAudioUrls(Array.isArray(existingAudios) ? existingAudios : []);
-  };
-
   const handleDeleteProduct = async (productId) => {
     console.log('=== HANDLE DELETE PRODUCT ===');
     console.log('Product ID:', productId);
