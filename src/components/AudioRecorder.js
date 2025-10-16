@@ -342,10 +342,14 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false }) => {
               controls
               className="w-100 mb-3"
               style={{ maxWidth: '400px' }}
+              playsInline={true}
+              preload="metadata"
             >
+              <source src={audioUrl} type="audio/mpeg" />
               <source src={audioUrl} type="audio/mp4" />
               <source src={audioUrl} type="audio/webm" />
               <source src={audioUrl} type="audio/ogg" />
+              <source src={audioUrl} type="audio/wav" />
               {t('Seu navegador não suporta o elemento de áudio', '您的浏览器不支持音频元素')}
             </audio>
             

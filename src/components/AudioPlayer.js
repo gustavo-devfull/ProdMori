@@ -8,7 +8,18 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
   const [audioErrors, setAudioErrors] = useState({});
   const audioRefs = useRef({});
 
+  // Detectar iOS
+  const isIOS = () => {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  };
+
   const handlePlay = async (index, url) => {
+    console.log(`=== TENTATIVA DE REPRODUÇÃO ${index} ===`);
+    console.log('URL:', url);
+    console.log('iOS detectado:', isIOS());
+    console.log('User Agent:', navigator.userAgent);
+    
     // Pausar todos os outros áudios
     Object.values(audioRefs.current).forEach(audio => {
       if (audio && !audio.paused) {
@@ -27,8 +38,34 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
           // Verificar se o áudio pode ser reproduzido
           console.log(`Tentando reproduzir áudio ${index}:`, url);
           
-          // Aguardar um pouco antes de tentar reproduzir para evitar AbortError
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Para iOS, aguardar mais tempo e verificar se o áudio está carregado
+          if (isIOS()) {
+            console.log('iOS detectado - aplicando configurações específicas');
+            
+            // Aguardar mais tempo no iOS
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Verificar se o áudio está carregado
+            if (audio.readyState < 2) {
+              console.log('Áudio ainda não carregado, aguardando...');
+              await new Promise(resolve => {
+                const checkReady = () => {
+                  if (audio.readyState >= 2) {
+                    resolve();
+                  } else {
+                    setTimeout(checkReady, 100);
+                  }
+                };
+                checkReady();
+              });
+            }
+            
+            // Definir volume para iOS
+            audio.volume = 1.0;
+          } else {
+            // Aguardar um pouco antes de tentar reproduzir para evitar AbortError
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
           
           await audio.play();
           setPlayingIndex(index);
@@ -48,10 +85,22 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
         } else if (error.name === 'NotSupportedError') {
           errorMessage = 'Formato de áudio não suportado ou arquivo não encontrado';
         } else if (error.name === 'NotAllowedError') {
-          errorMessage = 'Reprodução não permitida pelo navegador';
+          errorMessage = 'Reprodução não permitida (iOS pode bloquear reprodução automática)';
+        } else if (error.name === 'NetworkError') {
+          errorMessage = 'Erro de rede ao carregar áudio';
+        } else if (error.name === 'SecurityError') {
+          errorMessage = 'Erro de segurança (CORS ou HTTPS)';
         } else if (error.message.includes('Failed to load')) {
           errorMessage = 'Arquivo de áudio não encontrado';
         }
+        
+        console.error(`Detalhes do erro:`, {
+          name: error.name,
+          message: error.message,
+          code: error.code,
+          readyState: audio.readyState,
+          networkState: audio.networkState
+        });
         
         setAudioErrors(prev => ({ ...prev, [index]: errorMessage }));
         setPlayingIndex(null);
@@ -281,13 +330,19 @@ const AudioPlayer = ({ audioUrls = [], onDelete, disabled = false }) => {
                   ref={el => audioRefs.current[index] = el}
                   onEnded={() => handleAudioEnded(index)}
                   onError={(e) => handleAudioError(index, e)}
-                  preload="metadata"
+                  onLoadStart={() => console.log(`Áudio ${index} iniciando carregamento`)}
+                  onLoadedData={() => console.log(`Áudio ${index} dados carregados`)}
+                  onCanPlay={() => console.log(`Áudio ${index} pode reproduzir`)}
+                  preload={isIOS() ? "none" : "metadata"}
+                  playsInline={isIOS()}
+                  controls={false}
                   style={{ display: 'none' }}
                 >
                   <source src={url} type="audio/mpeg" />
                   <source src={url} type="audio/mp4" />
                   <source src={url} type="audio/webm" />
                   <source src={url} type="audio/ogg" />
+                  <source src={url} type="audio/wav" />
                   Seu navegador não suporta o elemento de áudio.
                 </audio>
               </ListGroup.Item>
