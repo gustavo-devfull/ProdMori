@@ -48,7 +48,6 @@ const Dashboard = () => {
   const [showAvailableTags, setShowAvailableTags] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [filteredFactories, setFilteredFactories] = useState([]);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
 
   // Estados para paginação
   const [currentPage, setCurrentPage] = useState(1);
@@ -365,17 +364,7 @@ const Dashboard = () => {
       }
     });
     
-    // Debounce para evitar múltiplas consultas
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-    
-    const timeout = setTimeout(() => {
-      console.log('Executando filtro após debounce...');
-      filterFactoriesByTags();
-    }, 500); // 500ms de debounce
-    
-    setDebounceTimeout(timeout);
+    // O filtro será executado automaticamente pelo useEffect
   };
 
   useEffect(() => {
@@ -386,6 +375,17 @@ const Dashboard = () => {
   useEffect(() => {
     setFilteredFactories(allFactories);
   }, [allFactories]);
+
+  // Executar filtro sempre que as tags selecionadas mudarem
+  useEffect(() => {
+    if (selectedTags.length > 0) {
+      console.log('Tags selecionadas mudaram, executando filtro...');
+      filterFactoriesByTags();
+    } else {
+      console.log('Nenhuma tag selecionada, mostrando todas as fábricas');
+      setFilteredFactories(allFactories);
+    }
+  }, [selectedTags, filterFactoriesByTags, allFactories]);
 
   const handleFactorySelect = (factoryId) => {
     if (factoryId) {
