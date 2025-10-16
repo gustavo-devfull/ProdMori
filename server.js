@@ -1448,12 +1448,16 @@ app.get('/api/firestore/get/tags', async (req, res) => {
     }
 
     // Ordenar por data de criação (apenas se não há filtros específicos)
+    // Nota: orderBy com filtros requer índices compostos no Firestore
     if (!factoryId && !division) {
       try {
         query = query.orderBy('createdAt', 'desc');
+        console.log('Aplicando orderBy para consulta sem filtros');
       } catch (orderError) {
         console.warn('Erro ao aplicar orderBy, continuando sem ordenação:', orderError);
       }
+    } else {
+      console.log('Pulando orderBy devido a filtros específicos (requer índice composto)');
     }
 
     console.log('Executing query...');
