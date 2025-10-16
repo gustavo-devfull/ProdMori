@@ -572,8 +572,6 @@ const FactoryDetail = () => {
           </div>
 
           {/* Tags da fábrica */}
-          {renderFactoryTags()}
-
           {/* Imagens da fábrica */}
           {(factory.imageUrl1 || factory.imageUrl2) && (
             <div className="mb-4">
@@ -605,6 +603,9 @@ const FactoryDetail = () => {
               </Row>
             </div>
           )}
+
+          {/* Tags da fábrica */}
+          {renderFactoryTags()}
 
           {/* Listagem dos produtos */}
           <div>
