@@ -97,7 +97,7 @@ const Products = () => {
       console.log('Product deleted successfully');
       
       console.log('Reloading products data...');
-      await loadProducts();
+      await loadData();
       console.log('Products data reloaded');
       
       setError(null);
