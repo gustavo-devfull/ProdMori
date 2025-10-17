@@ -62,6 +62,12 @@ const Dashboard = () => {
   const CACHE_DURATION = 5 * 60 * 1000;
 
   const loadFactories = useCallback(async (page = currentPage, forceRefresh = false) => {
+    // Evitar refresh durante uploads ativos
+    if (uploadingImages.image1 || uploadingImages.image2) {
+      console.log('Upload em andamento - pulando refresh...');
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -182,7 +188,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, t]);
+  }, [currentPage, pageSize, t, uploadingImages.image1, uploadingImages.image2]);
 
   // Função para carregar tags disponíveis
   const loadAvailableTags = useCallback(async () => {
@@ -521,16 +527,28 @@ const Dashboard = () => {
 
   // Listener para detectar quando o usuário volta para o Dashboard
   useEffect(() => {
+    let refreshTimeout;
+    
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('Dashboard visível novamente - forçando refresh...');
-        loadFactories(currentPage, true);
+      if (!document.hidden && !modalVisible) {
+        console.log('Dashboard visível novamente - agendando refresh...');
+        // Aguardar um pouco antes de fazer refresh para evitar conflitos com uploads
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          loadFactories(currentPage, true);
+        }, 2000);
       }
     };
 
     const handleFocus = () => {
-      console.log('Dashboard recebeu foco - forçando refresh...');
-      loadFactories(currentPage, true);
+      if (!modalVisible) {
+        console.log('Dashboard recebeu foco - agendando refresh...');
+        // Aguardar um pouco antes de fazer refresh para evitar conflitos com uploads
+        clearTimeout(refreshTimeout);
+        refreshTimeout = setTimeout(() => {
+          loadFactories(currentPage, true);
+        }, 2000);
+      }
     };
 
     // Adicionar listeners
@@ -539,10 +557,11 @@ const Dashboard = () => {
 
     // Cleanup
     return () => {
+      clearTimeout(refreshTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [loadFactories, currentPage]);
+  }, [loadFactories, currentPage, modalVisible]);
 
   // Forçar refresh inicial para garantir dados frescos
   useEffect(() => {
