@@ -104,12 +104,30 @@ const Factories = () => {
 
   // Carregar tags globais
   useEffect(() => {
-    const loadGlobalTags = () => {
+    const loadGlobalTags = async () => {
       try {
-        const globalTagsData = tagService.getAllTags();
+        const globalTagsData = await tagService.getAllTags();
         setGlobalTags(globalTagsData);
       } catch (error) {
         console.error('Erro ao carregar tags globais:', error);
+        // Fallback para localStorage
+        try {
+          const savedTags = localStorage.getItem('globalTags');
+          if (savedTags) {
+            const parsedTags = JSON.parse(savedTags);
+            const safeTags = {
+              regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
+              material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
+              outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : []
+            };
+            setGlobalTags(safeTags);
+          } else {
+            setGlobalTags({ regiao: [], material: [], outros: [] });
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback localStorage:', fallbackError);
+          setGlobalTags({ regiao: [], material: [], outros: [] });
+        }
       }
     };
     
@@ -221,8 +239,23 @@ const Factories = () => {
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
       // Fallback para localStorage
-      const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[]}');
-      setGlobalTags(localGlobalTags);
+      try {
+        const savedTags = localStorage.getItem('globalTags');
+        if (savedTags) {
+          const parsedTags = JSON.parse(savedTags);
+          const safeTags = {
+            regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
+            material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
+            outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : []
+          };
+          setGlobalTags(safeTags);
+        } else {
+          setGlobalTags({ regiao: [], material: [], outros: [] });
+        }
+      } catch (fallbackError) {
+        console.error('Erro no fallback localStorage:', fallbackError);
+        setGlobalTags({ regiao: [], material: [], outros: [] });
+      }
     }
   };
 
@@ -255,6 +288,24 @@ const Factories = () => {
       setGlobalTags(globalTagsData);
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
+      // Fallback para localStorage
+      try {
+        const savedTags = localStorage.getItem('globalTags');
+        if (savedTags) {
+          const parsedTags = JSON.parse(savedTags);
+          const safeTags = {
+            regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
+            material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
+            outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : []
+          };
+          setGlobalTags(safeTags);
+        } else {
+          setGlobalTags({ regiao: [], material: [], outros: [] });
+        }
+      } catch (fallbackError) {
+        console.error('Erro no fallback localStorage:', fallbackError);
+        setGlobalTags({ regiao: [], material: [], outros: [] });
+      }
     }
   };
 
@@ -304,8 +355,27 @@ const Factories = () => {
       addTagToFactory(newTag, division);
       
       // Atualizar tags globais disponíveis
-      const globalTagsData = tagService.getAllTags();
-      setGlobalTags(globalTagsData);
+      try {
+        const globalTagsData = await tagService.getAllTags();
+        setGlobalTags(globalTagsData);
+      } catch (error) {
+        console.error('Erro ao carregar tags globais:', error);
+        // Fallback para localStorage
+        try {
+          const savedTags = localStorage.getItem('globalTags');
+          if (savedTags) {
+            const parsedTags = JSON.parse(savedTags);
+            const safeTags = {
+              regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
+              material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
+              outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : []
+            };
+            setGlobalTags(safeTags);
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback localStorage:', fallbackError);
+        }
+      }
     } else {
       console.warn('Tag já existe globalmente:', result.message);
       // Mesmo assim, adicionar à fábrica atual

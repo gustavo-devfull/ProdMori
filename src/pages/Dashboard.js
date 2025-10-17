@@ -133,9 +133,41 @@ const Dashboard = () => {
       
       console.log('Carregando tags globais do Firebase...');
       // Buscar apenas tags globais (sem factoryId)
-      const response = await fetch('http://localhost:3001/api/firestore/get/tags');
-      const result = await response.json();
-      console.log('Dashboard - Resposta direta do Firebase:', result);
+      const apiUrl = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('gpreto.space') || window.location.hostname !== 'localhost' 
+        ? '/api' 
+        : 'http://localhost:3001/api';
+      
+      let result;
+      try {
+        const response = await fetch(`${apiUrl}/firestore/get/tags`);
+        result = await response.json();
+        console.log('Dashboard - Resposta direta do Firebase:', result);
+        
+        // Se houver erro de quota ou Firebase indisponível, usar localStorage
+        if (!response.ok || result.fallback || result.error) {
+          console.log('Firebase indisponível ou erro de quota, usando localStorage');
+          throw new Error('Firebase error');
+        }
+      } catch (error) {
+        console.log('Erro ao carregar do Firebase, usando localStorage:', error);
+        // Fallback para localStorage
+        const savedTags = localStorage.getItem('globalTags');
+        if (savedTags) {
+          const parsedTags = JSON.parse(savedTags);
+          const safeTags = {
+            regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
+            material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
+            outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : []
+          };
+          console.log('Dashboard - Tags do localStorage:', safeTags);
+          setAvailableTags(safeTags);
+          return;
+        } else {
+          console.log('Nenhuma tag encontrada no localStorage');
+          setAvailableTags({ regiao: [], material: [], outros: [] });
+          return;
+        }
+      }
       
       const tags = result.data || [];
       console.log('Dashboard - Tags globais carregadas:', tags);
