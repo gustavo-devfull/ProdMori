@@ -295,6 +295,7 @@ const Tags = () => {
                         key={tag.id || tag.name} 
                         bg="primary" 
                         className="d-flex align-items-center gap-1"
+                        style={{ fontSize: '14px' }}
                       >
                         {tag.name}
                         <i 
@@ -330,6 +331,7 @@ const Tags = () => {
                         key={tag.id || tag.name} 
                         bg="info" 
                         className="d-flex align-items-center gap-1"
+                        style={{ fontSize: '14px' }}
                       >
                         {tag.name}
                         <i 
@@ -367,6 +369,7 @@ const Tags = () => {
                         key={tag.id || tag.name} 
                         bg="success" 
                         className="d-flex align-items-center gap-1"
+                        style={{ fontSize: '14px' }}
                       >
                         {tag.name}
                         <i 
@@ -402,6 +405,7 @@ const Tags = () => {
                         key={tag.id || tag.name} 
                         bg="danger" 
                         className="d-flex align-items-center gap-1"
+                        style={{ fontSize: '14px' }}
                       >
                         {tag.name}
                         <i 

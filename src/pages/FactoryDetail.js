@@ -32,6 +32,7 @@ const FactoryDetail = () => {
   const [error, setError] = useState(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
+  const [currentAudioUrl, setCurrentAudioUrl] = useState('');
   const [editingProduct, setEditingProduct] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
@@ -154,8 +155,15 @@ const FactoryDetail = () => {
         ...values,
         imageUrl: imageUrl || values.imageUrl,
         factoryId: factoryId,
-        unit: 'PC' // Valor padrão conforme solicitado
+        unit: 'PC', // Valor padrão conforme solicitado
+        audioUrl: currentAudioUrl || values.audioUrl // Incluir áudio atual
       };
+      
+      console.log('=== HANDLE SUBMIT ===');
+      console.log('Current audioUrl:', currentAudioUrl);
+      console.log('Values audioUrl:', values.audioUrl);
+      console.log('Final audioUrl:', finalValues.audioUrl);
+      console.log('Final values:', finalValues);
       
       if (editingProduct) {
         await productServiceAPI.updateProduct(editingProduct.id, finalValues);
@@ -186,6 +194,7 @@ const FactoryDetail = () => {
     setEditingProduct(null);
     setError(null);
     setImageUrl('');
+    setCurrentAudioUrl('');
     setUploadingImage(false);
     
     console.log('Modal close states updated');
@@ -1212,26 +1221,15 @@ const FactoryDetail = () => {
                   <Form.Control
                     type="text"
                     name="unit"
-                    defaultValue={editingProduct?.unit || ''}
+                    defaultValue={editingProduct?.unit || 'PC'}
                     placeholder={t('Unidade', '单位')}
                   />
                 </Form.Group>
               </Col>
             </Row>
 
-            {/* CTNS | UNIT/CTN */}
+            {/* UNIT/CTN | CBM */}
             <Row className="mb-3">
-              <Col xs={6}>
-                <Form.Group>
-                  <Form.Label>{t('CTNS', '箱数')}</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="ctns"
-                    defaultValue={editingProduct?.ctns || ''}
-                    placeholder={t('Número de caixas', '箱数')}
-                  />
-                </Form.Group>
-              </Col>
               <Col xs={6}>
                 <Form.Group>
                   <Form.Label>{t('UNIT/CTN', '单位/箱')}</Form.Label>
@@ -1243,19 +1241,19 @@ const FactoryDetail = () => {
                   />
                 </Form.Group>
               </Col>
+              <Col xs={6}>
+                <Form.Group>
+                  <Form.Label>{t('CBM', '立方米')}</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.001"
+                    name="cbm"
+                    defaultValue={editingProduct?.cbm || ''}
+                    placeholder={t('Volume', '体积')}
+                  />
+                </Form.Group>
+              </Col>
             </Row>
-
-            {/* CBM */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('CBM', '立方米')}</Form.Label>
-              <Form.Control
-                type="number"
-                step="0.001"
-                name="cbm"
-                defaultValue={editingProduct?.cbm || ''}
-                placeholder={t('Volume', '体积')}
-              />
-            </Form.Group>
 
             {/* Peso unitário (g) */}
             <Form.Group className="mb-3">
@@ -1338,6 +1336,10 @@ const FactoryDetail = () => {
               <AudioRecorder 
                 onAudioReady={(blob, url) => {
                   console.log('Áudio gravado:', blob, url);
+                }}
+                onAudioChange={(url) => {
+                  console.log('AudioRecorder onAudioChange chamado com URL:', url);
+                  setCurrentAudioUrl(url);
                 }}
                 productId={editingProduct?.id || 'new'}
                 initialAudioUrl={editingProduct?.audioUrls?.[0]?.url || editingProduct?.audioUrl}

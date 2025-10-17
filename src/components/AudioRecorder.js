@@ -4,7 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import audioUploadService from '../services/audioUploadService';
 import productServiceAPI from '../services/productServiceAPI';
 
-const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, productId = null, collapsed = false }) => {
+const AudioRecorder = ({ onAudioReady, onAudioChange, initialAudioUrl, disabled = false, productId = null, collapsed = false }) => {
   const { t } = useLanguage();
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -20,6 +20,14 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
   const mediaRecorderRef = useRef(null);
   const timerRef = useRef(null);
   const streamRef = useRef(null);
+
+  // Notificar mudanças no áudio para o componente pai
+  useEffect(() => {
+    if (onAudioChange) {
+      console.log('AudioRecorder: Notificando mudança de áudio para componente pai:', audioUrl);
+      onAudioChange(audioUrl);
+    }
+  }, [audioUrl, onAudioChange]);
 
   // Verificar suporte do navegador
   const isSupported = () => {
@@ -206,6 +214,9 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
         setUploadedAudios(prev => [...prev, newAudio]);
         console.log('Upload realizado com sucesso:', result.audioUrl);
         
+        // Atualizar audioUrl principal para notificar o componente pai
+        setAudioUrl(result.audioUrl);
+        
         // Salvar array de áudios no Firebase
         await saveAudiosToFirebase([...uploadedAudios, newAudio]);
       }
@@ -221,6 +232,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
   const saveAudiosToFirebase = async (audios) => {
     if (!productId || productId === 'new') {
       console.log('ProductId inválido para salvar no Firebase:', productId);
+      console.log('Áudio será salvo junto com o produto quando ele for criado');
       return;
     }
 

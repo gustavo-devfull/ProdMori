@@ -29,6 +29,9 @@ const Products = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [audioUrls, setAudioUrls] = useState([]);
+  const [currentAudioUrl, setCurrentAudioUrl] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -69,12 +72,71 @@ const Products = () => {
     setPreviewVisible(true);
   };
 
+  const handleProductSelect = (productId) => {
+    setSelectedProducts(prev => {
+      if (prev.includes(productId)) {
+        return prev.filter(id => id !== productId);
+      } else {
+        return [...prev, productId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProducts.length === filteredProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(filteredProducts.map(product => product.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) {
+      alert(t('Nenhum produto selecionado', '没有选择产品'));
+      return;
+    }
+
+    const confirmMessage = t(
+      `Tem certeza que deseja excluir ${selectedProducts.length} produto(s)?`,
+      `确定要删除 ${selectedProducts.length} 个产品吗？`
+    );
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await Promise.all(
+        selectedProducts.map(productId => 
+          productServiceAPI.deleteProduct(productId)
+        )
+      );
+      
+      await loadData();
+      setSelectedProducts([]);
+      setBulkDeleteMode(false);
+      setError(null);
+    } catch (err) {
+      setError(t('Erro ao excluir produtos', '删除产品时出错'));
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleBulkDeleteMode = () => {
+    setBulkDeleteMode(!bulkDeleteMode);
+    setSelectedProducts([]);
+  };
+
 
   const handleModalClose = () => {
     setModalVisible(false);
     setEditingProduct(null);
     setError(null);
     setAudioUrls([]);
+    setCurrentAudioUrl('');
   };
 
   const handleSubmit = async (e) => {
@@ -88,7 +150,8 @@ const Products = () => {
       const productData = {
         ...values,
         factoryId: values.factoryId,
-        audioUrls: audioUrls // Incluir lista de URLs de áudio
+        audioUrls: audioUrls, // Incluir lista de URLs de áudio
+        audioUrl: currentAudioUrl || values.audioUrl // Incluir áudio atual
       };
 
       if (editingProduct) {
@@ -186,16 +249,59 @@ const Products = () => {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>{t('Produtos', '产品')}</h2>
-        <Button 
-          variant="primary" 
-          onClick={() => setModalVisible(true)}
-          className="d-flex align-items-center"
-        >
-          <i className="bi bi-plus-circle me-2"></i>
-          {t('Novo Produto', '新产品')}
-        </Button>
+      <div className="mb-4">
+        <h2 className="mb-3">{t('Todos os Produtos', '所有产品')}</h2>
+        <div className="d-flex gap-2 flex-wrap">
+          {bulkDeleteMode && (
+            <>
+              <Button 
+                variant="outline-secondary" 
+                onClick={handleSelectAll}
+                className="d-flex align-items-center"
+              >
+                <i className="bi bi-check-square me-1"></i>
+                {selectedProducts.length === filteredProducts.length 
+                  ? t('Desmarcar Todos', '取消全选') 
+                  : t('Selecionar Todos', '全选')
+                }
+              </Button>
+              <Button 
+                variant="danger" 
+                onClick={handleBulkDelete}
+                disabled={selectedProducts.length === 0 || submitting}
+                className="d-flex align-items-center"
+              >
+                {submitting ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    {t('Excluindo...', '删除中...')}
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-trash me-1"></i>
+                    {t('Excluir Selecionados', '删除选中')} ({selectedProducts.length})
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+          <Button 
+            variant={bulkDeleteMode ? "secondary" : "outline-danger"} 
+            onClick={toggleBulkDeleteMode}
+            className="d-flex align-items-center"
+          >
+            <i className={`bi ${bulkDeleteMode ? 'bi-x-circle' : 'bi-check-square'} me-1`}></i>
+            {bulkDeleteMode ? t('Cancelar Seleção', '取消选择') : t('Selecionar Produtos', '选择产品')}
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => setModalVisible(true)}
+            className="d-flex align-items-center"
+          >
+            <i className="bi bi-plus-circle me-2"></i>
+            {t('Novo Produto', '新产品')}
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -254,6 +360,19 @@ const Products = () => {
                   >
                     <Card className="h-100 shadow-sm">
                       <Card.Body className="d-flex flex-column">
+                        {/* Checkbox de seleção */}
+                        {bulkDeleteMode && (
+                          <div className="position-absolute top-0 start-0 p-2">
+                            <Form.Check
+                              type="checkbox"
+                              checked={selectedProducts.includes(product.id)}
+                              onChange={() => handleProductSelect(product.id)}
+                              className="bg-white rounded shadow-sm"
+                              style={{ zIndex: 10 }}
+                            />
+                          </div>
+                        )}
+                        
                         {/* Imagem do produto - 100% largura e 200px altura */}
                         <div className="mb-3">
                           {product.imageUrl ? (
@@ -456,11 +575,11 @@ const Products = () => {
               </Col>
             </Row>
 
-            {/* UNIT/CTNS | CBM */}
+            {/* UNIT/CTN | CBM */}
             <Row className="mb-3">
               <Col xs={6}>
                 <Form.Group>
-                  <Form.Label>{t('UNIT/CTNS', '每箱单位')}</Form.Label>
+                  <Form.Label>{t('UNIT/CTN', '单位/箱')}</Form.Label>
                   <Form.Control
                     type="text"
                     name="unitCtn"
@@ -535,6 +654,9 @@ const Products = () => {
               <AudioRecorder 
                 onAudioReady={(blob, url) => {
                   console.log('Áudio gravado:', blob, url);
+                }}
+                onAudioChange={(url) => {
+                  setCurrentAudioUrl(url);
                 }}
                 productId={editingProduct?.id || 'new'}
                 initialAudioUrl={editingProduct?.audioUrls?.[0]?.url || editingProduct?.audioUrl}
