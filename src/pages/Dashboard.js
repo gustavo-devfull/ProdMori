@@ -68,12 +68,62 @@ const Dashboard = () => {
       if (forceRefresh) {
         console.log('Forçando refresh - invalidando cache...');
         await optimizedFirebaseService.invalidateCache('factories');
-        // Também limpar cache do localStorage
+        // Limpar TODOS os caches relacionados a fábricas
         localStorage.removeItem('factoriesCache');
         localStorage.removeItem('factoriesCacheTime');
+        localStorage.removeItem('cache_factories_page_1_limit_12');
+        localStorage.removeItem('cache_time_factories_page_1_limit_12');
+        localStorage.removeItem('cache_dashboard_initial_data');
+        localStorage.removeItem('cache_time_dashboard_initial_data');
+        
+        // Limpar cache do IndexedDB também
+        try {
+          const cacheService = await import('../services/cacheService');
+          await cacheService.default.clearAll();
+          console.log('Cache do IndexedDB limpo');
+        } catch (error) {
+          console.warn('Erro ao limpar IndexedDB:', error);
+        }
       }
       
       const result = await optimizedFirebaseService.getFactories(page, pageSize, {});
+      
+      // Se ainda não funcionou, tentar busca direta sem cache
+      if (forceRefresh && result.fallback) {
+        console.log('Tentando busca direta sem cache...');
+        try {
+          const apiUrl = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('gpreto.space') || window.location.hostname !== 'localhost' 
+            ? '/api' 
+            : 'http://localhost:3001/api';
+          
+          const params = new URLSearchParams();
+          params.append('col', 'factories');
+          params.append('page', page.toString());
+          params.append('limit', pageSize.toString());
+          params.append('orderBy', 'createdAt');
+          params.append('orderDirection', 'desc');
+
+          const directResponse = await fetch(`${apiUrl}/firestore/get/paginated?${params}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store'
+          });
+
+          const directResult = await directResponse.json();
+          console.log('Resultado da busca direta:', directResult);
+          
+          if (directResponse.ok && !directResult.fallback) {
+            setAllFactories(directResult.data);
+            setTotalPages(directResult.pagination.pages);
+            setTotalFactories(directResult.pagination.total);
+            setCurrentPage(directResult.pagination.page);
+            console.log(`Fábricas carregadas diretamente: ${directResult.data.length} de ${directResult.pagination.total}`);
+            return;
+          }
+        } catch (directError) {
+          console.error('Erro na busca direta:', directError);
+        }
+      }
       
       if (result.success) {
         if (result.fallback && result.data.length === 0) {
@@ -669,15 +719,36 @@ const Dashboard = () => {
       <div className="bg-primary text-white p-3 rounded mb-3">
         <div className="d-flex justify-content-between align-items-center">
           <h2 className="mb-0 fs-5 fw-semibold">{t('ProductMobile Ravi', '产品移动端拉维')}</h2>
-          <Button 
-            variant="outline-light" 
-            size="sm"
-            onClick={() => loadFactories(currentPage, true)}
-            disabled={loading}
-            title={t('Atualizar dados', '刷新数据')}
-          >
-            <i className={`bi bi-arrow-clockwise ${loading ? 'spinning' : ''}`}></i>
-          </Button>
+          <div className="d-flex gap-2">
+            <Button 
+              variant="outline-light" 
+              size="sm"
+              onClick={() => {
+                // Limpeza agressiva de cache
+                console.log('Limpeza agressiva de cache...');
+                localStorage.clear();
+                sessionStorage.clear();
+                // Limpar IndexedDB
+                if ('indexedDB' in window) {
+                  indexedDB.deleteDatabase('PMR_Cache');
+                }
+                // Recarregar página
+                window.location.reload();
+              }}
+              title={t('Limpar cache e recarregar', '清除缓存并重新加载')}
+            >
+              <i className="bi bi-trash"></i>
+            </Button>
+            <Button 
+              variant="outline-light" 
+              size="sm"
+              onClick={() => loadFactories(currentPage, true)}
+              disabled={loading}
+              title={t('Atualizar dados', '刷新数据')}
+            >
+              <i className={`bi bi-arrow-clockwise ${loading ? 'spinning' : ''}`}></i>
+            </Button>
+          </div>
         </div>
       </div>
       

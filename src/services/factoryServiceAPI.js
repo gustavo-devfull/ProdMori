@@ -84,6 +84,21 @@ class FactoryServiceAPI {
       try {
         const optimizedService = await import('./optimizedFirebaseService');
         await optimizedService.default.invalidateCache('factories');
+        
+        // Limpeza agressiva de cache relacionado a fábricas
+        const cacheKeys = [
+          'factoriesCache',
+          'factoriesCacheTime',
+          'cache_factories_page_1_limit_12',
+          'cache_time_factories_page_1_limit_12',
+          'cache_dashboard_initial_data',
+          'cache_time_dashboard_initial_data'
+        ];
+        
+        cacheKeys.forEach(key => {
+          localStorage.removeItem(key);
+        });
+        
         console.log('Cache invalidado após atualização da fábrica');
       } catch (cacheError) {
         console.warn('Erro ao invalidar cache:', cacheError);
@@ -111,6 +126,21 @@ class FactoryServiceAPI {
       try {
         const optimizedService = await import('./optimizedFirebaseService');
         await optimizedService.default.invalidateCache('factories');
+        
+        // Limpeza agressiva de cache relacionado a fábricas
+        const cacheKeys = [
+          'factoriesCache',
+          'factoriesCacheTime',
+          'cache_factories_page_1_limit_12',
+          'cache_time_factories_page_1_limit_12',
+          'cache_dashboard_initial_data',
+          'cache_time_dashboard_initial_data'
+        ];
+        
+        cacheKeys.forEach(key => {
+          localStorage.removeItem(key);
+        });
+        
         console.log('Cache invalidado após exclusão da fábrica');
       } catch (cacheError) {
         console.warn('Erro ao invalidar cache:', cacheError);
