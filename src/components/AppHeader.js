@@ -12,6 +12,8 @@ const AppHeader = () => {
   
   // Detectar se estamos na página de produtos
   const isProductsPage = location.pathname === '/products';
+  // Detectar se estamos na página de tags
+  const isTagsPage = location.pathname === '/tags';
 
   useEffect(() => {
     const checkMobile = () => {
@@ -101,9 +103,9 @@ const AppHeader = () => {
             borderColor: '#0d6efd',
             color: 'white'
           }}
-          title={t('Dashboard', '仪表板')}
+          title={t('Fábricas', '工厂')}
         >
-          {t('DASHBOARD', '仪表板')}
+          {t('FÁBRICAS', '工厂')}
         </Button>
         
         <Button
@@ -119,6 +121,21 @@ const AppHeader = () => {
           title={t('Produtos', '产品')}
         >
           <i className="bi bi-box-seam"></i>
+        </Button>
+
+        <Button
+          variant={isTagsPage ? "warning" : "outline-light"}
+          onClick={() => handleNavigation('/tags')}
+          size={isMobile ? 'sm' : 'md'}
+          className="px-3 d-flex align-items-center"
+          style={{
+            backgroundColor: isTagsPage ? '#ffc107' : 'transparent',
+            borderColor: isTagsPage ? '#ffc107' : 'white',
+            color: 'white'
+          }}
+          title={t('Tags', '标签')}
+        >
+          <i className="bi bi-tags"></i>
         </Button>
       </Nav>
     </Navbar>

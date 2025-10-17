@@ -35,17 +35,20 @@ const Factories = () => {
   const [factoryTags, setFactoryTags] = useState({
     regiao: [],
     material: [],
-    outros: []
+    outros: [],
+    tipoProduto: []
   });
   const [newTagInputs, setNewTagInputs] = useState({
     regiao: '',
     material: '',
-    outros: ''
+    outros: '',
+    tipoProduto: ''
   });
   const [globalTags, setGlobalTags] = useState({
     regiao: [],
     material: [],
-    outros: []
+    outros: [],
+    tipoProduto: []
   });
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
@@ -118,7 +121,8 @@ const Factories = () => {
             const safeTags = {
               regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
               material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
-              outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : []
+              outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : [],
+              tipoProduto: Array.isArray(parsedTags?.tipoProduto) ? parsedTags.tipoProduto : []
             };
             setGlobalTags(safeTags);
           } else {
@@ -273,7 +277,8 @@ const Factories = () => {
       const safeTags = {
         regiao: Array.isArray(factoryTagsData?.regiao) ? factoryTagsData.regiao : [],
         material: Array.isArray(factoryTagsData?.material) ? factoryTagsData.material : [],
-        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : []
+        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : [],
+        tipoProduto: Array.isArray(factoryTagsData?.tipoProduto) ? factoryTagsData.tipoProduto : []
       };
       
       setFactoryTags(safeTags);
@@ -369,7 +374,8 @@ const Factories = () => {
             const safeTags = {
               regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
               material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
-              outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : []
+              outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : [],
+              tipoProduto: Array.isArray(parsedTags?.tipoProduto) ? parsedTags.tipoProduto : []
             };
             setGlobalTags(safeTags);
           }
@@ -468,6 +474,10 @@ const Factories = () => {
         allFactoryTags.push(...factoryTags.outros.map(tag => ({ ...tag, type: 'outros' })));
       }
       
+      if (factoryTags.tipoProduto && Array.isArray(factoryTags.tipoProduto) && factoryTags.tipoProduto.length > 0) {
+        allFactoryTags.push(...factoryTags.tipoProduto.map(tag => ({ ...tag, type: 'tipoProduto' })));
+      }
+      
       console.log('loadFactoryTags - All factory tags:', allFactoryTags);
       
       // Atualizar o estado com as tags da fábrica (manter estrutura com divisões)
@@ -476,7 +486,8 @@ const Factories = () => {
         [factoryId]: {
           regiao: factoryTags.regiao || [],
           material: factoryTags.material || [],
-          outros: factoryTags.outros || []
+          outros: factoryTags.outros || [],
+          tipoProduto: factoryTags.tipoProduto || []
         }
       }));
       
@@ -487,13 +498,14 @@ const Factories = () => {
 
   // Função para renderizar tags da fábrica
   const renderFactoryTags = (factory) => {
-    const factoryTags = factoryTagsMap[factory.id] || { regiao: [], material: [], outros: [] };
+    const factoryTags = factoryTagsMap[factory.id] || { regiao: [], material: [], outros: [], tipoProduto: [] };
     
     // Combinar todas as tags em um array para renderização
     const allTags = [
       ...(factoryTags.regiao || []),
       ...(factoryTags.material || []),
-      ...(factoryTags.outros || [])
+      ...(factoryTags.outros || []),
+      ...(factoryTags.tipoProduto || [])
     ];
     
     if (!allTags || allTags.length === 0) {

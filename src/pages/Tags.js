@@ -21,11 +21,12 @@ const Tags = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [newTagName, setNewTagName] = useState('');
-  const [selectedDivision, setSelectedDivision] = useState('regiao');
+  const [selectedDivision, setSelectedDivision] = useState('tipoProduto');
   const [globalTags, setGlobalTags] = useState({
     regiao: [],
     material: [],
-    outros: []
+    outros: [],
+    tipoProduto: []
   });
 
   console.log('Tags component rendering, loading:', loading);
@@ -37,6 +38,8 @@ const Tags = () => {
       console.log('Carregando tags globais do Firebase...');
       const globalTagsData = await tagService.getAllTags();
       console.log('Tags globais carregadas:', globalTagsData);
+      console.log('Tags globais - tipoProduto:', globalTagsData.tipoProduto);
+      console.log('Tags globais - tipoProduto length:', globalTagsData.tipoProduto?.length);
       setGlobalTags(globalTagsData);
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
@@ -46,7 +49,7 @@ const Tags = () => {
         setGlobalTags(fallbackTags);
       } catch (fallbackError) {
         console.error('Erro no fallback:', fallbackError);
-        setGlobalTags({ regiao: [], material: [], outros: [] });
+        setGlobalTags({ regiao: [], material: [], outros: [], tipoProduto: [] });
       }
     }
   }, []);
@@ -60,6 +63,8 @@ const Tags = () => {
       // Carregar tags globais do Firebase
       const globalTagsData = await tagService.getAllTags();
       console.log('Tags globais carregadas:', globalTagsData);
+      console.log('Tags globais - tipoProduto:', globalTagsData.tipoProduto);
+      console.log('Tags globais - tipoProduto length:', globalTagsData.tipoProduto?.length);
       setGlobalTags(globalTagsData);
       
     } catch (err) {
@@ -70,11 +75,11 @@ const Tags = () => {
         if (savedTags) {
           setGlobalTags(JSON.parse(savedTags));
         } else {
-          setGlobalTags({ regiao: [], material: [], outros: [] });
+          setGlobalTags({ regiao: [], material: [], outros: [], tipoProduto: [] });
         }
       } catch (fallbackError) {
         console.error('Erro no fallback localStorage:', fallbackError);
-        setGlobalTags({ regiao: [], material: [], outros: [] });
+        setGlobalTags({ regiao: [], material: [], outros: [], tipoProduto: [] });
       }
       setError(t('Erro ao carregar tags', '加载标签时出错'));
     } finally {
@@ -85,6 +90,33 @@ const Tags = () => {
   useEffect(() => {
     loadGlobalTags();
     loadTags();
+    
+    // Forçar sincronização com localStorage
+    const syncWithLocalStorage = () => {
+      const localTags = localStorage.getItem('globalTags');
+      const cacheTags = localStorage.getItem('globalTagsCache');
+      
+      console.log('Tags.js - localStorage globalTags:', localTags);
+      console.log('Tags.js - localStorage globalTagsCache:', cacheTags);
+      
+      if (cacheTags) {
+        try {
+          const parsedCacheTags = JSON.parse(cacheTags);
+          console.log('Tags.js - Parsed cache tags:', parsedCacheTags);
+          console.log('Tags.js - Cache tipoProduto:', parsedCacheTags.tipoProduto);
+          
+          if (parsedCacheTags.tipoProduto && parsedCacheTags.tipoProduto.length > 0) {
+            console.log('Tags.js - Sincronizando com cache...');
+            setGlobalTags(parsedCacheTags);
+          }
+        } catch (error) {
+          console.error('Tags.js - Erro ao parsear cache:', error);
+        }
+      }
+    };
+    
+    // Executar sincronização após um pequeno delay
+    setTimeout(syncWithLocalStorage, 1000);
   }, [loadGlobalTags, loadTags]);
 
   const handleSubmit = async (e) => {
@@ -242,7 +274,7 @@ const Tags = () => {
           {/* Exibir todas as tags por divisão */}
             <div>
               {/* Tags Região Globais */}
-              {globalTags.regiao.length > 0 && (
+              {globalTags.regiao && globalTags.regiao.length > 0 && (
                 <div className="mb-3">
                   <h6 className="text-primary">{t('Tags Região', '地区标签')}</h6>
                   <div className="d-flex flex-wrap gap-2">
@@ -276,8 +308,45 @@ const Tags = () => {
                 </div>
               )}
 
+              {/* Tags Tipo de Produto Globais */}
+              <div className="mb-3">
+                <h6 className="text-warning">{t('Tags Tipo de Produto', '产品类型标签')}</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {globalTags.tipoProduto && globalTags.tipoProduto.length > 0 ? (
+                    globalTags.tipoProduto.map(tag => (
+                      <Badge 
+                        key={tag.id || tag.name} 
+                        bg="warning" 
+                        className="d-flex align-items-center gap-1"
+                      >
+                        {tag.name}
+                        <i 
+                          className="bi bi-pencil text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleEdit(tag)}
+                          title={t('Editar', '编辑')}
+                        ></i>
+                        <i 
+                          className="bi bi-trash text-white" 
+                          style={{ cursor: 'pointer' }}
+                          onClick={(e) => {
+                            console.log('Delete button clicked for tipoProduto tag:', tag.id);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(tag.id, 'tipoProduto');
+                          }}
+                          title={t('Excluir', '删除')}
+                        ></i>
+                      </Badge>
+                    ))
+                  ) : (
+                    <small className="text-muted">{t('Nenhuma tag cadastrada', '没有注册标签')}</small>
+                  )}
+                </div>
+              </div>
+
               {/* Tags Material Globais */}
-              {globalTags.material.length > 0 && (
+              {globalTags.material && globalTags.material.length > 0 && (
                 <div className="mb-3">
                   <h6 className="text-success">{t('Tags Material', '材料标签')}</h6>
                   <div className="d-flex flex-wrap gap-2">
@@ -312,7 +381,7 @@ const Tags = () => {
               )}
 
               {/* Tags Outros Globais */}
-              {globalTags.outros.length > 0 && (
+              {globalTags.outros && globalTags.outros.length > 0 && (
                 <div className="mb-3">
                   <h6 className="text-danger">{t('Tags Outros', '其他标签')}</h6>
                   <div className="d-flex flex-wrap gap-2">
@@ -346,7 +415,8 @@ const Tags = () => {
                 </div>
               )}
 
-              {globalTags.regiao.length === 0 && globalTags.material.length === 0 && globalTags.outros.length === 0 && (
+
+              {(!globalTags.regiao || globalTags.regiao.length === 0) && (!globalTags.material || globalTags.material.length === 0) && (!globalTags.outros || globalTags.outros.length === 0) && (!globalTags.tipoProduto || globalTags.tipoProduto.length === 0) && (
                 <p className="text-muted text-center">{t('Nenhuma tag global encontrada', '没有找到全局标签')}</p>
               )}
             </div>
@@ -386,6 +456,7 @@ const Tags = () => {
                 <option value="regiao">{t('Tags Região', '地区标签')}</option>
                 <option value="material">{t('Tags Material', '材料标签')}</option>
                 <option value="outros">{t('Tags Outros', '其他标签')}</option>
+                <option value="tipoProduto">{t('Tags Tipo de Produto', '产品类型标签')}</option>
               </Form.Select>
             </Form.Group>
           </Modal.Body>

@@ -59,7 +59,8 @@ class TagServiceFirebase {
           tags = [
             ...(factoryTags.regiao || []),
             ...(factoryTags.material || []),
-            ...(factoryTags.outros || [])
+            ...(factoryTags.outros || []),
+            ...(factoryTags.tipoProduto || [])
           ];
         }
       } else {
@@ -70,7 +71,8 @@ class TagServiceFirebase {
           tags = [
             ...(parsedGlobalTags.regiao || []),
             ...(parsedGlobalTags.material || []),
-            ...(parsedGlobalTags.outros || [])
+            ...(parsedGlobalTags.outros || []),
+            ...(parsedGlobalTags.tipoProduto || [])
           ];
         }
       }
@@ -208,7 +210,8 @@ class TagServiceFirebase {
       const organizedTags = {
         regiao: [],
         material: [],
-        outros: []
+        outros: [],
+        tipoProduto: []
       };
 
       tags.forEach(tag => {
@@ -220,7 +223,7 @@ class TagServiceFirebase {
       return organizedTags;
     } catch (error) {
       console.error('TagServiceFirebase.getFactoryTags - Error:', error);
-      return { regiao: [], material: [], outros: [] };
+      return { regiao: [], material: [], outros: [], tipoProduto: [] };
     }
   }
 
@@ -233,7 +236,8 @@ class TagServiceFirebase {
       const organizedTags = {
         regiao: [],
         material: [],
-        outros: []
+        outros: [],
+        tipoProduto: []
       };
 
       tags.forEach(tag => {
@@ -250,7 +254,7 @@ class TagServiceFirebase {
       return organizedTags;
     } catch (error) {
       console.error('TagServiceFirebase.getAllGlobalTags - Error:', error);
-      return { regiao: [], material: [], outros: [] };
+      return { regiao: [], material: [], outros: [], tipoProduto: [] };
     }
   }
 

@@ -51,14 +51,15 @@ class TagService {
         return {
           regiao: this.removeDuplicateTags(Array.isArray(parsedTags.regiao) ? parsedTags.regiao : []),
           material: this.removeDuplicateTags(Array.isArray(parsedTags.material) ? parsedTags.material : []),
-          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : [])
+          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : []),
+          tipoProduto: this.removeDuplicateTags(Array.isArray(parsedTags.tipoProduto) ? parsedTags.tipoProduto : [])
         };
       }
       
-      return { regiao: [], material: [], outros: [] };
+      return { regiao: [], material: [], outros: [], tipoProduto: [] };
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
-      return { regiao: [], material: [], outros: [] };
+      return { regiao: [], material: [], outros: [], tipoProduto: [] };
     }
   }
 
@@ -209,14 +210,15 @@ class TagService {
         return {
           regiao: this.removeDuplicateTags(Array.isArray(parsedTags.regiao) ? parsedTags.regiao : []),
           material: this.removeDuplicateTags(Array.isArray(parsedTags.material) ? parsedTags.material : []),
-          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : [])
+          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : []),
+          tipoProduto: this.removeDuplicateTags(Array.isArray(parsedTags.tipoProduto) ? parsedTags.tipoProduto : [])
         };
       }
       
-      return { regiao: [], material: [], outros: [] };
+      return { regiao: [], material: [], outros: [], tipoProduto: [] };
     } catch (error) {
       console.error('Erro ao carregar tags da fábrica:', error);
-      return { regiao: [], material: [], outros: [] };
+      return { regiao: [], material: [], outros: [], tipoProduto: [] };
     }
   }
 
@@ -382,7 +384,7 @@ class TagService {
       return availableTags;
     } catch (error) {
       console.error('Erro ao obter tags disponíveis:', error);
-      return { regiao: [], material: [], outros: [] };
+      return { regiao: [], material: [], outros: [], tipoProduto: [] };
     }
   }
 

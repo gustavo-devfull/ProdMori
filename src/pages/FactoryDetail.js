@@ -39,22 +39,30 @@ const FactoryDetail = () => {
   const [factoryTags, setFactoryTags] = useState({
     regiao: [],
     material: [],
-    outros: []
+    outros: [],
+    tipoProduto: []
   });
   const [factoryNewTagInputs, setFactoryNewTagInputs] = useState({
     regiao: '',
     material: '',
-    outros: ''
+    outros: '',
+    tipoProduto: ''
   });
   const [globalTags, setGlobalTags] = useState({
     regiao: [],
     material: [],
-    outros: []
+    outros: [],
+    tipoProduto: []
   });
   const [factoryDataExpanded, setFactoryDataExpanded] = useState(false);
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
   const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
+  
+  // Estados para tags do produto
+  const [productTags, setProductTags] = useState([]);
+  const [newProductTagName, setNewProductTagName] = useState('');
+  const [newProductTagDivision, setNewProductTagDivision] = useState('tipoProduto');
 
   const loadFactoryData = useCallback(async () => {
     try {
@@ -106,7 +114,8 @@ const FactoryDetail = () => {
         ...values,
         imageUrl: imageUrl || values.imageUrl,
         factoryId: factoryId,
-        unit: 'PC' // Valor padrão conforme solicitado
+        unit: 'PC', // Valor padrão conforme solicitado
+        tags: productTags // Incluir tags do produto
       };
       
       if (editingProduct) {
@@ -139,6 +148,11 @@ const FactoryDetail = () => {
     setError(null);
     setImageUrl('');
     setUploadingImage(false);
+    
+    // Limpar tags do produto
+    setProductTags([]);
+    setNewProductTagName('');
+    setNewProductTagDivision('tipoProduto');
     
     console.log('Modal close states updated');
   };
@@ -213,7 +227,8 @@ const FactoryDetail = () => {
       const safeTags = {
         regiao: Array.isArray(factoryTagsData?.regiao) ? factoryTagsData.regiao : [],
         material: Array.isArray(factoryTagsData?.material) ? factoryTagsData.material : [],
-        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : []
+        outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : [],
+        tipoProduto: Array.isArray(factoryTagsData?.tipoProduto) ? factoryTagsData.tipoProduto : []
       };
       
       setFactoryTags(safeTags);
@@ -225,7 +240,7 @@ const FactoryDetail = () => {
       if (savedTags) {
         setFactoryTags(JSON.parse(savedTags));
       } else {
-        setFactoryTags({ regiao: [], material: [], outros: [] });
+        setFactoryTags({ regiao: [], material: [], outros: [], tipoProduto: [] });
       }
     }
     
@@ -234,13 +249,59 @@ const FactoryDetail = () => {
     try {
       const globalTagsData = await tagService.getAllTags();
       console.log('Tags globais carregadas:', globalTagsData);
+      console.log('Tags globais - tipoProduto:', globalTagsData.tipoProduto);
+      console.log('Tags globais - tipoProduto length:', globalTagsData.tipoProduto?.length);
       setGlobalTags(globalTagsData);
+      
+      // Verificar se há tags no cache do Dashboard
+      const cacheTags = localStorage.getItem('globalTagsCache');
+      if (cacheTags) {
+        try {
+          const parsedCacheTags = JSON.parse(cacheTags);
+          console.log('Cache do Dashboard encontrado:', parsedCacheTags);
+          console.log('Cache - tipoProduto:', parsedCacheTags.tipoProduto);
+          console.log('Cache - tipoProduto length:', parsedCacheTags.tipoProduto?.length);
+          
+          // Se o cache tem mais tags tipoProduto, usar o cache
+          if (parsedCacheTags.tipoProduto && parsedCacheTags.tipoProduto.length > 0) {
+            console.log('Usando cache do Dashboard para tipoProduto...');
+            setGlobalTags(prev => ({
+              ...prev,
+              tipoProduto: parsedCacheTags.tipoProduto
+            }));
+          }
+        } catch (cacheError) {
+          console.error('Erro ao parsear cache:', cacheError);
+        }
+      }
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
       // Fallback para localStorage
-      const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[]}');
+      const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[],"tipoProduto":[]}');
       console.log('Usando tags globais do localStorage:', localGlobalTags);
-      setGlobalTags(localGlobalTags);
+      
+      // Verificar cache do Dashboard também no fallback
+      const cacheTags = localStorage.getItem('globalTagsCache');
+      let cacheTipoProduto = [];
+      if (cacheTags) {
+        try {
+          const parsedCacheTags = JSON.parse(cacheTags);
+          cacheTipoProduto = parsedCacheTags.tipoProduto || [];
+          console.log('Cache do Dashboard no fallback - tipoProduto:', cacheTipoProduto);
+        } catch (cacheError) {
+          console.error('Erro ao parsear cache no fallback:', cacheError);
+        }
+      }
+      
+      // Garantir que todas as divisões existem
+      const safeGlobalTags = {
+        regiao: localGlobalTags.regiao || [],
+        material: localGlobalTags.material || [],
+        outros: localGlobalTags.outros || [],
+        tipoProduto: localGlobalTags.tipoProduto || cacheTipoProduto || []
+      };
+      console.log('Safe global tags:', safeGlobalTags);
+      setGlobalTags(safeGlobalTags);
     }
   };
 
@@ -335,6 +396,12 @@ const FactoryDetail = () => {
   // Funções para gerenciar tags da fábrica
   const addTagToFactory = (tag, division) => {
     setFactoryTags(prev => {
+      // Verificar se a divisão existe e é um array
+      if (!prev[division] || !Array.isArray(prev[division])) {
+        console.log('Divisão não existe ou não é array:', division);
+        return prev;
+      }
+      
       // Verificar se a tag já existe na divisão
       const existingTag = prev[division].find(t => t.id === tag.id || t.name === tag.name);
       if (existingTag) {
@@ -398,6 +465,12 @@ const FactoryDetail = () => {
     console.log('Division:', division);
     console.log('Current factory tags:', factoryTags[division]);
     
+    // Verificar se a divisão existe e é um array
+    if (!factoryTags[division] || !Array.isArray(factoryTags[division])) {
+      console.log('Divisão não existe ou não é array:', division);
+      return;
+    }
+    
     // Verificar se a tag já existe na fábrica (por ID ou nome)
     const existingTag = factoryTags[division].find(t => t.id === tag.id || t.name === tag.name);
     if (existingTag) {
@@ -414,13 +487,81 @@ const FactoryDetail = () => {
     setFactoryTags({
       regiao: [],
       material: [],
-      outros: []
+      outros: [],
+      tipoProduto: []
     });
     setFactoryNewTagInputs({
       regiao: '',
       material: '',
-      outros: ''
+      outros: '',
+      tipoProduto: ''
     });
+  };
+
+  // Funções para gerenciar tags do produto
+  const addProductTag = (tag) => {
+    // Verificar se a tag já foi adicionada
+    const existingTag = productTags.find(t => t.id === tag.id || t.name === tag.name);
+    if (existingTag) {
+      console.log('Tag já adicionada ao produto:', tag.name);
+      return;
+    }
+    
+    console.log('Adicionando tag ao produto:', tag.name);
+    setProductTags(prev => [...prev, tag]);
+  };
+
+  const removeProductTag = (tagId) => {
+    console.log('Removendo tag do produto:', tagId);
+    setProductTags(prev => prev.filter(tag => tag.id !== tagId));
+  };
+
+  const addNewProductTag = async () => {
+    const tagName = newProductTagName.trim();
+    if (!tagName) return;
+
+    const newTag = {
+      id: Date.now().toString(),
+      name: tagName,
+      division: newProductTagDivision,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    console.log('=== ADDING NEW PRODUCT TAG ===');
+    console.log('New tag:', newTag);
+
+    try {
+      // Adicionar ao serviço global de tags
+      const result = await tagService.addTag(newTag);
+      console.log('Add tag result:', result);
+      
+      if (result.success) {
+        // Adicionar à fábrica atual (para que apareça nas tags disponíveis)
+        console.log('Adding tag to factory...');
+        addTagToFactory(newTag, newProductTagDivision);
+        
+        // Adicionar ao produto atual
+        addProductTag(newTag);
+        
+        // Atualizar tags globais disponíveis
+        const globalTagsData = await tagService.getAllTags();
+        setGlobalTags(globalTagsData);
+        
+        console.log('Tag adicionada com sucesso à fábrica e produto');
+      } else {
+        console.warn('Tag já existe globalmente:', result.message);
+        // Mesmo assim, adicionar à fábrica e produto atual
+        addTagToFactory(newTag, newProductTagDivision);
+        addProductTag(newTag);
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar tag:', error);
+      setError(t('Erro ao adicionar tag', '添加标签时出错'));
+    }
+
+    // Limpar input
+    setNewProductTagName('');
   };
 
   if (loading) {
@@ -603,7 +744,7 @@ const FactoryDetail = () => {
                     <div className="mb-2">
                       <small className="text-muted">{t('Região:', '地区:')}</small>
                       <div>
-                        {factoryTags.regiao.map((tag, index) => (
+                        {factoryTags.regiao && factoryTags.regiao.map((tag, index) => (
                           <Badge key={index} bg="primary" className="me-1 mb-1">
                             {typeof tag === 'string' ? tag : tag.name}
                           </Badge>
@@ -615,7 +756,7 @@ const FactoryDetail = () => {
                     <div className="mb-2">
                       <small className="text-muted">{t('Material:', '材料:')}</small>
                       <div>
-                        {factoryTags.material.map((tag, index) => (
+                        {factoryTags.material && factoryTags.material.map((tag, index) => (
                           <Badge key={index} bg="success" className="me-1 mb-1">
                             {typeof tag === 'string' ? tag : tag.name}
                           </Badge>
@@ -627,7 +768,7 @@ const FactoryDetail = () => {
                     <div className="mb-2">
                       <small className="text-muted">{t('Outros:', '其他:')}</small>
                       <div>
-                        {factoryTags.outros.map((tag, index) => (
+                        {factoryTags.outros && factoryTags.outros.map((tag, index) => (
                           <Badge key={index} bg="danger" className="me-1 mb-1">
                             {typeof tag === 'string' ? tag : tag.name}
                           </Badge>
@@ -842,41 +983,44 @@ const FactoryDetail = () => {
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
-            {/* Botão salvar no topo */}
-            <div className="d-flex justify-content-end mb-3">
-              <Button 
-                variant="success" 
-                type="submit" 
-                disabled={submitting || uploadingImage}
-                className="d-flex align-items-center"
-              >
-                {submitting ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    {t('Salvando...', '保存中...')}
-                  </>
-                ) : uploadingImage ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    {t('Enviando imagem...', '上传图片中...')}
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-check-lg me-1"></i>
-                    {t('Salvar', '保存')}
-                  </>
-                )}
-              </Button>
-            </div>
 
-            {/* Nome da Fábrica sem Label */}
+            {/* Nome da Fábrica com Botão Salvar */}
             <Form.Group className="mb-3">
-              <Form.Control
-                type="text"
-                value={factory.name}
-                disabled
-                className="bg-light"
-              />
+              <Row className="align-items-center">
+                <Col xs={8}>
+                  <Form.Control
+                    type="text"
+                    value={factory.name}
+                    disabled
+                    className="bg-light"
+                  />
+                </Col>
+                <Col xs={4}>
+                  <Button 
+                    variant="success" 
+                    type="submit" 
+                    disabled={submitting || uploadingImage}
+                    className="w-100 d-flex align-items-center justify-content-center"
+                  >
+                    {submitting ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        {t('Salvando...', '保存中...')}
+                      </>
+                    ) : uploadingImage ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        {t('Enviando imagem...', '上传图片中...')}
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-check-lg me-1"></i>
+                        {t('Salvar', '保存')}
+                      </>
+                    )}
+                  </Button>
+                </Col>
+              </Row>
             </Form.Group>
 
             {/* Foto do produto */}
@@ -1049,6 +1193,118 @@ const FactoryDetail = () => {
               />
             </Form.Group>
 
+            {/* Tags do Produto */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags do Produto', '产品标签')}</Form.Label>
+              
+              {/* Tags selecionadas */}
+              {productTags.length > 0 && (
+                <div className="d-flex flex-wrap gap-2 mb-2">
+                  {productTags.map(tag => (
+                    <Badge 
+                      key={tag.id} 
+                      bg="info" 
+                      className="d-flex align-items-center gap-1"
+                      style={{ cursor: 'pointer', fontSize: '14px' }}
+                      onClick={() => removeProductTag(tag.id)}
+                    >
+                      {tag.name}
+                      <i className="bi bi-x"></i>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Tags disponíveis da fábrica */}
+              <div className="mb-3">
+                <small className="text-muted">{t('Tags disponíveis da fábrica:', '工厂可用标签:')}</small>
+                <div className="d-flex flex-wrap gap-2 mt-1">
+                  {/* Tags de Região */}
+                  {globalTags.regiao && globalTags.regiao.map(tag => (
+                    <Badge
+                      key={tag.id}
+                      bg="primary"
+                      className="cursor-pointer"
+                      onClick={() => addProductTag(tag)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                  {/* Tags de Material */}
+                  {globalTags.material && globalTags.material.map(tag => (
+                    <Badge
+                      key={tag.id}
+                      bg="success"
+                      className="cursor-pointer"
+                      onClick={() => addProductTag(tag)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                  {/* Tags de Outros */}
+                  {globalTags.outros && globalTags.outros.map(tag => (
+                    <Badge
+                      key={tag.id}
+                      bg="danger"
+                      className="cursor-pointer"
+                      onClick={() => addProductTag(tag)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                  {/* Tags de Tipo de Produto */}
+                  {globalTags.tipoProduto && globalTags.tipoProduto.map(tag => (
+                    <Badge
+                      key={tag.id}
+                      bg="warning"
+                      className="cursor-pointer"
+                      onClick={() => addProductTag(tag)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Adicionar nova tag */}
+              <Row>
+                <Col xs={8}>
+                  <Form.Control
+                    type="text"
+                    placeholder={t('Nova tag', '新标签')}
+                    value={newProductTagName}
+                    onChange={(e) => setNewProductTagName(e.target.value)}
+                  />
+                </Col>
+                <Col xs={4}>
+                  <Form.Select
+                    value={newProductTagDivision}
+                    onChange={(e) => setNewProductTagDivision(e.target.value)}
+                  >
+                    <option value="regiao">{t('Região', '地区')}</option>
+                    <option value="material">{t('Material', '材料')}</option>
+                    <option value="outros">{t('Outros', '其他')}</option>
+                    <option value="tipoProduto">{t('Tipo de produto', '产品类型')}</option>
+                  </Form.Select>
+                </Col>
+              </Row>
+              <div className="mt-2">
+                <Button 
+                  variant="outline-primary" 
+                  size="sm"
+                  onClick={addNewProductTag}
+                  disabled={!newProductTagName.trim()}
+                >
+                  <i className="bi bi-plus me-1"></i>
+                  {t('Adicionar Tag', '添加标签')}
+                </Button>
+              </div>
+            </Form.Group>
+
             {/* Gravação de Áudio */}
             <Form.Group className="mb-3">
               <AudioRecorder 
@@ -1210,7 +1466,7 @@ const FactoryDetail = () => {
             <Form.Group className="mb-3">
               <Form.Label>{t('Tags Região', '地区标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                {factoryTags.regiao.map(tag => (
+                {factoryTags.regiao && factoryTags.regiao.map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="primary" 
@@ -1272,11 +1528,77 @@ const FactoryDetail = () => {
               </div>
             </Form.Group>
 
+            {/* Tags Tipo de Produto */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Tags Tipo de Produto', '产品类型标签')}</Form.Label>
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                {factoryTags.tipoProduto && factoryTags.tipoProduto.map(tag => (
+                  <Badge 
+                    key={tag.id} 
+                    bg="warning" 
+                    className="d-flex align-items-center gap-1"
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
+                    onClick={() => removeTagFromFactory(tag.id, 'tipoProduto')}
+                  >
+                    {tag.name}
+                    <i className="bi bi-x"></i>
+                  </Badge>
+                ))}
+              </div>
+              <div className="d-flex gap-2">
+                <Form.Control
+                  type="text"
+                  placeholder={t('Nova tag', '新标签')}
+                  value={factoryNewTagInputs.tipoProduto}
+                  onChange={(e) => setFactoryNewTagInputs(prev => ({ ...prev, tipoProduto: e.target.value }))}
+                />
+                <Button 
+                  variant="outline-warning" 
+                  size="sm"
+                  onClick={() => addNewTagToFactory('tipoProduto')}
+                  disabled={!factoryNewTagInputs.tipoProduto.trim()}
+                >
+                  <i className="bi bi-plus"></i>
+                </Button>
+              </div>
+              
+              {/* Tags Globais Tipo de Produto */}
+              <div className="mt-2">
+                <small className="text-muted d-block mb-2">{t('Tags Globais Disponíveis', '可用全局标签')}:</small>
+                {globalTags && globalTags.tipoProduto && globalTags.tipoProduto.length > 0 ? (
+                  <div className="d-flex flex-wrap gap-1">
+                    {globalTags.tipoProduto.map(tag => {
+                      const isAlreadyAdded = factoryTags.tipoProduto && factoryTags.tipoProduto.some(t => t.id === tag.id);
+                      return (
+                        <Badge 
+                          key={tag.id} 
+                          bg="secondary" 
+                          className="d-flex align-items-center gap-1"
+                          style={{ 
+                            cursor: isAlreadyAdded ? 'not-allowed' : 'pointer',
+                            opacity: isAlreadyAdded ? 0.5 : 1,
+                            fontSize: '14px'
+                          }}
+                          onClick={() => !isAlreadyAdded && addGlobalTagToFactory(tag, 'tipoProduto')}
+                          title={isAlreadyAdded ? t('Já adicionada', '已添加') : t('Clique para adicionar', '点击添加')}
+                        >
+                          {tag.name}
+                          {!isAlreadyAdded && <i className="bi bi-plus"></i>}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <small className="text-muted">{t('Nenhuma tag global disponível', '没有可用的全局标签')}</small>
+                )}
+              </div>
+            </Form.Group>
+
             {/* Tags Material */}
             <Form.Group className="mb-3">
               <Form.Label>{t('Tags Material', '材料标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                {factoryTags.material.map(tag => (
+                {factoryTags.material && factoryTags.material.map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="success" 
@@ -1342,7 +1664,7 @@ const FactoryDetail = () => {
             <Form.Group className="mb-3">
               <Form.Label>{t('Tags Outros', '其他标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                {factoryTags.outros.map(tag => (
+                {factoryTags.outros && factoryTags.outros.map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="danger" 
