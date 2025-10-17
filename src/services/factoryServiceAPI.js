@@ -32,7 +32,18 @@ class FactoryServiceAPI {
       }
 
       const result = await response.json();
-      return { id: result.id, ...factoryData };
+      const newFactory = { id: result.id, ...factoryData };
+      
+      // Invalidar cache após criação
+      try {
+        const optimizedService = await import('./optimizedFirebaseService');
+        await optimizedService.default.invalidateCache('factories');
+        console.log('Cache invalidado após criação da fábrica');
+      } catch (cacheError) {
+        console.warn('Erro ao invalidar cache:', cacheError);
+      }
+      
+      return newFactory;
     } catch (error) {
       console.error('Erro ao criar fábrica:', error);
       throw error;
@@ -67,7 +78,18 @@ class FactoryServiceAPI {
         throw new Error(errorData.error || 'Erro ao atualizar fábrica');
       }
 
-      return { id, ...factoryData };
+      const result = { id, ...factoryData };
+      
+      // Invalidar cache após atualização
+      try {
+        const optimizedService = await import('./optimizedFirebaseService');
+        await optimizedService.default.invalidateCache('factories');
+        console.log('Cache invalidado após atualização da fábrica');
+      } catch (cacheError) {
+        console.warn('Erro ao invalidar cache:', cacheError);
+      }
+      
+      return result;
     } catch (error) {
       console.error('Erro ao atualizar fábrica:', error);
       throw error;
@@ -83,6 +105,15 @@ class FactoryServiceAPI {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Erro ao deletar fábrica');
+      }
+
+      // Invalidar cache após exclusão
+      try {
+        const optimizedService = await import('./optimizedFirebaseService');
+        await optimizedService.default.invalidateCache('factories');
+        console.log('Cache invalidado após exclusão da fábrica');
+      } catch (cacheError) {
+        console.warn('Erro ao invalidar cache:', cacheError);
       }
 
       return true;

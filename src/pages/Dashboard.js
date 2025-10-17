@@ -58,11 +58,21 @@ const Dashboard = () => {
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
 
-  const loadFactories = useCallback(async (page = currentPage) => {
+  const loadFactories = useCallback(async (page = currentPage, forceRefresh = false) => {
     try {
       setLoading(true);
       
-      console.log('Carregando fábricas com paginação...');
+      console.log('Carregando fábricas com paginação...', { page, forceRefresh });
+      
+      // Se forçar refresh, invalidar cache primeiro
+      if (forceRefresh) {
+        console.log('Forçando refresh - invalidando cache...');
+        await optimizedFirebaseService.invalidateCache('factories');
+        // Também limpar cache do localStorage
+        localStorage.removeItem('factoriesCache');
+        localStorage.removeItem('factoriesCacheTime');
+      }
+      
       const result = await optimizedFirebaseService.getFactories(page, pageSize, {});
       
       if (result.success) {
@@ -404,6 +414,31 @@ const Dashboard = () => {
     loadAvailableTags();
   }, [loadFactories, loadAvailableTags]);
 
+  // Listener para detectar quando o usuário volta para o Dashboard
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Dashboard visível novamente - forçando refresh...');
+        loadFactories(currentPage, true);
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('Dashboard recebeu foco - forçando refresh...');
+      loadFactories(currentPage, true);
+    };
+
+    // Adicionar listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadFactories, currentPage]);
+
   useEffect(() => {
     setFilteredFactories(allFactories);
   }, [allFactories]);
@@ -632,7 +667,18 @@ const Dashboard = () => {
   return (
     <div>
       <div className="bg-primary text-white p-3 rounded mb-3">
-        <h2 className="mb-0 fs-5 fw-semibold">{t('ProductMobile Ravi', '产品移动端拉维')}</h2>
+        <div className="d-flex justify-content-between align-items-center">
+          <h2 className="mb-0 fs-5 fw-semibold">{t('ProductMobile Ravi', '产品移动端拉维')}</h2>
+          <Button 
+            variant="outline-light" 
+            size="sm"
+            onClick={() => loadFactories(currentPage, true)}
+            disabled={loading}
+            title={t('Atualizar dados', '刷新数据')}
+          >
+            <i className={`bi bi-arrow-clockwise ${loading ? 'spinning' : ''}`}></i>
+          </Button>
+        </div>
       </div>
       
       {/* Botão Cadastrar Fábrica */}
