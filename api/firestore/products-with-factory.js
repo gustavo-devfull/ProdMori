@@ -24,23 +24,20 @@ export default async function handler(req, res) {
       return res.status(500).json(productsResult);
     }
     
-    // Para cada produto, buscar informações da fábrica
-    const productsWithFactory = await Promise.all(
-      productsResult.data.map(async (product) => {
-        if (product.factoryId) {
-          try {
-            const factoryResult = await getCollectionData('factories', 1);
-            if (factoryResult.ok && factoryResult.data.length > 0) {
-              const factory = factoryResult.data.find(f => f.id === product.factoryId);
-              return { ...product, factory: factory || null };
-            }
-          } catch (err) {
-            console.error(`Erro ao carregar fábrica para produto ${product.name}:`, err);
-          }
-        }
-        return { ...product, factory: null };
-      })
-    );
+    // Buscar todas as fábricas uma vez
+    const factoriesResult = await getCollectionData('factories', 1000);
+    const factoriesMap = {};
+    if (factoriesResult.ok) {
+      factoriesResult.data.forEach(factory => {
+        factoriesMap[factory.id] = factory;
+      });
+    }
+    
+    // Para cada produto, associar informações da fábrica
+    const productsWithFactory = productsResult.data.map(product => {
+      const factory = product.factoryId ? factoriesMap[product.factoryId] : null;
+      return { ...product, factory };
+    });
     
     res.status(200).json({
       ok: true,

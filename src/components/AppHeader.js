@@ -89,17 +89,13 @@ const AppHeader = () => {
       
       <Nav className="ms-auto d-flex align-items-center gap-3">
         <Button
-          variant={location.pathname === '/' ? 'primary' : 'outline-light'}
+          variant="primary"
           onClick={() => handleNavigation('/')}
           size={isMobile ? 'sm' : 'md'}
           className="px-3 fw-semibold"
-          style={location.pathname === '/' ? {
+          style={{
             backgroundColor: '#0d6efd',
             borderColor: '#0d6efd',
-            color: 'white'
-          } : {
-            backgroundColor: 'transparent',
-            borderColor: 'white',
             color: 'white'
           }}
           title={t('Dashboard', '仪表板')}
@@ -108,22 +104,18 @@ const AppHeader = () => {
         </Button>
         
         <Button
-          variant={location.pathname === '/products' ? 'primary' : 'outline-light'}
+          variant="outline-light"
           onClick={() => handleNavigation('/products')}
           size={isMobile ? 'sm' : 'md'}
-          className="px-3 fw-semibold"
-          style={location.pathname === '/products' ? {
-            backgroundColor: '#0d6efd',
-            borderColor: '#0d6efd',
-            color: 'white'
-          } : {
+          className="px-3 d-flex align-items-center"
+          style={{
             backgroundColor: 'transparent',
             borderColor: 'white',
             color: 'white'
           }}
           title={t('Produtos', '产品')}
         >
-          {t('PRODUTOS', '产品')}
+          <i className="bi bi-box-seam"></i>
         </Button>
       </Nav>
     </Navbar>

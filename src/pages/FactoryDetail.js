@@ -72,7 +72,13 @@ const FactoryDetail = () => {
       
       // Carregar produtos da fábrica
       const productsData = await factoryServiceAPI.getProductsByFactory(factoryId);
-      setProducts(productsData);
+      // Ordenar produtos pelos mais recentes primeiro
+      const sortedProducts = productsData.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+      });
+      setProducts(sortedProducts);
       
       setError(null);
     } catch (err) {
@@ -108,10 +114,9 @@ const FactoryDetail = () => {
         setModalVisible(false);
         setEditingProduct(null);
       } else {
-        const newProduct = await productServiceAPI.createProduct(finalValues);
-        // Após criar, abrir para editar
-        setEditingProduct(newProduct);
-        // Não fechar o modal, apenas recarregar os dados
+        await productServiceAPI.createProduct(finalValues);
+        setModalVisible(false);
+        setEditingProduct(null);
       }
       
       setImageUrl('');
@@ -467,34 +472,98 @@ const FactoryDetail = () => {
             
             <Row>
               <Col md={6}>
-                <div className="mb-3">
-                  <strong>{t('Nome:', '名称:')}</strong> {factory.name}
+                <div className="mb-3 d-flex align-items-center">
+                  <div style={{ fontSize: '12px', color: '#6c757d', minWidth: '80px', marginRight: '10px' }}>
+                    {t('Nome', '名称')}:
+                  </div>
+                  <Form.Control
+                    type="text"
+                    value={factory.name || ''}
+                    placeholder={t('Nome', '名称')}
+                    readOnly
+                    className="border-0 bg-transparent p-0 flex-grow-1"
+                    style={{ boxShadow: 'none', fontSize: '14px' }}
+                  />
                 </div>
-                <div className="mb-3">
-                  <strong>{t('Contato:', '联系人:')}</strong> {factory.contactName || t('Não informado', '未提供')}
+                <div className="mb-3 d-flex align-items-center">
+                  <div style={{ fontSize: '12px', color: '#6c757d', minWidth: '80px', marginRight: '10px' }}>
+                    {t('Contato', '联系人')}:
+                  </div>
+                  <Form.Control
+                    type="text"
+                    value={factory.contactName || ''}
+                    placeholder={t('Contato', '联系人')}
+                    readOnly
+                    className="border-0 bg-transparent p-0 flex-grow-1"
+                    style={{ boxShadow: 'none', fontSize: '14px' }}
+                  />
                 </div>
-                <div className="mb-3">
-                  <strong>{t('Telefone:', '电话:')}</strong> {factory.phone || t('Não informado', '未提供')}
+                <div className="mb-3 d-flex align-items-center">
+                  <div style={{ fontSize: '12px', color: '#6c757d', minWidth: '80px', marginRight: '10px' }}>
+                    {t('Telefone', '电话')}:
+                  </div>
+                  <Form.Control
+                    type="text"
+                    value={factory.phone || ''}
+                    placeholder={t('Telefone', '电话')}
+                    readOnly
+                    className="border-0 bg-transparent p-0 flex-grow-1"
+                    style={{ boxShadow: 'none', fontSize: '14px' }}
+                  />
                 </div>
-                <div className="mb-3">
-                  <strong>{t('WeChat:', '微信:')}</strong> {factory.wechat || t('Não informado', '未提供')}
+                <div className="mb-3 d-flex align-items-center">
+                  <div style={{ fontSize: '12px', color: '#6c757d', minWidth: '80px', marginRight: '10px' }}>
+                    {t('WeChat', '微信')}:
+                  </div>
+                  <Form.Control
+                    type="text"
+                    value={factory.wechat || ''}
+                    placeholder={t('WeChat', '微信')}
+                    readOnly
+                    className="border-0 bg-transparent p-0 flex-grow-1"
+                    style={{ boxShadow: 'none', fontSize: '14px' }}
+                  />
                 </div>
-                <div className="mb-3">
-                  <strong>{t('Email:', '邮箱:')}</strong> {factory.email || t('Não informado', '未提供')}
+                <div className="mb-3 d-flex align-items-center">
+                  <div style={{ fontSize: '12px', color: '#6c757d', minWidth: '80px', marginRight: '10px' }}>
+                    {t('Email', '邮箱')}:
+                  </div>
+                  <Form.Control
+                    type="text"
+                    value={factory.email || ''}
+                    placeholder={t('Email', '邮箱')}
+                    readOnly
+                    className="border-0 bg-transparent p-0 flex-grow-1"
+                    style={{ boxShadow: 'none', fontSize: '14px' }}
+                  />
                 </div>
               </Col>
               <Col md={6}>
-                <div className="mb-3">
-                  <strong>{t('Localização:', '位置:')}</strong> {factory.location || t('Não informado', '未提供')}
+                <div className="mb-3 d-flex align-items-center">
+                  <div style={{ fontSize: '12px', color: '#6c757d', minWidth: '80px', marginRight: '10px' }}>
+                    {t('Localização', '位置')}:
+                  </div>
+                  <Form.Control
+                    type="text"
+                    value={factory.location || ''}
+                    placeholder={t('Localização', '位置')}
+                    readOnly
+                    className="border-0 bg-transparent p-0 flex-grow-1"
+                    style={{ boxShadow: 'none', fontSize: '14px' }}
+                  />
                 </div>
-                <div className="mb-3">
-                  <strong>{t('Segmento:', '行业:')}</strong> {factory.segment || t('Não informado', '未提供')}
-                </div>
-                <div className="mb-3">
-                  <strong>{t('Criado em:', '创建时间:')}</strong> {factory.createdAt ? new Date(factory.createdAt).toLocaleString() : t('Não informado', '未提供')}
-                </div>
-                <div className="mb-3">
-                  <strong>{t('Atualizado em:', '更新时间:')}</strong> {factory.updatedAt ? new Date(factory.updatedAt).toLocaleString() : t('Não informado', '未提供')}
+                <div className="mb-3 d-flex align-items-center">
+                  <div style={{ fontSize: '12px', color: '#6c757d', minWidth: '80px', marginRight: '10px' }}>
+                    {t('Segmento', '行业')}:
+                  </div>
+                  <Form.Control
+                    type="text"
+                    value={factory.segment || ''}
+                    placeholder={t('Segmento', '行业')}
+                    readOnly
+                    className="border-0 bg-transparent p-0 flex-grow-1"
+                    style={{ boxShadow: 'none', fontSize: '14px' }}
+                  />
                 </div>
               </Col>
             </Row>
@@ -562,22 +631,50 @@ const FactoryDetail = () => {
                   <Row>
                     {factory.imageUrl1 && (
                       <Col md={6} className="mb-2">
-                        <CustomImage
-                          src={factory.imageUrl1}
-                          alt={`${factory.name} - Imagem 1`}
-                          style={{ width: '100%', height: '200px', objectFit: 'cover' }}
-                          fallback={<div className="bg-light d-flex align-items-center justify-content-center" style={{ height: '200px' }}>Imagem 1</div>}
-                        />
+                        <div
+                          style={{ 
+                            width: '100%', 
+                            height: '200px', 
+                            cursor: 'pointer',
+                            borderRadius: '8px',
+                            overflow: 'hidden'
+                          }}
+                          onClick={() => {
+                            setPreviewImage(factory.imageUrl1);
+                            setPreviewVisible(true);
+                          }}
+                        >
+                          <CustomImage
+                            src={factory.imageUrl1}
+                            alt={`${factory.name} - Imagem 1`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            fallback={<div className="bg-light d-flex align-items-center justify-content-center h-100">Imagem 1</div>}
+                          />
+                        </div>
                       </Col>
                     )}
                     {factory.imageUrl2 && (
                       <Col md={6} className="mb-2">
-                        <CustomImage
-                          src={factory.imageUrl2}
-                          alt={`${factory.name} - Imagem 2`}
-                          style={{ width: '100%', height: '200px', objectFit: 'cover' }}
-                          fallback={<div className="bg-light d-flex align-items-center justify-content-center" style={{ height: '200px' }}>Imagem 2</div>}
-                        />
+                        <div
+                          style={{ 
+                            width: '100%', 
+                            height: '200px', 
+                            cursor: 'pointer',
+                            borderRadius: '8px',
+                            overflow: 'hidden'
+                          }}
+                          onClick={() => {
+                            setPreviewImage(factory.imageUrl2);
+                            setPreviewVisible(true);
+                          }}
+                        >
+                          <CustomImage
+                            src={factory.imageUrl2}
+                            alt={`${factory.name} - Imagem 2`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            fallback={<div className="bg-light d-flex align-items-center justify-content-center h-100">Imagem 2</div>}
+                          />
+                        </div>
                       </Col>
                     )}
                   </Row>
@@ -624,8 +721,8 @@ const FactoryDetail = () => {
                     <Card className="h-100">
                       <Card.Body className="p-3">
                         <Row className="align-items-start">
-                          {/* Foto do produto - 150px de largura */}
-                          <Col xs={4}>
+                          {/* Foto do produto - 50% da largura, 180px de altura */}
+                          <Col xs={6}>
                             <div className="d-flex justify-content-center">
                               {product.imageUrl ? (
                                 <CustomImage
@@ -633,8 +730,8 @@ const FactoryDetail = () => {
                                   alt={product.name}
                                   className="img-fluid rounded"
                                   style={{ 
-                                    width: '150px', 
-                                    height: 'auto', 
+                                    width: '100%', 
+                                    height: '150px', 
                                     objectFit: 'cover',
                                     cursor: 'pointer'
                                   }}
@@ -645,7 +742,7 @@ const FactoryDetail = () => {
                                 <div 
                                   className="d-flex align-items-center justify-content-center rounded bg-light"
                                   style={{ 
-                                    width: '150px', 
+                                    width: '100%', 
                                     height: '150px',
                                     cursor: 'pointer'
                                   }}
@@ -658,20 +755,24 @@ const FactoryDetail = () => {
                           </Col>
                           
                           {/* Informações do produto */}
-                          <Col xs={8}>
+                          <Col xs={6}>
                             <div className="d-flex flex-column h-100">
-                              {/* REF e U.PRICE na mesma linha */}
-                              <div className="mb-3">
-                                <div className="d-flex justify-content-between align-items-center mb-1">
-                                  <span className="fw-medium text-muted small">REF:</span>
-                                  <span className="text-primary fw-bold">
-                                    ¥ {product.uPrice || t('Sob consulta', '咨询价格')}
-                                  </span>
-                                </div>
+                              {/* REF na primeira linha */}
+                              <div className="mb-2">
+                                <span className="fw-medium">
+                                  {product.ref || t('Sem REF', '无REF')}
+                                </span>
                               </div>
                               
-                              {/* Ícones de ação alinhados à direita */}
-                              <div className="mt-auto d-flex justify-content-end gap-2">
+                              {/* U.PRICE na segunda linha */}
+                              <div className="mb-3">
+                                <span className="text-primary fw-bold">
+                                  ¥ {product.uPrice || t('Sob consulta', '咨询价格')}
+                                </span>
+                              </div>
+                              
+                              {/* Botões na terceira linha */}
+                              <div className="d-flex gap-2">
                                 <Button 
                                   variant="outline-primary" 
                                   size="sm"
@@ -685,7 +786,7 @@ const FactoryDetail = () => {
                                   }}
                                   title={t('Editar produto', '编辑产品')}
                                 >
-                                  <i className="bi bi-pencil"></i>
+                                  {t('Editar', '编辑')}
                                 </Button>
                                 <Button 
                                   variant="outline-danger" 
@@ -701,7 +802,7 @@ const FactoryDetail = () => {
                                   disabled={submitting}
                                   title={t('Excluir produto', '删除产品')}
                                 >
-                                  <i className="bi bi-trash"></i>
+                                  {t('Excluir', '删除')}
                                 </Button>
                               </div>
                             </div>

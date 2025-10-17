@@ -429,9 +429,9 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
               </Alert>
             )}
 
-            {/* Controles de gravação simplificados */}
-            {!audioUrl && !isRecording && (
-              <div className="text-center">
+            {/* Botão Iniciar Gravação - sempre visível quando não está gravando */}
+            {!isRecording && (
+              <div className="text-center mb-3">
                 <Button 
                   variant="success" 
                   size="lg"
@@ -447,7 +447,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
 
             {/* Controles durante a gravação */}
             {isRecording && (
-              <div className="text-center">
+              <div className="text-center mb-3">
                 <div className="mb-2">
                   <span className="badge bg-primary fs-6">
                     {formatTime(recordingTime)}
@@ -504,10 +504,7 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
               <div className="mb-3">
                 {uploadedAudios.map((audio, index) => (
                   <div key={audio.id} className="border rounded p-2 mb-2">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <small className="text-muted">
-                        {audio.fileName || `Áudio ${index + 1}`}
-                      </small>
+                    <div className="d-flex justify-content-center align-items-center mb-2">
                       <small className="text-muted">
                         {new Date(audio.uploadedAt).toLocaleString()}
                       </small>
@@ -531,38 +528,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
               </div>
             )}
 
-            {/* Player de áudio */}
-            {audioUrl && !audioUrl.startsWith('blob:') && (
-              <div className="text-center">
-                <audio
-                  ref={audioRef}
-                  controls
-                  className="w-100 mb-2"
-                  style={{ maxWidth: '400px' }}
-                  playsInline={true}
-                  preload="metadata"
-                >
-                  <source src={audioUrl} type="audio/mpeg" />
-                  <source src={audioUrl} type="audio/mp4" />
-                  <source src={audioUrl} type="audio/webm" />
-                  <source src={audioUrl} type="audio/ogg" />
-                  <source src={audioUrl} type="audio/wav" />
-                  {t('Seu navegador não suporta o elemento de áudio', '您的浏览器不支持音频元素')}
-                </audio>
-                
-                <div className="d-flex justify-content-center gap-2">
-                  <Button 
-                    variant="outline-primary"
-                    onClick={reRecord}
-                    disabled={disabled}
-                    size="sm"
-                  >
-                    <i className="bi bi-arrow-clockwise me-1"></i>
-                    {t('Regravar', '重新录制')}
-                  </Button>
-                </div>
-              </div>
-            )}
           </>
         )}
       </Card.Body>

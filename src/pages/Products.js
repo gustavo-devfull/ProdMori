@@ -155,12 +155,47 @@ const Products = () => {
 
   // Filtrar produtos
   const filteredProducts = products.filter(product => {
-    const matchesSearch = !searchTerm || 
-      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.segment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.factory?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!searchTerm) return true;
     
-    return matchesSearch;
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Buscar no nome do produto
+    const matchesName = product.name?.toLowerCase().includes(searchLower);
+    
+    // Buscar no segmento do produto
+    const matchesSegment = product.segment?.toLowerCase().includes(searchLower);
+    
+    // Buscar no nome da fábrica
+    const matchesFactoryName = product.factory?.name?.toLowerCase().includes(searchLower);
+    
+    // Buscar no campo REF
+    const matchesRef = product.ref?.toLowerCase().includes(searchLower);
+    
+    // Buscar nas tags da fábrica
+    let matchesFactoryTags = false;
+    if (product.factory?.tags) {
+      const factoryTags = product.factory.tags;
+      // Verificar tags de região
+      if (factoryTags.regiao && Array.isArray(factoryTags.regiao)) {
+        matchesFactoryTags = factoryTags.regiao.some(tag => 
+          (typeof tag === 'string' ? tag : tag.name)?.toLowerCase().includes(searchLower)
+        );
+      }
+      // Verificar tags de material
+      if (!matchesFactoryTags && factoryTags.material && Array.isArray(factoryTags.material)) {
+        matchesFactoryTags = factoryTags.material.some(tag => 
+          (typeof tag === 'string' ? tag : tag.name)?.toLowerCase().includes(searchLower)
+        );
+      }
+      // Verificar tags de outros
+      if (!matchesFactoryTags && factoryTags.outros && Array.isArray(factoryTags.outros)) {
+        matchesFactoryTags = factoryTags.outros.some(tag => 
+          (typeof tag === 'string' ? tag : tag.name)?.toLowerCase().includes(searchLower)
+        );
+      }
+    }
+    
+    return matchesName || matchesSegment || matchesFactoryName || matchesRef || matchesFactoryTags;
   });
 
   // Agrupar produtos por fábrica
@@ -210,7 +245,7 @@ const Products = () => {
                 <Form.Label>{t('Buscar', '搜索')}</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder={t('Nome, segmento ou fábrica...', '名称、行业或工厂...')}
+                  placeholder={t('Nome, REF, segmento, fábrica ou tags...', '名称、参考号、行业、工厂或标签...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -251,15 +286,15 @@ const Products = () => {
                   >
                     <Card className="h-100 shadow-sm">
                       <Card.Body className="d-flex flex-column">
-                        {/* Imagem do produto */}
-                        <div className="text-center mb-3">
+                        {/* Imagem do produto - 100% largura e 200px altura */}
+                        <div className="mb-3">
                           {product.imageUrl ? (
                             <CustomImage
                               src={product.imageUrl}
                               alt={product.name}
                               className="img-fluid rounded"
                               style={{ 
-                                height: '150px', 
+                                height: '200px', 
                                 width: '100%', 
                                 objectFit: 'cover' 
                               }}
@@ -269,45 +304,34 @@ const Products = () => {
                           ) : (
                             <div 
                               className="bg-light rounded d-flex align-items-center justify-content-center"
-                              style={{ height: '150px' }}
+                              style={{ height: '200px', width: '100%' }}
                             >
                               <i className="bi bi-image text-muted fs-1"></i>
                             </div>
                           )}
                         </div>
 
-                        {/* Informações do produto */}
-                        <div className="flex-grow-1">
-                          {/* Nome do produto (alinhado à esquerda) | Símbolo do yuan + U.PRICE (alinhado à direita) */}
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <h6 className="card-title text-truncate mb-0" title={product.name} style={{ flex: 1, marginRight: '10px' }}>
-                              {product.name || t('Sem nome', '无名称')}
-                            </h6>
-                            <div className="text-primary fw-bold d-flex align-items-center">
-                              <span className="me-1">¥</span>
-                              {product.uPrice || t('Sob consulta', '咨询价格')}
-                            </div>
-                          </div>
-                          
-                          {/* Segmento */}
-                          <div className="d-flex align-items-center justify-content-between mb-2">
-                            <p className="text-muted small mb-0">
-                              {product.segment || t('Sem segmento', '无行业')}
-                            </p>
-                          </div>
-                          
-                          {/* Gravação de Áudio */}
-                          <div className="mb-3">
-                            <AudioRecorder 
-                              onAudioReady={(blob, url) => {
-                                console.log('Áudio gravado:', blob, url);
-                              }}
-                              productId={product.id}
-                              initialAudioUrl={product.audioUrls?.[0]?.url || product.audioUrl}
-                              collapsed={true}
-                              disabled={false}
-                            />
-                          </div>
+                        {/* REF | U.PRICE */}
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <span className="fw-medium">
+                            {product.ref || t('Sem REF', '无REF')}
+                          </span>
+                          <span className="text-primary fw-bold">
+                            ¥ {product.uPrice || t('Sob consulta', '咨询价格')}
+                          </span>
+                        </div>
+                        
+                        {/* Card de Áudio */}
+                        <div className="mb-3">
+                          <AudioRecorder 
+                            onAudioReady={(blob, url) => {
+                              console.log('Áudio gravado:', blob, url);
+                            }}
+                            productId={product.id}
+                            initialAudioUrl={product.audioUrls?.[0]?.url || product.audioUrl}
+                            collapsed={true}
+                            disabled={false}
+                          />
                         </div>
                       </Card.Body>
                     </Card>
