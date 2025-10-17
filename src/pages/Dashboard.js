@@ -64,9 +64,21 @@ const Dashboard = () => {
   const loadFactories = useCallback(async (page = currentPage, forceRefresh = false) => {
     // Evitar refresh durante uploads ativos
     if (uploadingImages.image1 || uploadingImages.image2) {
-      console.log('Upload em andamento - pulando refresh...');
+      console.log('🚫 Upload em andamento - pulando refresh...', {
+        image1: uploadingImages.image1,
+        image2: uploadingImages.image2,
+        forceRefresh,
+        page
+      });
       return;
     }
+    
+    console.log('🔄 Iniciando loadFactories...', {
+      page,
+      forceRefresh,
+      modalVisible,
+      uploadingImages
+    });
     
     try {
       setLoading(true);
@@ -188,7 +200,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, t, uploadingImages.image1, uploadingImages.image2]);
+  }, [currentPage, pageSize, t, uploadingImages, modalVisible]);
 
   // Função para carregar tags disponíveis
   const loadAvailableTags = useCallback(async () => {
@@ -530,24 +542,32 @@ const Dashboard = () => {
     let refreshTimeout;
     
     const handleVisibilityChange = () => {
-      if (!document.hidden && !modalVisible) {
+      // Não fazer refresh se modal estiver aberto OU se houver upload ativo
+      if (!document.hidden && !modalVisible && !uploadingImages.image1 && !uploadingImages.image2) {
         console.log('Dashboard visível novamente - agendando refresh...');
         // Aguardar um pouco antes de fazer refresh para evitar conflitos com uploads
         clearTimeout(refreshTimeout);
         refreshTimeout = setTimeout(() => {
-          loadFactories(currentPage, true);
-        }, 2000);
+          // Verificar novamente antes de executar o refresh
+          if (!uploadingImages.image1 && !uploadingImages.image2 && !modalVisible) {
+            loadFactories(currentPage, true);
+          }
+        }, 3000);
       }
     };
 
     const handleFocus = () => {
-      if (!modalVisible) {
+      // Não fazer refresh se modal estiver aberto OU se houver upload ativo
+      if (!modalVisible && !uploadingImages.image1 && !uploadingImages.image2) {
         console.log('Dashboard recebeu foco - agendando refresh...');
         // Aguardar um pouco antes de fazer refresh para evitar conflitos com uploads
         clearTimeout(refreshTimeout);
         refreshTimeout = setTimeout(() => {
-          loadFactories(currentPage, true);
-        }, 2000);
+          // Verificar novamente antes de executar o refresh
+          if (!uploadingImages.image1 && !uploadingImages.image2 && !modalVisible) {
+            loadFactories(currentPage, true);
+          }
+        }, 3000);
       }
     };
 
@@ -561,7 +581,7 @@ const Dashboard = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [loadFactories, currentPage, modalVisible]);
+  }, [loadFactories, currentPage, modalVisible, uploadingImages.image1, uploadingImages.image2]);
 
   // Forçar refresh inicial para garantir dados frescos
   useEffect(() => {
@@ -1395,14 +1415,21 @@ const Dashboard = () => {
                   const file = e.target.files[0];
                   if (file) {
                     try {
+                      console.log('📤 Iniciando upload da imagem principal...', {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        modalVisible,
+                        uploadingImages
+                      });
                       setUploadingImages(prev => ({ ...prev, image1: true }));
                       const imageUrl = await imageService.uploadFile(file);
-                      console.log('Imagem principal enviada:', imageUrl);
+                      console.log('✅ Imagem principal enviada com sucesso:', imageUrl);
                       setImageUrls(prev => ({ ...prev, image1: imageUrl }));
                     } catch (error) {
-                      console.error('Erro no upload da imagem:', error);
+                      console.error('❌ Erro no upload da imagem:', error);
                       setError(t('Erro no upload da imagem', '图片上传时出错'));
                     } finally {
+                      console.log('🏁 Finalizando upload da imagem principal...');
                       setUploadingImages(prev => ({ ...prev, image1: false }));
                     }
                   }
@@ -1425,14 +1452,21 @@ const Dashboard = () => {
                   const file = e.target.files[0];
                   if (file) {
                     try {
+                      console.log('📤 Iniciando upload da imagem secundária...', {
+                        fileName: file.name,
+                        fileSize: file.size,
+                        modalVisible,
+                        uploadingImages
+                      });
                       setUploadingImages(prev => ({ ...prev, image2: true }));
                       const imageUrl = await imageService.uploadFile(file);
-                      console.log('Imagem secundária enviada:', imageUrl);
+                      console.log('✅ Imagem secundária enviada com sucesso:', imageUrl);
                       setImageUrls(prev => ({ ...prev, image2: imageUrl }));
                     } catch (error) {
-                      console.error('Erro no upload da imagem secundária:', error);
+                      console.error('❌ Erro no upload da imagem secundária:', error);
                       setError(t('Erro no upload da imagem', '图片上传时出错'));
                     } finally {
+                      console.log('🏁 Finalizando upload da imagem secundária...');
                       setUploadingImages(prev => ({ ...prev, image2: false }));
                     }
                   }
