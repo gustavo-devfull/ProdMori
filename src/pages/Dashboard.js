@@ -12,7 +12,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import optimizedFirebaseService from '../services/optimizedFirebaseService';
 import tagService from '../services/tagService';
-import factoryServiceAPI from '../services/factoryServiceAPI';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Dashboard = () => {
@@ -42,72 +41,23 @@ const Dashboard = () => {
       
       console.log('Carregando fábricas com paginação...', { page, forceRefresh });
       
-      // Tentar primeiro com factoryServiceAPI (mais direto)
-      try {
-        console.log('Tentando carregar fábricas via factoryServiceAPI...');
-        const result = await factoryServiceAPI.getFactories(page, pageSize);
-        console.log('Dashboard - Resultado do factoryServiceAPI:', result);
-        
-        if (result.success && result.data) {
-          setAllFactories(result.data.factories || []);
-          setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
-          console.log('Dashboard - Fábricas carregadas via factoryServiceAPI:', result.data.factories?.length || 0);
-          return; // Sucesso, sair da função
-        }
-      } catch (apiError) {
-        console.error('Erro no factoryServiceAPI:', apiError);
-      }
+      // Usar optimizedFirebaseService
+      console.log('Tentando carregar fábricas via optimizedFirebaseService...');
+      const result = await optimizedFirebaseService.getFactories(page, pageSize);
+      console.log('Dashboard - Resultado do optimizedFirebaseService:', result);
       
-      // Fallback para optimizedFirebaseService
-      try {
-        console.log('Tentando carregar fábricas via optimizedFirebaseService...');
-        const result = await optimizedFirebaseService.getFactories(page, pageSize);
-        console.log('Dashboard - Resultado do optimizedFirebaseService:', result);
-        
-        if (result.success && result.data) {
-          setAllFactories(result.data.factories || []);
-          setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
-          console.log('Dashboard - Fábricas carregadas via optimizedFirebaseService:', result.data.factories?.length || 0);
-          return; // Sucesso, sair da função
-        }
-      } catch (firebaseError) {
-        console.error('Erro no optimizedFirebaseService:', firebaseError);
+      if (result.success && result.data) {
+        setAllFactories(result.data.factories || []);
+        setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
+        console.log('Dashboard - Fábricas carregadas via optimizedFirebaseService:', result.data.factories?.length || 0);
+      } else {
+        console.log('Dashboard - Resultado não teve sucesso, usando array vazio');
+        setAllFactories([]);
+        setTotalPages(1);
       }
-      
-      // Se ainda não funcionou, tentar busca direta via API
-      console.log('Tentando busca direta via API...');
-      try {
-        const apiUrl = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('gpreto.space') || window.location.hostname !== 'localhost' 
-          ? '/api' 
-          : 'http://localhost:3001/api';
-        
-        const params = new URLSearchParams();
-        params.append('col', 'factories');
-        params.append('page', page.toString());
-        params.append('limit', pageSize.toString());
-        params.append('orderBy', 'createdAt');
-        params.append('orderDirection', 'desc');
-
-        const response = await fetch(`${apiUrl}/firestore/get?${params.toString()}`);
-        const directResult = await response.json();
-        
-        if (directResult.success && directResult.data) {
-          setAllFactories(directResult.data.factories || []);
-          setTotalPages(Math.ceil((directResult.data.total || 0) / pageSize));
-          console.log('Dashboard - Dados carregados diretamente:', directResult.data.factories?.length || 0);
-          return; // Sucesso, sair da função
-        }
-      } catch (directError) {
-        console.error('Erro na busca direta:', directError);
-      }
-      
-      // Se chegou até aqui, nenhum método funcionou
-      console.log('Nenhum método de carregamento funcionou, usando array vazio');
-      setAllFactories([]);
-      setTotalPages(1);
       
     } catch (err) {
-      console.error('Erro geral ao carregar fábricas:', err);
+      console.error('Erro ao carregar fábricas:', err);
       setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
       setAllFactories([]);
     } finally {
