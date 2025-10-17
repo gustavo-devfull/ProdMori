@@ -35,17 +35,23 @@ const Tags = () => {
   // Função para carregar tags globais do Firebase
   const loadGlobalTags = useCallback(async () => {
     try {
+      console.log('=== LOAD GLOBAL TAGS ===');
       console.log('Carregando tags globais do Firebase...');
       const globalTagsData = await tagService.getAllTags();
       console.log('Tags globais carregadas:', globalTagsData);
-      console.log('Tags globais - tipoProduto:', globalTagsData.tipoProduto);
-      console.log('Tags globais - tipoProduto length:', globalTagsData.tipoProduto?.length);
+      console.log('Tags globais - regiao:', globalTagsData.regiao?.length || 0);
+      console.log('Tags globais - material:', globalTagsData.material?.length || 0);
+      console.log('Tags globais - outros:', globalTagsData.outros?.length || 0);
+      console.log('Tags globais - tipoProduto:', globalTagsData.tipoProduto?.length || 0);
+      console.log('Tags globais - tipoProduto array:', globalTagsData.tipoProduto);
       setGlobalTags(globalTagsData);
+      console.log('=== GLOBAL TAGS SET ===');
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
       // Fallback para localStorage se Firebase falhar
       try {
         const fallbackTags = await tagService.getAllTags();
+        console.log('Fallback tags carregadas:', fallbackTags);
         setGlobalTags(fallbackTags);
       } catch (fallbackError) {
         console.error('Erro no fallback:', fallbackError);
@@ -91,32 +97,38 @@ const Tags = () => {
     loadGlobalTags();
     loadTags();
     
-    // Forçar sincronização com localStorage
+    // Forçar sincronização com localStorage - REMOVIDO para evitar sobrescrever Firebase
     const syncWithLocalStorage = () => {
-      const localTags = localStorage.getItem('globalTags');
-      const cacheTags = localStorage.getItem('globalTagsCache');
-      
-      console.log('Tags.js - localStorage globalTags:', localTags);
-      console.log('Tags.js - localStorage globalTagsCache:', cacheTags);
-      
-      if (cacheTags) {
-        try {
-          const parsedCacheTags = JSON.parse(cacheTags);
-          console.log('Tags.js - Parsed cache tags:', parsedCacheTags);
-          console.log('Tags.js - Cache tipoProduto:', parsedCacheTags.tipoProduto);
-          
-          if (parsedCacheTags.tipoProduto && parsedCacheTags.tipoProduto.length > 0) {
-            console.log('Tags.js - Sincronizando com cache...');
-            setGlobalTags(parsedCacheTags);
-          }
-        } catch (error) {
-          console.error('Tags.js - Erro ao parsear cache:', error);
-        }
-      }
+      // Não fazer sincronização automática para evitar sobrescrever dados do Firebase
+      console.log('Tags.js - Sincronização com localStorage desabilitada para preservar dados do Firebase');
     };
     
     // Executar sincronização após um pequeno delay
     setTimeout(syncWithLocalStorage, 1000);
+    
+    // Adicionar listener para mudanças no localStorage
+    const handleStorageChange = (e) => {
+      if (e.key === 'globalTagsCache') {
+        console.log('Tags.js - Cache atualizado, sincronizando...');
+        syncWithLocalStorage();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Adicionar listener para quando a página ganha foco
+    const handleFocus = () => {
+      console.log('Tags.js - Página ganhou foco, verificando cache...');
+      setTimeout(syncWithLocalStorage, 100);
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [loadGlobalTags, loadTags]);
 
   const handleSubmit = async (e) => {
@@ -310,13 +322,13 @@ const Tags = () => {
 
               {/* Tags Tipo de Produto Globais */}
               <div className="mb-3">
-                <h6 className="text-warning">{t('Tags Tipo de Produto', '产品类型标签')}</h6>
+                <h6 className="text-info">{t('Tags Tipo de Produto', '产品类型标签')}</h6>
                 <div className="d-flex flex-wrap gap-2">
                   {globalTags.tipoProduto && globalTags.tipoProduto.length > 0 ? (
                     globalTags.tipoProduto.map(tag => (
                       <Badge 
                         key={tag.id || tag.name} 
-                        bg="warning" 
+                        bg="info" 
                         className="d-flex align-items-center gap-1"
                       >
                         {tag.name}

@@ -776,7 +776,7 @@ const Dashboard = () => {
             bg={
               tag.division === 'regiao' ? 'primary' : 
               tag.division === 'material' ? 'success' : 
-              tag.division === 'tipoProduto' ? 'warning' : 
+              tag.division === 'tipoProduto' ? 'info' : 
               'danger'
             }
             style={{ fontSize: '12px' }}
@@ -865,6 +865,26 @@ const Dashboard = () => {
                 </div>
               )}
 
+              {/* Tags de Tipo de Produto */}
+              {availableTags.tipoProduto.length > 0 && (
+                <div className="mb-3">
+                  <h6 className="text-info small mb-2">{t('Tipo de produto', '产品类型')}</h6>
+                  <div className="d-flex flex-wrap gap-2">
+                    {availableTags.tipoProduto.map(tag => (
+                      <Badge
+                        key={tag.id}
+                        bg={selectedTags.some(st => st.id === tag.id) ? 'info' : 'secondary'}
+                        className="cursor-pointer"
+                        onClick={() => toggleTagSelection(tag)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Tags de Material */}
               {availableTags.material.length > 0 && (
                 <div className="mb-3">
@@ -894,26 +914,6 @@ const Dashboard = () => {
                       <Badge
                         key={tag.id}
                         bg={selectedTags.some(st => st.id === tag.id) ? 'danger' : 'secondary'}
-                        className="cursor-pointer"
-                        onClick={() => toggleTagSelection(tag)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {tag.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Tags de Tipo de Produto */}
-              {availableTags.tipoProduto.length > 0 && (
-                <div className="mb-3">
-                  <h6 className="text-warning small mb-2">{t('Tipo de produto', '产品类型')}</h6>
-                  <div className="d-flex flex-wrap gap-2">
-                    {availableTags.tipoProduto.map(tag => (
-                      <Badge
-                        key={tag.id}
-                        bg={selectedTags.some(st => st.id === tag.id) ? 'warning' : 'secondary'}
                         className="cursor-pointer"
                         onClick={() => toggleTagSelection(tag)}
                         style={{ cursor: 'pointer' }}

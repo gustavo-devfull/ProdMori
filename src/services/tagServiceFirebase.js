@@ -124,8 +124,14 @@ class TagServiceFirebase {
 
       const result = await response.json();
       
+      console.log('TagServiceFirebase.getTags - Response:', response.ok);
+      console.log('TagServiceFirebase.getTags - Result:', result);
+      console.log('TagServiceFirebase.getTags - Fallback:', result.fallback);
+      console.log('TagServiceFirebase.getTags - Error:', result.error);
+      
       // Se houver erro de quota ou Firebase indisponível, usar localStorage
       if (!response.ok || result.fallback || result.error) {
+        console.log('TagServiceFirebase.getTags - Using localStorage fallback');
         return this.getTagsFromLocalStorage(factoryId, division);
       }
       

@@ -58,11 +58,6 @@ const FactoryDetail = () => {
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
   const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
-  
-  // Estados para tags do produto
-  const [productTags, setProductTags] = useState([]);
-  const [newProductTagName, setNewProductTagName] = useState('');
-  const [newProductTagDivision, setNewProductTagDivision] = useState('tipoProduto');
 
   const loadFactoryData = useCallback(async () => {
     try {
@@ -88,6 +83,42 @@ const FactoryDetail = () => {
       });
       setProducts(sortedProducts);
       
+      // Carregar tags da fábrica
+      console.log('=== CARREGANDO TAGS DA FÁBRICA ===');
+      try {
+        const factoryTagsData = await tagService.getFactoryTags(factoryId);
+        console.log('loadFactoryData - Tags carregadas:', factoryTagsData);
+        
+        // Garantir que a estrutura está correta
+        const safeTags = {
+          regiao: Array.isArray(factoryTagsData?.regiao) ? factoryTagsData.regiao : [],
+          material: Array.isArray(factoryTagsData?.material) ? factoryTagsData.material : [],
+          outros: Array.isArray(factoryTagsData?.outros) ? factoryTagsData.outros : [],
+          tipoProduto: Array.isArray(factoryTagsData?.tipoProduto) ? factoryTagsData.tipoProduto : []
+        };
+        
+        setFactoryTags(safeTags);
+        console.log('loadFactoryData - Tags definidas no estado:', safeTags);
+      } catch (error) {
+        console.error('Erro ao carregar tags da fábrica:', error);
+        // Fallback para localStorage
+        const savedTags = localStorage.getItem(`tags_${factoryId}`);
+        if (savedTags) {
+          const parsedTags = JSON.parse(savedTags);
+          const safeTags = {
+            regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
+            material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
+            outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : [],
+            tipoProduto: Array.isArray(parsedTags?.tipoProduto) ? parsedTags.tipoProduto : []
+          };
+          setFactoryTags(safeTags);
+          console.log('loadFactoryData - Fallback localStorage tags:', safeTags);
+        } else {
+          setFactoryTags({ regiao: [], material: [], outros: [], tipoProduto: [] });
+          console.log('loadFactoryData - No saved tags, using empty structure');
+        }
+      }
+      
       setError(null);
     } catch (err) {
       setError(t('Erro ao carregar dados da fábrica', '加载工厂数据时出错'));
@@ -100,6 +131,14 @@ const FactoryDetail = () => {
   useEffect(() => {
     loadFactoryData();
   }, [loadFactoryData]);
+
+  // Monitorar mudanças no estado factoryTags
+  useEffect(() => {
+    console.log('=== FACTORY TAGS STATE CHANGED ===');
+    console.log('Current factoryTags:', factoryTags);
+    console.log('tipoProduto tags:', factoryTags.tipoProduto);
+    console.log('tipoProduto length:', factoryTags.tipoProduto?.length);
+  }, [factoryTags]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,8 +153,7 @@ const FactoryDetail = () => {
         ...values,
         imageUrl: imageUrl || values.imageUrl,
         factoryId: factoryId,
-        unit: 'PC', // Valor padrão conforme solicitado
-        tags: productTags // Incluir tags do produto
+        unit: 'PC' // Valor padrão conforme solicitado
       };
       
       if (editingProduct) {
@@ -148,11 +186,6 @@ const FactoryDetail = () => {
     setError(null);
     setImageUrl('');
     setUploadingImage(false);
-    
-    // Limpar tags do produto
-    setProductTags([]);
-    setNewProductTagName('');
-    setNewProductTagDivision('tipoProduto');
     
     console.log('Modal close states updated');
   };
@@ -238,9 +271,19 @@ const FactoryDetail = () => {
       // Fallback para localStorage
       const savedTags = localStorage.getItem(`tags_${factoryId}`);
       if (savedTags) {
-        setFactoryTags(JSON.parse(savedTags));
+        const parsedTags = JSON.parse(savedTags);
+        // Garantir que tipoProduto existe
+        const safeTags = {
+          regiao: Array.isArray(parsedTags?.regiao) ? parsedTags.regiao : [],
+          material: Array.isArray(parsedTags?.material) ? parsedTags.material : [],
+          outros: Array.isArray(parsedTags?.outros) ? parsedTags.outros : [],
+          tipoProduto: Array.isArray(parsedTags?.tipoProduto) ? parsedTags.tipoProduto : []
+        };
+        setFactoryTags(safeTags);
+        console.log('handleEditFactory - Fallback localStorage tags:', safeTags);
       } else {
         setFactoryTags({ regiao: [], material: [], outros: [], tipoProduto: [] });
+        console.log('handleEditFactory - No saved tags, using empty structure');
       }
     }
     
@@ -347,9 +390,14 @@ const FactoryDetail = () => {
       
       // Salvar as tags da fábrica usando o serviço
       console.log('Saving factory tags:', factoryTags);
+      console.log('Factory tags tipoProduto:', factoryTags.tipoProduto);
+      console.log('Factory tags tipoProduto length:', factoryTags.tipoProduto?.length);
+      
       Object.keys(factoryTags).forEach(division => {
+        console.log(`Processing division: ${division}`);
+        console.log(`Tags in ${division}:`, factoryTags[division]);
         factoryTags[division].forEach(tag => {
-          console.log(`Saving tag: ${tag.name} (${tag.id}) to factory ${factoryId}`);
+          console.log(`Saving tag: ${tag.name} (${tag.id}) to factory ${factoryId} in division ${division}`);
           tagService.addTagToFactory(factoryId, tag);
         });
       });
@@ -395,10 +443,20 @@ const FactoryDetail = () => {
 
   // Funções para gerenciar tags da fábrica
   const addTagToFactory = (tag, division) => {
+    console.log('=== ADD TAG TO FACTORY ===');
+    console.log('Tag:', tag);
+    console.log('Division:', division);
+    console.log('Current factoryTags before:', factoryTags);
+    
     setFactoryTags(prev => {
+      console.log('Previous state:', prev);
+      console.log('Division exists:', !!prev[division]);
+      console.log('Division is array:', Array.isArray(prev[division]));
+      
       // Verificar se a divisão existe e é um array
       if (!prev[division] || !Array.isArray(prev[division])) {
         console.log('Divisão não existe ou não é array:', division);
+        console.log('Current prev[division]:', prev[division]);
         return prev;
       }
       
@@ -410,10 +468,12 @@ const FactoryDetail = () => {
       }
       
       console.log('Adicionando tag à fábrica:', tag.name, 'na divisão:', division);
-      return {
+      const newState = {
         ...prev,
         [division]: [...prev[division], tag]
       };
+      console.log('New state after adding tag:', newState);
+      return newState;
     });
   };
 
@@ -498,71 +558,6 @@ const FactoryDetail = () => {
     });
   };
 
-  // Funções para gerenciar tags do produto
-  const addProductTag = (tag) => {
-    // Verificar se a tag já foi adicionada
-    const existingTag = productTags.find(t => t.id === tag.id || t.name === tag.name);
-    if (existingTag) {
-      console.log('Tag já adicionada ao produto:', tag.name);
-      return;
-    }
-    
-    console.log('Adicionando tag ao produto:', tag.name);
-    setProductTags(prev => [...prev, tag]);
-  };
-
-  const removeProductTag = (tagId) => {
-    console.log('Removendo tag do produto:', tagId);
-    setProductTags(prev => prev.filter(tag => tag.id !== tagId));
-  };
-
-  const addNewProductTag = async () => {
-    const tagName = newProductTagName.trim();
-    if (!tagName) return;
-
-    const newTag = {
-      id: Date.now().toString(),
-      name: tagName,
-      division: newProductTagDivision,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    console.log('=== ADDING NEW PRODUCT TAG ===');
-    console.log('New tag:', newTag);
-
-    try {
-      // Adicionar ao serviço global de tags
-      const result = await tagService.addTag(newTag);
-      console.log('Add tag result:', result);
-      
-      if (result.success) {
-        // Adicionar à fábrica atual (para que apareça nas tags disponíveis)
-        console.log('Adding tag to factory...');
-        addTagToFactory(newTag, newProductTagDivision);
-        
-        // Adicionar ao produto atual
-        addProductTag(newTag);
-        
-        // Atualizar tags globais disponíveis
-        const globalTagsData = await tagService.getAllTags();
-        setGlobalTags(globalTagsData);
-        
-        console.log('Tag adicionada com sucesso à fábrica e produto');
-      } else {
-        console.warn('Tag já existe globalmente:', result.message);
-        // Mesmo assim, adicionar à fábrica e produto atual
-        addTagToFactory(newTag, newProductTagDivision);
-        addProductTag(newTag);
-      }
-    } catch (error) {
-      console.error('Erro ao adicionar tag:', error);
-      setError(t('Erro ao adicionar tag', '添加标签时出错'));
-    }
-
-    // Limpar input
-    setNewProductTagName('');
-  };
 
   if (loading) {
     return (
@@ -1193,116 +1188,16 @@ const FactoryDetail = () => {
               />
             </Form.Group>
 
-            {/* Tags do Produto */}
+            {/* REMARK */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('Tags do Produto', '产品标签')}</Form.Label>
-              
-              {/* Tags selecionadas */}
-              {productTags.length > 0 && (
-                <div className="d-flex flex-wrap gap-2 mb-2">
-                  {productTags.map(tag => (
-                    <Badge 
-                      key={tag.id} 
-                      bg="info" 
-                      className="d-flex align-items-center gap-1"
-                      style={{ cursor: 'pointer', fontSize: '14px' }}
-                      onClick={() => removeProductTag(tag.id)}
-                    >
-                      {tag.name}
-                      <i className="bi bi-x"></i>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Tags disponíveis da fábrica */}
-              <div className="mb-3">
-                <small className="text-muted">{t('Tags disponíveis da fábrica:', '工厂可用标签:')}</small>
-                <div className="d-flex flex-wrap gap-2 mt-1">
-                  {/* Tags de Região */}
-                  {globalTags.regiao && globalTags.regiao.map(tag => (
-                    <Badge
-                      key={tag.id}
-                      bg="primary"
-                      className="cursor-pointer"
-                      onClick={() => addProductTag(tag)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
-                  {/* Tags de Material */}
-                  {globalTags.material && globalTags.material.map(tag => (
-                    <Badge
-                      key={tag.id}
-                      bg="success"
-                      className="cursor-pointer"
-                      onClick={() => addProductTag(tag)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
-                  {/* Tags de Outros */}
-                  {globalTags.outros && globalTags.outros.map(tag => (
-                    <Badge
-                      key={tag.id}
-                      bg="danger"
-                      className="cursor-pointer"
-                      onClick={() => addProductTag(tag)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
-                  {/* Tags de Tipo de Produto */}
-                  {globalTags.tipoProduto && globalTags.tipoProduto.map(tag => (
-                    <Badge
-                      key={tag.id}
-                      bg="warning"
-                      className="cursor-pointer"
-                      onClick={() => addProductTag(tag)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Adicionar nova tag */}
-              <Row>
-                <Col xs={8}>
-                  <Form.Control
-                    type="text"
-                    placeholder={t('Nova tag', '新标签')}
-                    value={newProductTagName}
-                    onChange={(e) => setNewProductTagName(e.target.value)}
-                  />
-                </Col>
-                <Col xs={4}>
-                  <Form.Select
-                    value={newProductTagDivision}
-                    onChange={(e) => setNewProductTagDivision(e.target.value)}
-                  >
-                    <option value="regiao">{t('Região', '地区')}</option>
-                    <option value="material">{t('Material', '材料')}</option>
-                    <option value="outros">{t('Outros', '其他')}</option>
-                    <option value="tipoProduto">{t('Tipo de produto', '产品类型')}</option>
-                  </Form.Select>
-                </Col>
-              </Row>
-              <div className="mt-2">
-                <Button 
-                  variant="outline-primary" 
-                  size="sm"
-                  onClick={addNewProductTag}
-                  disabled={!newProductTagName.trim()}
-                >
-                  <i className="bi bi-plus me-1"></i>
-                  {t('Adicionar Tag', '添加标签')}
-                </Button>
-              </div>
+              <Form.Label>{t('REMARK', '备注')}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                name="remark"
+                defaultValue={editingProduct?.remark || ''}
+                placeholder={t('Digite observações adicionais', '输入额外备注')}
+              />
             </Form.Group>
 
             {/* Gravação de Áudio */}
