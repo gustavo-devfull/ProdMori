@@ -24,6 +24,12 @@ const Dashboard = () => {
   const [filteredFactories, setFilteredFactories] = useState([]);
   const [factorySearchTerm, setFactorySearchTerm] = useState('');
   const [showFilterCard, setShowFilterCard] = useState(false);
+  const [availableTags, setAvailableTags] = useState({
+    regiao: [],
+    material: [],
+    outros: [],
+    tipoProduto: []
+  });
 
   // Estados para paginação
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,9 +93,20 @@ const Dashboard = () => {
       const tags = await tagService.getAllTags();
       console.log('Dashboard - Tags globais carregadas:', tags);
       
-      // Não precisamos mais dos availableTags no Dashboard simplificado
+      setAvailableTags(tags || {
+        regiao: [],
+        material: [],
+        outros: [],
+        tipoProduto: []
+      });
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
+      setAvailableTags({
+        regiao: [],
+        material: [],
+        outros: [],
+        tipoProduto: []
+      });
     }
   }, []);
 
@@ -172,6 +189,17 @@ const Dashboard = () => {
   const handlePageChange = (page) => {
     setCurrentPage(page);
     loadFactories(page, true);
+  };
+
+  const handleTagToggle = (tag) => {
+    setSelectedTags(prev => {
+      const isSelected = prev.some(t => t.id === tag.id);
+      if (isSelected) {
+        return prev.filter(t => t.id !== tag.id);
+      } else {
+        return [...prev, tag];
+      }
+    });
   };
 
   const clearFilters = () => {
@@ -285,6 +313,127 @@ const Dashboard = () => {
               />
             </div>
 
+            {/* Tags selecionadas */}
+            {selectedTags.length > 0 && (
+              <div className="mb-3">
+                <label className="form-label">{t('Tags Selecionadas', '已选标签')}</label>
+                <div className="d-flex flex-wrap gap-1">
+                  {selectedTags.map(tag => (
+                    <Badge 
+                      key={tag.id} 
+                      bg={
+                        tag.division === 'regiao' ? 'primary' : 
+                        tag.division === 'material' ? 'success' : 
+                        tag.division === 'tipoProduto' ? 'info' : 
+                        'danger'
+                      }
+                      className="d-flex align-items-center gap-1"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleTagToggle(tag)}
+                    >
+                      {tag.name}
+                      <i className="bi bi-x"></i>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Filtros por divisão */}
+            <div className="row">
+              {/* Tags Região */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">{t('Região', '地区')}</label>
+                <div className="d-flex flex-wrap gap-1">
+                  {availableTags.regiao && availableTags.regiao.length > 0 ? 
+                    availableTags.regiao.map(tag => (
+                      <Badge 
+                        key={tag.id} 
+                        bg={selectedTags.some(t => t.id === tag.id) ? 'primary' : 'outline-primary'}
+                        className="d-flex align-items-center gap-1"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleTagToggle(tag)}
+                      >
+                        {tag.name}
+                        {selectedTags.some(t => t.id === tag.id) && <i className="bi bi-check"></i>}
+                      </Badge>
+                    )) : (
+                      <small className="text-muted">{t('Nenhuma tag disponível', '无可用标签')}</small>
+                    )
+                  }
+                </div>
+              </div>
+
+              {/* Tags Tipo de Produto */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">{t('Tipo de Produto', '产品类型')}</label>
+                <div className="d-flex flex-wrap gap-1">
+                  {availableTags.tipoProduto && availableTags.tipoProduto.length > 0 ? 
+                    availableTags.tipoProduto.map(tag => (
+                      <Badge 
+                        key={tag.id} 
+                        bg={selectedTags.some(t => t.id === tag.id) ? 'info' : 'outline-info'}
+                        className="d-flex align-items-center gap-1"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleTagToggle(tag)}
+                      >
+                        {tag.name}
+                        {selectedTags.some(t => t.id === tag.id) && <i className="bi bi-check"></i>}
+                      </Badge>
+                    )) : (
+                      <small className="text-muted">{t('Nenhuma tag disponível', '无可用标签')}</small>
+                    )
+                  }
+                </div>
+              </div>
+
+              {/* Tags Material */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">{t('Material', '材料')}</label>
+                <div className="d-flex flex-wrap gap-1">
+                  {availableTags.material && availableTags.material.length > 0 ? 
+                    availableTags.material.map(tag => (
+                      <Badge 
+                        key={tag.id} 
+                        bg={selectedTags.some(t => t.id === tag.id) ? 'success' : 'outline-success'}
+                        className="d-flex align-items-center gap-1"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleTagToggle(tag)}
+                      >
+                        {tag.name}
+                        {selectedTags.some(t => t.id === tag.id) && <i className="bi bi-check"></i>}
+                      </Badge>
+                    )) : (
+                      <small className="text-muted">{t('Nenhuma tag disponível', '无可用标签')}</small>
+                    )
+                  }
+                </div>
+              </div>
+
+              {/* Tags Outros */}
+              <div className="col-md-6 mb-3">
+                <label className="form-label fw-bold">{t('Outros', '其他')}</label>
+                <div className="d-flex flex-wrap gap-1">
+                  {availableTags.outros && availableTags.outros.length > 0 ? 
+                    availableTags.outros.map(tag => (
+                      <Badge 
+                        key={tag.id} 
+                        bg={selectedTags.some(t => t.id === tag.id) ? 'danger' : 'outline-danger'}
+                        className="d-flex align-items-center gap-1"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleTagToggle(tag)}
+                      >
+                        {tag.name}
+                        {selectedTags.some(t => t.id === tag.id) && <i className="bi bi-check"></i>}
+                      </Badge>
+                    )) : (
+                      <small className="text-muted">{t('Nenhuma tag disponível', '无可用标签')}</small>
+                    )
+                  }
+                </div>
+              </div>
+            </div>
+
             {/* Botão limpar filtros */}
             <div className="d-flex gap-2">
               <Button variant="outline-secondary" size="sm" onClick={clearFilters}>
@@ -306,50 +455,51 @@ const Dashboard = () => {
       <Row>
         {filteredFactories.map(factory => (
           <Col key={factory.id} md={6} lg={4} className="mb-4">
-            <Card 
-              className="h-100 factory-card" 
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate(`/factory/${factory.id}`)}
-            >
+            <Card className="h-100 factory-card">
               <Card.Body>
-                <div className="d-flex justify-content-between align-items-start mb-2">
+                {/* Cabeçalho: NOME | BOTÃO */}
+                <div className="d-flex justify-content-between align-items-center mb-3">
                   <h5 className="card-title mb-0">{factory.name}</h5>
-                  <small className="text-muted">
-                    {new Date(factory.createdAt).toLocaleDateString()}
-                  </small>
+                  <Button 
+                    variant="primary" 
+                    size="sm"
+                    onClick={() => navigate(`/factory/${factory.id}`)}
+                  >
+                    <i className="bi bi-arrow-right me-1"></i>
+                    {t('Ver', '查看')}
+                  </Button>
                 </div>
                 
-                {factory.contactName && (
-                  <p className="card-text mb-1">
-                    <strong>{t('Contato', '联系人')}:</strong> {factory.contactName}
-                  </p>
-                )}
-                
-                {factory.phone && (
-                  <p className="card-text mb-1">
-                    <strong>{t('Telefone', '电话')}:</strong> {factory.phone}
-                  </p>
-                )}
-                
-                {factory.address && (
-                  <p className="card-text mb-2">
-                    <strong>{t('Endereço', '地址')}:</strong> {factory.address}
-                  </p>
-                )}
-                
-                <div className="mb-2">
-                  <small className="text-muted">{t('Tags', '标签')}:</small>
+                {/* Tags */}
+                <div className="mb-3">
+                  <small className="text-muted d-block mb-1">{t('Tags', '标签')}:</small>
                   <FactoryTagsDisplay factoryId={factory.id} />
                 </div>
                 
-                {factory.description && (
-                  <p className="card-text text-muted small">
-                    {factory.description.length > 100 
-                      ? `${factory.description.substring(0, 100)}...` 
-                      : factory.description
-                    }
-                  </p>
-                )}
+                {/* Informações adicionais */}
+                <div className="small text-muted">
+                  {factory.contactName && (
+                    <div className="mb-1">
+                      <strong>{t('Contato', '联系人')}:</strong> {factory.contactName}
+                    </div>
+                  )}
+                  
+                  {factory.phone && (
+                    <div className="mb-1">
+                      <strong>{t('Telefone', '电话')}:</strong> {factory.phone}
+                    </div>
+                  )}
+                  
+                  {factory.address && (
+                    <div className="mb-1">
+                      <strong>{t('Endereço', '地址')}:</strong> {factory.address}
+                    </div>
+                  )}
+                  
+                  <div className="text-muted">
+                    {new Date(factory.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
               </Card.Body>
             </Card>
           </Col>
