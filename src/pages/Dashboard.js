@@ -552,7 +552,7 @@ const Dashboard = () => {
           if (!uploadingImages.image1 && !uploadingImages.image2 && !modalVisible) {
             loadFactories(currentPage, true);
           }
-        }, 3000);
+        }, 5000); // Aumentado para 5 segundos
       }
     };
 
@@ -567,13 +567,15 @@ const Dashboard = () => {
           if (!uploadingImages.image1 && !uploadingImages.image2 && !modalVisible) {
             loadFactories(currentPage, true);
           }
-        }, 3000);
+        }, 5000); // Aumentado para 5 segundos
       }
     };
 
-    // Adicionar listeners
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
+    // Só adicionar listeners se não houver upload ativo
+    if (!uploadingImages.image1 && !uploadingImages.image2) {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleFocus);
+    }
 
     // Cleanup
     return () => {
@@ -585,9 +587,12 @@ const Dashboard = () => {
 
   // Forçar refresh inicial para garantir dados frescos
   useEffect(() => {
-    console.log('Dashboard montado - forçando refresh inicial...');
-    loadFactories(currentPage, true);
-  }, [loadFactories, currentPage]); // Executar quando o componente monta ou dependências mudam
+    // Só fazer refresh inicial se modal não estiver aberto
+    if (!modalVisible) {
+      console.log('Dashboard montado - forçando refresh inicial...');
+      loadFactories(currentPage, true);
+    }
+  }, [loadFactories, currentPage, modalVisible]); // Executar quando o componente monta ou dependências mudam
 
   useEffect(() => {
     setFilteredFactories(allFactories);
@@ -1412,6 +1417,7 @@ const Dashboard = () => {
                 accept="image/*"
                 name="image1"
                 onChange={async (e) => {
+                  e.preventDefault(); // Prevenir comportamento padrão
                   const file = e.target.files[0];
                   if (file) {
                     try {
@@ -1449,6 +1455,7 @@ const Dashboard = () => {
                 accept="image/*"
                 name="image2"
                 onChange={async (e) => {
+                  e.preventDefault(); // Prevenir comportamento padrão
                   const file = e.target.files[0];
                   if (file) {
                     try {
