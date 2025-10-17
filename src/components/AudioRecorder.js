@@ -18,7 +18,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
   const [isExpanded, setIsExpanded] = useState(!collapsed);
   
   const mediaRecorderRef = useRef(null);
-  const audioRef = useRef(null);
   const timerRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -252,36 +251,6 @@ const AudioRecorder = ({ onAudioReady, initialAudioUrl, disabled = false, produc
     }
   };
 
-  // Regravar
-  const reRecord = async () => {
-    setAudioUrl('');
-    setRecordingTime(0);
-    setError(null);
-    setIsUploading(false);
-    setSavingToFirebase(false);
-    
-    // Limpar áudio anterior
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-
-    // Limpar áudio do Firebase se existir
-    if (productId && productId !== 'new') {
-      try {
-        await productServiceAPI.updateProduct(productId, {
-          audioUrls: [],
-          audioUrl: '',
-          audioUploadedAt: '',
-          audioUpdatedAt: new Date().toISOString()
-        });
-        console.log('Áudios removidos do Firebase');
-        setUploadedAudios([]);
-      } catch (error) {
-        console.error('Erro ao remover áudios do Firebase:', error);
-      }
-    }
-  };
 
   // Limpar áudio
   const clearAudio = async () => {
