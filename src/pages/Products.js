@@ -11,11 +11,9 @@ import {
 } from 'react-bootstrap';
 import CustomImage from '../components/CustomImage';
 import AudioRecorder from '../components/AudioRecorder';
-import AudioPlayer from '../components/AudioPlayer';
 import productServiceAPI from '../services/productServiceAPI';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import imageService from '../services/imageService';
-import audioUploadService from '../services/audioUploadService';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Products = () => {
@@ -31,8 +29,6 @@ const Products = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [audioUrls, setAudioUrls] = useState([]);
-  const [uploadingAudio, setUploadingAudio] = useState(false);
-  const [lastUploadedAudioUrl, setLastUploadedAudioUrl] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -73,40 +69,12 @@ const Products = () => {
     setPreviewVisible(true);
   };
 
-  // Função para lidar com áudio gravado
-  const handleAudioReady = async (blob, url) => {
-    if (blob && editingProduct) {
-      try {
-        setUploadingAudio(true);
-        const result = await audioUploadService.uploadAudio(blob, editingProduct.id);
-        
-        if (result.success) {
-          // Adicionar novo áudio à lista
-          setAudioUrls(prev => [...prev, result.audioUrl]);
-          setLastUploadedAudioUrl(result.audioUrl);
-          console.log('Áudio enviado com sucesso:', result);
-        }
-      } catch (error) {
-        console.error('Erro ao enviar áudio:', error);
-        setError(t('Erro ao enviar áudio', '发送音频时出错'));
-      } finally {
-        setUploadingAudio(false);
-      }
-    }
-  };
-
-  // Função para deletar áudio da lista
-  const handleDeleteAudio = (index) => {
-    setAudioUrls(prev => prev.filter((_, i) => i !== index));
-  };
 
   const handleModalClose = () => {
     setModalVisible(false);
     setEditingProduct(null);
     setError(null);
     setAudioUrls([]);
-    setUploadingAudio(false);
-    setLastUploadedAudioUrl('');
   };
 
   const handleSubmit = async (e) => {
@@ -461,26 +429,6 @@ const Products = () => {
                 placeholder={t('Digite a referência', '输入参考号')}
               />
             </Form.Group>
-
-            {/* Áudio (substitui REMARK) */}
-              <AudioRecorder 
-                onAudioReady={handleAudioReady}
-                initialAudioUrl={lastUploadedAudioUrl}
-                disabled={uploadingAudio}
-              />
-            
-            <AudioPlayer 
-              audioUrls={audioUrls}
-              onDelete={handleDeleteAudio}
-              disabled={uploadingAudio}
-            />
-            
-            {uploadingAudio && (
-              <div className="text-center mb-3">
-                <Spinner animation="border" size="sm" className="me-2" />
-                <span className="text-muted">{t('Enviando áudio...', '发送音频中...')}</span>
-              </div>
-            )}
 
             {/* U.PRICE | UNIT */}
             <Row className="mb-3">

@@ -142,6 +142,7 @@ const Factories = () => {
       if (uploadingImages.image1 || uploadingImages.image2) {
         console.log('Aguardando upload das imagens...');
         setError(t('Aguarde o upload das imagens terminar', '等待图片上传完成'));
+        setSubmitting(false); // Resetar estado de submitting
         return;
       }
       

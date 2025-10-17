@@ -45,7 +45,6 @@ const Dashboard = () => {
     material: [],
     outros: []
   });
-  const [showAvailableTags, setShowAvailableTags] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [filteredFactories, setFilteredFactories] = useState([]);
 
@@ -68,13 +67,24 @@ const Dashboard = () => {
       if (forceRefresh) {
         console.log('Forçando refresh - invalidando cache...');
         await optimizedFirebaseService.invalidateCache('factories');
+        
         // Limpar TODOS os caches relacionados a fábricas
-        localStorage.removeItem('factoriesCache');
-        localStorage.removeItem('factoriesCacheTime');
-        localStorage.removeItem('cache_factories_page_1_limit_12');
-        localStorage.removeItem('cache_time_factories_page_1_limit_12');
-        localStorage.removeItem('cache_dashboard_initial_data');
-        localStorage.removeItem('cache_time_dashboard_initial_data');
+        const cacheKeys = [
+          'factoriesCache',
+          'factoriesCacheTime',
+          'cache_factories_page_1_limit_12',
+          'cache_time_factories_page_1_limit_12',
+          'cache_dashboard_initial_data',
+          'cache_time_dashboard_initial_data',
+          'factories_page_1_limit_12',
+          'factories_page_1_limit_12_{}'
+        ];
+        
+        cacheKeys.forEach(key => {
+          localStorage.removeItem(key);
+          localStorage.removeItem(`cache_${key}`);
+          localStorage.removeItem(`cache_time_${key}`);
+        });
         
         // Limpar cache do IndexedDB também
         try {
@@ -84,9 +94,23 @@ const Dashboard = () => {
         } catch (error) {
           console.warn('Erro ao limpar IndexedDB:', error);
         }
+        
+        // Limpar cache em memória do cacheService
+        try {
+          const cacheService = await import('../services/cacheService');
+          cacheService.default.memoryCache.clear();
+          console.log('Cache em memória limpo');
+        } catch (error) {
+          console.warn('Erro ao limpar cache em memória:', error);
+        }
       }
       
-      const result = await optimizedFirebaseService.getFactories(page, pageSize, {});
+      const result = await optimizedFirebaseService.getPaginatedData('factories', {
+        page,
+        limit: pageSize,
+        filters: {},
+        forceRefresh
+      });
       
       // Se ainda não funcionou, tentar busca direta sem cache
       if (forceRefresh && result.fallback) {
@@ -489,6 +513,12 @@ const Dashboard = () => {
     };
   }, [loadFactories, currentPage]);
 
+  // Forçar refresh inicial para garantir dados frescos
+  useEffect(() => {
+    console.log('Dashboard montado - forçando refresh inicial...');
+    loadFactories(currentPage, true);
+  }, [loadFactories, currentPage]); // Executar quando o componente monta ou dependências mudam
+
   useEffect(() => {
     setFilteredFactories(allFactories);
   }, [allFactories]);
@@ -519,6 +549,7 @@ const Dashboard = () => {
       if (uploadingImages.image1 || uploadingImages.image2) {
         console.log('Aguardando upload das imagens...');
         setError(t('Aguarde o upload das imagens terminar', '等待图片上传完成'));
+        setSubmitting(false); // Resetar estado de submitting
         return;
       }
       
@@ -996,14 +1027,14 @@ const Dashboard = () => {
 
             {/* Tags Região */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('Tags Região', '地区标签')}</Form.Label>
+              <Form.Label className="fw-bold">{t('Tags Região', '地区标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
                 {factoryTags.regiao.map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="primary" 
                     className="d-flex align-items-center gap-1"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
                     onClick={() => removeTagFromFactory(tag.id, 'regiao')}
                   >
                     {tag.name}
@@ -1027,18 +1058,41 @@ const Dashboard = () => {
                   <i className="bi bi-plus"></i>
                 </Button>
               </div>
+              
+              {/* Tags Globais Região */}
+              <div className="mt-2">
+                <small className="text-muted d-block mb-2">
+                  {t('Tags Globais Disponíveis', '可用全局标签')}
+                </small>
+                <div className="d-flex flex-wrap gap-2">
+                  {availableTags && availableTags.regiao && availableTags.regiao.length > 0 && 
+                    availableTags.regiao.map(tag => (
+                      <Badge 
+                        key={tag.id} 
+                        bg="secondary" 
+                        className="d-flex align-items-center gap-1"
+                        style={{ cursor: 'pointer', fontSize: '12px' }}
+                        onClick={() => addAvailableTagToFactory(tag)}
+                      >
+                        {tag.name}
+                        <i className="bi bi-plus"></i>
+                      </Badge>
+                    ))
+                  }
+                </div>
+              </div>
             </Form.Group>
 
             {/* Tags Material */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('Tags Material', '材料标签')}</Form.Label>
+              <Form.Label className="fw-bold">{t('Tags Material', '材料标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
                 {factoryTags.material.map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="success" 
                     className="d-flex align-items-center gap-1"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
                     onClick={() => removeTagFromFactory(tag.id, 'material')}
                   >
                     {tag.name}
@@ -1062,18 +1116,41 @@ const Dashboard = () => {
                   <i className="bi bi-plus"></i>
                 </Button>
               </div>
+              
+              {/* Tags Globais Material */}
+              <div className="mt-2">
+                <small className="text-muted d-block mb-2">
+                  {t('Tags Globais Disponíveis', '可用全局标签')}
+                </small>
+                <div className="d-flex flex-wrap gap-2">
+                  {availableTags && availableTags.material && availableTags.material.length > 0 && 
+                    availableTags.material.map(tag => (
+                      <Badge 
+                        key={tag.id} 
+                        bg="secondary" 
+                        className="d-flex align-items-center gap-1"
+                        style={{ cursor: 'pointer', fontSize: '12px' }}
+                        onClick={() => addAvailableTagToFactory(tag)}
+                      >
+                        {tag.name}
+                        <i className="bi bi-plus"></i>
+                      </Badge>
+                    ))
+                  }
+                </div>
+              </div>
             </Form.Group>
 
             {/* Tags Outros */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('Tags Outros', '其他标签')}</Form.Label>
+              <Form.Label className="fw-bold">{t('Tags Outros', '其他标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
                 {factoryTags.outros.map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="danger" 
                     className="d-flex align-items-center gap-1"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', fontSize: '14px' }}
                     onClick={() => removeTagFromFactory(tag.id, 'outros')}
                   >
                     {tag.name}
@@ -1097,95 +1174,31 @@ const Dashboard = () => {
                   <i className="bi bi-plus"></i>
                 </Button>
               </div>
+              
+              {/* Tags Globais Outros */}
+              <div className="mt-2">
+                <small className="text-muted d-block mb-2">
+                  {t('Tags Globais Disponíveis', '可用全局标签')}
+                </small>
+                <div className="d-flex flex-wrap gap-2">
+                  {availableTags && availableTags.outros && availableTags.outros.length > 0 && 
+                    availableTags.outros.map(tag => (
+                      <Badge 
+                        key={tag.id} 
+                        bg="secondary" 
+                        className="d-flex align-items-center gap-1"
+                        style={{ cursor: 'pointer', fontSize: '12px' }}
+                        onClick={() => addAvailableTagToFactory(tag)}
+                      >
+                        {tag.name}
+                        <i className="bi bi-plus"></i>
+                      </Badge>
+                    ))
+                  }
+                </div>
+              </div>
             </Form.Group>
 
-            {/* Tags Disponíveis */}
-            <Row className="mb-3">
-              <Col xs={12}>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6 className="text-success mb-0">{t('Tags Disponíveis', '可用标签')}</h6>
-                  <Button 
-                    variant="outline-success" 
-                    size="sm"
-                    onClick={() => setShowAvailableTags(!showAvailableTags)}
-                  >
-                    {showAvailableTags ? t('Ocultar', '隐藏') : t('Mostrar', '显示')}
-                  </Button>
-                </div>
-                
-                {showAvailableTags && (
-                  <div className="border rounded p-3 bg-light">
-                    {/* Tags Região Disponíveis */}
-                    {availableTags && availableTags.regiao && availableTags.regiao.length > 0 && (
-                      <div className="mb-3">
-                        <h6 className="text-primary small">{t('Região', '地区')}</h6>
-                        <div className="d-flex flex-wrap gap-2">
-                          {availableTags.regiao.map(tag => (
-                            <Badge 
-                              key={tag.id} 
-                              bg="primary" 
-                              className="d-flex align-items-center gap-1"
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => addAvailableTagToFactory(tag)}
-                            >
-                              {tag.name}
-                              <i className="bi bi-plus"></i>
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tags Material Disponíveis */}
-                    {availableTags && availableTags.material && availableTags.material.length > 0 && (
-                      <div className="mb-3">
-                        <h6 className="text-success small">{t('Material', '材料')}</h6>
-                        <div className="d-flex flex-wrap gap-2">
-                          {availableTags.material.map(tag => (
-                            <Badge 
-                              key={tag.id} 
-                              bg="success" 
-                              className="d-flex align-items-center gap-1"
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => addAvailableTagToFactory(tag)}
-                            >
-                              {tag.name}
-                              <i className="bi bi-plus"></i>
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tags Outros Disponíveis */}
-                    {availableTags && availableTags.outros && availableTags.outros.length > 0 && (
-                      <div className="mb-3">
-                        <h6 className="text-danger small">{t('Outros', '其他')}</h6>
-                        <div className="d-flex flex-wrap gap-2">
-                          {availableTags.outros.map(tag => (
-                            <Badge 
-                              key={tag.id} 
-                              bg="danger" 
-                              className="d-flex align-items-center gap-1"
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => addAvailableTagToFactory(tag)}
-                            >
-                              {tag.name}
-                              <i className="bi bi-plus"></i>
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {availableTags && availableTags.regiao && availableTags.material && availableTags.outros && 
-                     availableTags.regiao.length === 0 && availableTags.material.length === 0 && availableTags.outros.length === 0 && (
-                      <p className="text-muted text-center mb-0">{t('Nenhuma tag disponível', '没有可用标签')}</p>
-                    )}
-                  </div>
-                )}
-              </Col>
-            </Row>
 
             <Form.Group className="mb-3">
               <Form.Label>{t('Imagem Principal', '主图片')}</Form.Label>

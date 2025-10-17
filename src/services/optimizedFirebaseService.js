@@ -14,6 +14,47 @@ class OptimizedFirebaseService {
     this.batchSize = 5; // Tamanho do batch para consultas agrupadas
   }
 
+  // Busca direta sem cache
+  async fetchPaginatedDataDirectly(collection, options = {}) {
+    const {
+      page = 1,
+      limit = this.pageSize,
+      orderBy = 'createdAt',
+      orderDirection = 'desc',
+      filters = {}
+    } = options;
+
+    const params = new URLSearchParams({
+      col: collection,
+      page: page.toString(),
+      limit: limit.toString(),
+      orderBy,
+      orderDirection
+    });
+
+    // Adicionar filtros
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        params.append(key, value);
+      }
+    });
+
+    const response = await fetch(`${this.apiUrl}/firestore/get/paginated?${params}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store'
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok || result.fallback || result.error) {
+      console.log('Firebase indisponível na busca direta, usando localStorage');
+      return this.getFactoriesFromLocalStorage(page, limit);
+    }
+
+    return result;
+  }
+
   // Consulta otimizada com paginação
   async getPaginatedData(collection, options = {}) {
     const {
@@ -22,8 +63,15 @@ class OptimizedFirebaseService {
       orderBy = 'createdAt',
       orderDirection = 'desc',
       filters = {},
-      cacheKey = null
+      cacheKey = null,
+      forceRefresh = false
     } = options;
+
+    // Se forçar refresh, usar busca direta
+    if (forceRefresh) {
+      console.log('Forçando busca direta sem cache para:', collection);
+      return await this.fetchPaginatedDataDirectly(collection, options);
+    }
 
     const cacheKeyFinal = cacheKey || `${collection}_page_${page}_limit_${limit}_${JSON.stringify(filters)}`;
     

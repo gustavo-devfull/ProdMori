@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, Button, Dropdown } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const AppHeader = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
   const [isMobile, setIsMobile] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  
+  // Detectar se estamos na página de produtos
+  const isProductsPage = location.pathname === '/products';
 
   useEffect(() => {
     const checkMobile = () => {
@@ -103,13 +107,13 @@ const AppHeader = () => {
         </Button>
         
         <Button
-          variant="outline-light"
+          variant={isProductsPage ? "success" : "outline-light"}
           onClick={() => handleNavigation('/products')}
           size={isMobile ? 'sm' : 'md'}
           className="px-3 d-flex align-items-center"
           style={{
-            backgroundColor: 'transparent',
-            borderColor: 'white',
+            backgroundColor: isProductsPage ? '#198754' : 'transparent',
+            borderColor: isProductsPage ? '#198754' : 'white',
             color: 'white'
           }}
           title={t('Produtos', '产品')}

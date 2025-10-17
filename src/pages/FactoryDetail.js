@@ -257,13 +257,20 @@ const FactoryDetail = () => {
   const handleFactorySubmit = async (values) => {
     try {
       setFactorySubmitting(true);
+      setError(null); // Limpar erros anteriores
       
       // Verificar se há uploads em andamento
       if (uploadingImages.image1 || uploadingImages.image2) {
         console.log('Aguardando upload das imagens...');
         setError(t('Aguarde o upload das imagens terminar', '等待图片上传完成'));
+        setFactorySubmitting(false); // Resetar estado de submitting
         return;
       }
+      
+      console.log('=== UPDATING FACTORY ===');
+      console.log('Factory ID:', factoryId);
+      console.log('Values:', values);
+      console.log('Image URLs:', imageUrls);
       
       // Usar as URLs das imagens do estado do React
       const finalValues = {
@@ -272,25 +279,34 @@ const FactoryDetail = () => {
         imageUrl2: imageUrls.image2 || values.imageUrl2
       };
       
+      console.log('Final values:', finalValues);
+      
       await factoryServiceAPI.updateFactory(factoryId, finalValues);
+      console.log('Factory updated successfully');
       
       // Salvar as tags da fábrica usando o serviço
+      console.log('Saving factory tags:', factoryTags);
       Object.keys(factoryTags).forEach(division => {
         factoryTags[division].forEach(tag => {
+          console.log(`Saving tag: ${tag.name} (${tag.id}) to factory ${factoryId}`);
           tagService.addTagToFactory(factoryId, tag);
         });
       });
       
       // Sincronizar tags globais após salvar
       tagService.syncGlobalTags();
+      console.log('Factory tags saved and synced');
       
       setFactoryEditModalVisible(false);
       await loadFactoryData();
+      console.log('Factory data reloaded');
+      
     } catch (err) {
+      console.error('Error updating factory:', err);
       setError(t('Erro ao salvar fábrica', '保存工厂时出错'));
-      console.error(err);
     } finally {
       setFactorySubmitting(false);
+      console.log('Factory submitting state reset');
     }
   };
 
