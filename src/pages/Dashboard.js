@@ -124,6 +124,37 @@ const Dashboard = () => {
     loadAvailableTags();
   }, [loadFactories, loadAvailableTags]); // Incluir dependências para evitar warning
 
+  // Escutar eventos de exclusão de fábricas
+  useEffect(() => {
+    const handleFactoryDeleted = (event) => {
+      console.log('Dashboard - Fábrica excluída detectada:', event.detail);
+      // Recarregar fábricas imediatamente
+      loadFactories(1, true);
+    };
+
+    const handleFactoryCreated = (event) => {
+      console.log('Dashboard - Nova fábrica criada detectada:', event.detail);
+      // Recarregar fábricas imediatamente
+      loadFactories(1, true);
+    };
+
+    const handleFactoryUpdated = (event) => {
+      console.log('Dashboard - Fábrica atualizada detectada:', event.detail);
+      // Recarregar fábricas imediatamente
+      loadFactories(1, true);
+    };
+
+    window.addEventListener('factoryDeleted', handleFactoryDeleted);
+    window.addEventListener('factoryCreated', handleFactoryCreated);
+    window.addEventListener('factoryUpdated', handleFactoryUpdated);
+    
+    return () => {
+      window.removeEventListener('factoryDeleted', handleFactoryDeleted);
+      window.removeEventListener('factoryCreated', handleFactoryCreated);
+      window.removeEventListener('factoryUpdated', handleFactoryUpdated);
+    };
+  }, [loadFactories]);
+
   // Carregar tags de cada fábrica quando as fábricas forem carregadas (otimizado)
   useEffect(() => {
     if (allFactories.length > 0) {

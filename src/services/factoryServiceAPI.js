@@ -39,7 +39,12 @@ class FactoryServiceAPI {
         const optimizedService = await import('./optimizedFirebaseService');
         // Invalidar todo o cache de fábricas
         await optimizedService.default.invalidateCache('factories');
-        console.log('Cache invalidado após criação da fábrica');
+        // Disparar evento customizado para notificar componentes
+        window.dispatchEvent(new CustomEvent('factoryCreated', { 
+          detail: { factoryId: result.id } 
+        }));
+        
+        console.log('Cache invalidado e evento disparado após criação da fábrica');
       } catch (cacheError) {
         console.warn('Erro ao invalidar cache:', cacheError);
       }
@@ -100,7 +105,12 @@ class FactoryServiceAPI {
           localStorage.removeItem(key);
         });
         
-        console.log('Cache invalidado após atualização da fábrica');
+        // Disparar evento customizado para notificar componentes
+        window.dispatchEvent(new CustomEvent('factoryUpdated', { 
+          detail: { factoryId: id } 
+        }));
+        
+        console.log('Cache invalidado e evento disparado após atualização da fábrica');
       } catch (cacheError) {
         console.warn('Erro ao invalidar cache:', cacheError);
       }
@@ -142,7 +152,12 @@ class FactoryServiceAPI {
           localStorage.removeItem(key);
         });
         
-        console.log('Cache invalidado após exclusão da fábrica');
+        // Disparar evento customizado para notificar componentes
+        window.dispatchEvent(new CustomEvent('factoryDeleted', { 
+          detail: { factoryId: id } 
+        }));
+        
+        console.log('Cache invalidado e evento disparado após exclusão da fábrica');
       } catch (cacheError) {
         console.warn('Erro ao invalidar cache:', cacheError);
       }
