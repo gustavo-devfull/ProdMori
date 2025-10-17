@@ -88,7 +88,7 @@ const FactoryDetail = () => {
       // Carregar tags da fábrica
       console.log('=== CARREGANDO TAGS DA FÁBRICA ===');
       try {
-        const factoryTagsData = await tagService.getFactoryTags(factoryId);
+        const factoryTagsData = await tagService.getFactoryTagsWithAssociations(factoryId);
         console.log('loadFactoryData - Tags carregadas:', factoryTagsData);
         
         // Garantir que a estrutura está correta
@@ -369,7 +369,7 @@ const FactoryDetail = () => {
     
     // Carregar tags da fábrica (mesmo método da página de fábricas)
     try {
-      const factoryTagsData = await tagService.getFactoryTags(factoryId);
+      const factoryTagsData = await tagService.getFactoryTagsWithAssociations(factoryId);
       console.log('handleEditFactory - Tags carregadas:', factoryTagsData);
       
       // Garantir que a estrutura está correta
@@ -406,61 +406,23 @@ const FactoryDetail = () => {
     // Recarregar tags globais
     console.log('=== CARREGANDO TAGS GLOBAIS ===');
     try {
-      const globalTagsData = await tagService.getAllTags();
+      const globalTagsData = await tagService.getAllTagsFromFirebase();
       console.log('Tags globais carregadas:', globalTagsData);
       console.log('Tags globais - tipoProduto:', globalTagsData.tipoProduto);
       console.log('Tags globais - tipoProduto length:', globalTagsData.tipoProduto?.length);
       setGlobalTags(globalTagsData);
       
-      // Verificar se há tags no cache do Dashboard
-      const cacheTags = localStorage.getItem('globalTagsCache');
-      if (cacheTags) {
-        try {
-          const parsedCacheTags = JSON.parse(cacheTags);
-          console.log('Cache do Dashboard encontrado:', parsedCacheTags);
-          console.log('Cache - tipoProduto:', parsedCacheTags.tipoProduto);
-          console.log('Cache - tipoProduto length:', parsedCacheTags.tipoProduto?.length);
-          
-          // Se o cache tem mais tags tipoProduto, usar o cache
-          if (parsedCacheTags.tipoProduto && parsedCacheTags.tipoProduto.length > 0) {
-            console.log('Usando cache do Dashboard para tipoProduto...');
-            setGlobalTags(prev => ({
-              ...prev,
-              tipoProduto: parsedCacheTags.tipoProduto
-            }));
-          }
-        } catch (cacheError) {
-          console.error('Erro ao parsear cache:', cacheError);
-        }
-      }
+      // Não usar cache do Dashboard - usar apenas dados do Firebase
+      console.log('Usando apenas dados do Firebase (sem cache)');
     } catch (error) {
-      console.error('Erro ao carregar tags globais:', error);
-      // Fallback para localStorage
-      const localGlobalTags = JSON.parse(localStorage.getItem('globalTags') || '{"regiao":[],"material":[],"outros":[],"tipoProduto":[]}');
-      console.log('Usando tags globais do localStorage:', localGlobalTags);
-      
-      // Verificar cache do Dashboard também no fallback
-      const cacheTags = localStorage.getItem('globalTagsCache');
-      let cacheTipoProduto = [];
-      if (cacheTags) {
-        try {
-          const parsedCacheTags = JSON.parse(cacheTags);
-          cacheTipoProduto = parsedCacheTags.tipoProduto || [];
-          console.log('Cache do Dashboard no fallback - tipoProduto:', cacheTipoProduto);
-        } catch (cacheError) {
-          console.error('Erro ao parsear cache no fallback:', cacheError);
-        }
-      }
-      
-      // Garantir que todas as divisões existem
-      const safeGlobalTags = {
-        regiao: localGlobalTags.regiao || [],
-        material: localGlobalTags.material || [],
-        outros: localGlobalTags.outros || [],
-        tipoProduto: localGlobalTags.tipoProduto || cacheTipoProduto || []
-      };
-      console.log('Safe global tags:', safeGlobalTags);
-      setGlobalTags(safeGlobalTags);
+      console.error('Erro ao carregar tags globais do Firebase:', error);
+      // Em caso de erro, usar estrutura vazia (não usar localStorage)
+      setGlobalTags({
+        regiao: [],
+        material: [],
+        outros: [],
+        tipoProduto: []
+      });
     }
   };
 
@@ -508,13 +470,17 @@ const FactoryDetail = () => {
       console.log('Saving factory tags:', factoryTags);
       console.log('Factory tags tipoProduto:', factoryTags.tipoProduto);
       console.log('Factory tags tipoProduto length:', factoryTags.tipoProduto?.length);
+      console.log('Factory ID:', factoryId);
       
       Object.keys(factoryTags).forEach(division => {
         console.log(`Processing division: ${division}`);
         console.log(`Tags in ${division}:`, factoryTags[division]);
-        factoryTags[division].forEach(tag => {
+        factoryTags[division].forEach(async (tag) => {
           console.log(`Saving tag: ${tag.name} (${tag.id}) to factory ${factoryId} in division ${division}`);
-          tagService.addTagToFactory(factoryId, tag);
+          console.log(`Tag isNewTag: ${tag.isNewTag}`);
+          
+          // Todas as tags (novas e existentes) devem ser associadas à fábrica
+          await tagService.createTagAssociation(tag, factoryId);
         });
       });
       
@@ -548,8 +514,8 @@ const FactoryDetail = () => {
         await factoryServiceAPI.deleteFactory(factoryId);
         console.log('Fábrica excluída com sucesso');
         
-        // Redirecionar para a página de fábricas
-        navigate('/factories');
+        // Redirecionar para o Dashboard
+        navigate('/dashboard');
       } catch (error) {
         console.error('Erro ao excluir fábrica:', error);
         alert(t('Erro ao excluir fábrica', '删除工厂时出错'));
@@ -605,28 +571,38 @@ const FactoryDetail = () => {
     const tagName = factoryNewTagInputs[division].trim();
     if (!tagName) return;
 
+    console.log('=== ADD NEW TAG TO FACTORY ===');
+    console.log('Tag:', tagName);
+    console.log('Division:', division);
+    console.log('Current factory tags:', factoryTags);
+
     const newTag = {
       id: Date.now().toString(),
       name: tagName,
       division: division,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      isNewTag: true // Marcar como tag nova
     };
 
-    // Adicionar ao serviço global de tags
-    const result = tagService.addTag(newTag);
-    if (result.success) {
-      // Adicionar à fábrica atual
-      addTagToFactory(newTag, division);
-      
-      // Atualizar tags globais disponíveis
-      const globalTagsData = await tagService.getAllTags();
-      setGlobalTags(globalTagsData);
-    } else {
-      console.warn('Tag já existe globalmente:', result.message);
-      // Mesmo assim, adicionar à fábrica atual
-      addTagToFactory(newTag, division);
+    // Criar a tag globalmente primeiro
+    try {
+      const result = await tagService.addTag(newTag);
+      if (result.success) {
+        console.log('Tag criada globalmente:', result);
+        
+        // Atualizar tags globais disponíveis
+        const globalTagsData = await tagService.getAllTagsFromFirebase();
+        setGlobalTags(globalTagsData);
+      } else {
+        console.warn('Tag já existe globalmente:', result.message);
+      }
+    } catch (error) {
+      console.error('Erro ao criar tag globalmente:', error);
     }
+
+    // Adicionar à fábrica atual (sempre, mesmo se já existir globalmente)
+    addTagToFactory(newTag, division);
 
     // Limpar input
     setFactoryNewTagInputs(prev => ({
@@ -655,8 +631,13 @@ const FactoryDetail = () => {
     }
 
     console.log('Adicionando tag global à fábrica:', tag.name);
+    // Marcar como tag global existente (não nova)
+    const tagToAdd = {
+      ...tag,
+      isNewTag: false
+    };
     // Adicionar a tag à fábrica
-    addTagToFactory(tag, division);
+    addTagToFactory(tagToAdd, division);
   };
 
   const resetFactoryTags = () => {

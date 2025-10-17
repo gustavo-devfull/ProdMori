@@ -37,6 +37,7 @@ class FactoryServiceAPI {
       // Invalidar cache após criação
       try {
         const optimizedService = await import('./optimizedFirebaseService');
+        // Invalidar todo o cache de fábricas
         await optimizedService.default.invalidateCache('factories');
         console.log('Cache invalidado após criação da fábrica');
       } catch (cacheError) {

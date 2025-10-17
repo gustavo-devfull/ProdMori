@@ -297,8 +297,27 @@ class OptimizedFirebaseService {
     if (key) {
       await cacheService.invalidate(key, type);
     } else {
-      // Invalidar todo o cache do tipo
-      await cacheService.clearAll();
+      // Invalidar todo o cache do tipo específico
+      if (type === 'factories') {
+        // Invalidar todas as chaves de cache que começam com 'factories_'
+        const memoryKeys = Array.from(cacheService.memoryCache.keys());
+        const factoryKeys = memoryKeys.filter(key => key.startsWith('factories_'));
+        
+        for (const factoryKey of factoryKeys) {
+          await cacheService.invalidate(factoryKey, type);
+        }
+        
+        // Também limpar do localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('cache_factories_')) {
+            localStorage.removeItem(key);
+            localStorage.removeItem(`cache_time_${key.replace('cache_', '')}`);
+          }
+        }
+      } else {
+        await cacheService.clearAll();
+      }
     }
   }
 

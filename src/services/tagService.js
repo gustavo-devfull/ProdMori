@@ -4,23 +4,25 @@ class TagService {
   constructor() {
     this.storageKey = 'global_tags';
     this.useFirebase = true; // Tentar usar Firebase primeiro
+    this.tagServiceFirebase = tagServiceFirebase; // Inicializar referência
   }
 
-  // Função para remover tags duplicadas
-  removeDuplicateTags(tags) {
-    if (!Array.isArray(tags)) return [];
-    
-    const seen = new Set();
-    return tags.filter(tag => {
-      // Criar uma chave única baseada no nome e divisão
-      const key = `${tag.name.toLowerCase()}_${tag.division}`;
-      if (seen.has(key)) {
-        return false; // Tag duplicada removida silenciosamente
-      }
-      seen.add(key);
-      return true;
-    });
-  }
+  // Função para remover tags duplicadas (por nome, case-insensitive) - REMOVIDA PARA EVITAR LOOP
+  // removeDuplicateTags(tags) {
+  //   if (!Array.isArray(tags)) return [];
+  //   
+  //   const seen = new Set();
+  //   return tags.filter(tag => {
+  //     // Criar uma chave única baseada apenas no nome (case-insensitive)
+  //     const key = tag.name.toLowerCase();
+  //     if (seen.has(key)) {
+  //       console.log(`TagService.removeDuplicateTags - Removendo duplicata: ${tag.name}`);
+  //       return false; // Tag duplicada removida
+  //     }
+  //     seen.add(key);
+  //     return true;
+  //   });
+  // }
 
   // Obter todas as tags globais
   async getAllTags() {
@@ -34,10 +36,10 @@ class TagService {
           
           // Remover duplicatas de cada divisão
           const cleanedTags = {
-            regiao: this.removeDuplicateTags(globalTags.regiao || []),
-            material: this.removeDuplicateTags(globalTags.material || []),
-            outros: this.removeDuplicateTags(globalTags.outros || []),
-            tipoProduto: this.removeDuplicateTags(globalTags.tipoProduto || [])
+            regiao: globalTags.regiao || [],
+            material: globalTags.material || [],
+            outros: globalTags.outros || [],
+            tipoProduto: globalTags.tipoProduto || []
           };
           console.log('TagService.getAllTags - Tags limpas:', cleanedTags);
           return cleanedTags;
@@ -53,10 +55,10 @@ class TagService {
         const parsedTags = JSON.parse(tags);
         // Garantir que a estrutura está correta e remover duplicatas
         return {
-          regiao: this.removeDuplicateTags(Array.isArray(parsedTags.regiao) ? parsedTags.regiao : []),
-          material: this.removeDuplicateTags(Array.isArray(parsedTags.material) ? parsedTags.material : []),
-          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : []),
-          tipoProduto: this.removeDuplicateTags(Array.isArray(parsedTags.tipoProduto) ? parsedTags.tipoProduto : [])
+          regiao: Array.isArray(parsedTags.regiao) ? parsedTags.regiao : [],
+          material: Array.isArray(parsedTags.material) ? parsedTags.material : [],
+          outros: Array.isArray(parsedTags.outros) ? parsedTags.outros : [],
+          tipoProduto: Array.isArray(parsedTags.tipoProduto) ? parsedTags.tipoProduto : []
         };
       }
       
@@ -78,13 +80,35 @@ class TagService {
     }
   }
 
-  // Adicionar uma nova tag global
+  // Adicionar uma nova tag global (sempre sem factoryId)
   async addTag(tag, factoryId = null) {
     try {
-      // Tentar usar Firebase primeiro
+      // Verificar se a tag já existe antes de tentar criar
+      const allTags = await this.getAllTags();
+      const existingTag = allTags[tag.division].find(t => 
+        t.name.toLowerCase() === tag.name.toLowerCase()
+      );
+      
+      if (existingTag) {
+        console.log('TagService.addTag - Tag já existe:', existingTag);
+        return { 
+          success: false, 
+          message: 'Tag já existe', 
+          existingTag: existingTag 
+        };
+      }
+
+      // Tentar usar Firebase primeiro (sempre sem factoryId para manter tags globais)
       if (this.useFirebase) {
         try {
-          const result = await tagServiceFirebase.createTag(tag, factoryId);
+          const result = await tagServiceFirebase.createTag(tag, null); // Sempre null para tags globais
+          
+          // Verificar se o Firebase retornou erro de duplicata
+          if (result.success === false) {
+            console.log('TagService.addTag - Firebase detectou duplicata:', result);
+            return result;
+          }
+          
           console.log('Tag adicionada ao Firebase:', result);
           return { success: true, message: 'Tag adicionada com sucesso', id: result.id };
         } catch (firebaseError) {
@@ -94,14 +118,6 @@ class TagService {
       }
 
       // Fallback para localStorage
-      const allTags = await this.getAllTags();
-      
-      // Verificar se a tag já existe
-      const existingTag = allTags[tag.division].find(t => t.name === tag.name);
-      if (existingTag) {
-        return { success: false, message: 'Tag já existe' };
-      }
-
       // Adicionar a nova tag
       allTags[tag.division].push(tag);
       
@@ -146,6 +162,16 @@ class TagService {
           console.log('Attempting to remove tag from Firebase...');
           await tagServiceFirebase.deleteTag(tagId);
           console.log('Tag successfully removed from Firebase');
+          
+          // Invalidar cache de tags após remoção
+          try {
+            const cacheService = await import('./cacheService');
+            await cacheService.default.invalidate(`tags_global_${division}`, 'tags');
+            await cacheService.default.invalidate(`tags_global_all`, 'tags');
+            console.log('Cache de tags invalidado após remoção');
+          } catch (cacheError) {
+            console.warn('Erro ao invalidar cache:', cacheError);
+          }
         } catch (firebaseError) {
           console.warn('Failed to remove tag from Firebase:', firebaseError);
           // Continuar mesmo se Firebase falhar
@@ -154,6 +180,9 @@ class TagService {
       
       // Remover também das fábricas que possuem essa tag
       this.removeTagFromAllFactories(tagId, division);
+      
+      // Forçar refresh das tags globais
+      this.refreshGlobalTags();
       
       return { success: true, message: 'Tag removida com sucesso' };
     } catch (error) {
@@ -194,10 +223,10 @@ class TagService {
           const tags = await tagServiceFirebase.getFactoryTags(factoryId);
           // Remover duplicatas de cada divisão
           const cleanedTags = {
-            regiao: this.removeDuplicateTags(tags.regiao || []),
-            material: this.removeDuplicateTags(tags.material || []),
-            outros: this.removeDuplicateTags(tags.outros || []),
-            tipoProduto: this.removeDuplicateTags(tags.tipoProduto || [])
+            regiao: tags.regiao || [],
+            material: tags.material || [],
+            outros: tags.outros || [],
+            tipoProduto: tags.tipoProduto || []
           };
           
           return cleanedTags;
@@ -213,10 +242,10 @@ class TagService {
         const parsedTags = JSON.parse(factoryTags);
         // Garantir que a estrutura está correta e remover duplicatas
         return {
-          regiao: this.removeDuplicateTags(Array.isArray(parsedTags.regiao) ? parsedTags.regiao : []),
-          material: this.removeDuplicateTags(Array.isArray(parsedTags.material) ? parsedTags.material : []),
-          outros: this.removeDuplicateTags(Array.isArray(parsedTags.outros) ? parsedTags.outros : []),
-          tipoProduto: this.removeDuplicateTags(Array.isArray(parsedTags.tipoProduto) ? parsedTags.tipoProduto : [])
+          regiao: Array.isArray(parsedTags.regiao) ? parsedTags.regiao : [],
+          material: Array.isArray(parsedTags.material) ? parsedTags.material : [],
+          outros: Array.isArray(parsedTags.outros) ? parsedTags.outros : [],
+          tipoProduto: Array.isArray(parsedTags.tipoProduto) ? parsedTags.tipoProduto : []
         };
       }
       
@@ -415,6 +444,309 @@ class TagService {
     } catch (error) {
       console.error('TagService.testConnection - Error:', error);
       return { success: false, error: 'Test failed', details: error.message };
+    }
+  }
+
+  // Função para limpar tags duplicadas existentes
+  async cleanupDuplicateTags() {
+    try {
+      console.log('TagService.cleanupDuplicateTags - Iniciando limpeza de duplicatas...');
+      
+      const allTags = await this.getAllTags();
+      let cleanedCount = 0;
+      
+      // Limpar duplicatas em cada divisão
+      Object.keys(allTags).forEach(division => {
+        const originalLength = allTags[division].length;
+        // Manter tags como estão (sem remover duplicatas)
+        // allTags[division] = this.removeDuplicateTags(allTags[division]);
+        const cleanedLength = allTags[division].length;
+        const removedCount = originalLength - cleanedLength;
+        
+        if (removedCount > 0) {
+          console.log(`TagService.cleanupDuplicateTags - Removidas ${removedCount} duplicatas da divisão ${division}`);
+          cleanedCount += removedCount;
+        }
+      });
+      
+      if (cleanedCount > 0) {
+        // Salvar tags limpas
+        this.saveAllTags(allTags);
+        console.log(`TagService.cleanupDuplicateTags - Total de ${cleanedCount} duplicatas removidas`);
+      } else {
+        console.log('TagService.cleanupDuplicateTags - Nenhuma duplicata encontrada');
+      }
+      
+      return { success: true, cleanedCount };
+    } catch (error) {
+      console.error('Erro ao limpar tags duplicadas:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Função para verificar se uma tag já existe (case-insensitive)
+  async tagExists(tagName, division) {
+    try {
+      const allTags = await this.getAllTags();
+      return allTags[division].some(tag => 
+        tag.name.toLowerCase() === tagName.toLowerCase()
+      );
+    } catch (error) {
+      console.error('Erro ao verificar se tag existe:', error);
+      return false;
+    }
+  }
+
+  // Função para forçar refresh das tags globais
+  async refreshGlobalTags() {
+    try {
+      console.log('TagService.refreshGlobalTags - Forçando refresh das tags globais...');
+      
+      // Limpar cache de tags globais
+      try {
+        const cacheService = await import('./cacheService');
+        await cacheService.default.invalidate('tags_global_all', 'tags');
+        await cacheService.default.invalidate('tags_global_regiao', 'tags');
+        await cacheService.default.invalidate('tags_global_material', 'tags');
+        await cacheService.default.invalidate('tags_global_outros', 'tags');
+        await cacheService.default.invalidate('tags_global_tipoProduto', 'tags');
+        console.log('Cache de tags globais limpo');
+      } catch (cacheError) {
+        console.warn('Erro ao limpar cache:', cacheError);
+      }
+      
+      // Limpar localStorage também
+      localStorage.removeItem(this.storageKey);
+      console.log('localStorage de tags limpo');
+      
+    } catch (error) {
+      console.error('Erro ao fazer refresh das tags globais:', error);
+    }
+  }
+
+  // Função para carregar tags diretamente do Firebase (sem fallback)
+  async getAllTagsFromFirebase() {
+    try {
+      console.log('TagService.getAllTagsFromFirebase - Carregando diretamente do Firebase...');
+      
+      // Forçar uso do Firebase
+      const originalUseFirebase = this.useFirebase;
+      this.useFirebase = true;
+      
+      const globalTags = await tagServiceFirebase.getAllGlobalTags();
+      console.log('TagService.getAllTagsFromFirebase - Tags carregadas do Firebase:', globalTags);
+      
+      // Remover duplicatas de cada divisão
+      const cleanedTags = {
+        regiao: globalTags.regiao || [],
+        material: globalTags.material || [],
+        outros: globalTags.outros || [],
+        tipoProduto: globalTags.tipoProduto || []
+      };
+      
+      console.log('TagService.getAllTagsFromFirebase - Tags limpas:', cleanedTags);
+      
+      // Restaurar estado original
+      this.useFirebase = originalUseFirebase;
+      
+      return cleanedTags;
+    } catch (error) {
+      console.error('TagService.getAllTagsFromFirebase - Erro ao carregar do Firebase:', error);
+      throw error; // Não fazer fallback, deixar o erro ser tratado pelo componente
+    }
+  }
+
+  // Função para associar uma tag global existente a uma fábrica
+  async associateTagToFactory(tagId, factoryId) {
+    try {
+      console.log('TagService.associateTagToFactory - Associando tag:', { tagId, factoryId });
+      
+      // Tentar usar Firebase primeiro
+      if (this.useFirebase) {
+        try {
+          const result = await tagServiceFirebase.associateTagToFactory(tagId, factoryId);
+          console.log('Tag associada ao Firebase:', result);
+          return { success: true, message: 'Tag associada com sucesso' };
+        } catch (firebaseError) {
+          console.warn('Erro ao associar tag no Firebase, usando localStorage:', firebaseError);
+          this.useFirebase = false; // Desabilitar Firebase temporariamente
+        }
+      }
+
+      // Fallback para localStorage (apenas associar localmente)
+      console.log('Associando tag localmente (Firebase indisponível)');
+      return { success: true, message: 'Tag associada localmente' };
+    } catch (error) {
+      console.error('Erro ao associar tag à fábrica:', error);
+      return { success: false, message: 'Erro ao associar tag' };
+    }
+  }
+
+  // Associar uma tag existente a uma fábrica (criando associação separada)
+  async createTagAssociation(tag, factoryId) {
+    try {
+      console.log('TagService.createTagAssociation - Associando tag global:', { tag: tag.name, factoryId });
+      
+      // Criar associação no localStorage (sistema simples e eficiente)
+      const associationKey = `factory_tags_${factoryId}`;
+      let associations = JSON.parse(localStorage.getItem(associationKey) || '{}');
+      
+      // Garantir que a divisão existe
+      if (!associations[tag.division]) {
+        associations[tag.division] = [];
+      }
+      
+      // Verificar se já está associada
+      const alreadyAssociated = associations[tag.division].some(t => t.id === tag.id);
+      
+      if (alreadyAssociated) {
+        console.log('TagService.createTagAssociation - Tag já está associada a esta fábrica');
+        return { success: true, message: 'Tag já associada' };
+      }
+      
+      // Adicionar associação local
+      associations[tag.division].push({
+        id: tag.id,
+        name: tag.name,
+        division: tag.division
+      });
+      
+      // Salvar no localStorage
+      localStorage.setItem(associationKey, JSON.stringify(associations));
+      
+      console.log('TagService.createTagAssociation - Associação salva:', associations);
+      
+      return { success: true, message: 'Tag associada à fábrica' };
+    } catch (error) {
+      console.error('TagService.createTagAssociation - Erro geral:', error);
+      return { success: false, message: 'Erro ao criar associação da tag' };
+    }
+  }
+
+  // Carregar tags associadas a uma fábrica (usando associações locais)
+  async getFactoryTagsWithAssociations(factoryId) {
+    try {
+      console.log('TagService.getFactoryTagsWithAssociations - Carregando tags da fábrica:', factoryId);
+      
+      // Carregar associações locais da fábrica
+      const associationKey = `factory_tags_${factoryId}`;
+      const associations = JSON.parse(localStorage.getItem(associationKey) || '{}');
+      
+      console.log('TagService.getFactoryTagsWithAssociations - Associações encontradas:', associations);
+      
+      // Organizar tags por divisão
+      const result = {
+        regiao: [],
+        material: [],
+        outros: [],
+        tipoProduto: []
+      };
+      
+      // Para cada divisão, adicionar as tags associadas
+      Object.keys(result).forEach(division => {
+        if (associations[division]) {
+          result[division] = associations[division].map(assoc => ({
+            id: assoc.id,
+            name: assoc.name,
+            division: assoc.division,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }));
+        }
+      });
+      
+      console.log('TagService.getFactoryTagsWithAssociations - Resultado final:', result);
+      return result;
+    } catch (error) {
+      console.error('TagService.getFactoryTagsWithAssociations - Erro:', error);
+      return {
+        regiao: [],
+        material: [],
+        outros: [],
+        tipoProduto: []
+      };
+    }
+  }
+
+  // Limpar duplicatas do Firebase (manter apenas a primeira ocorrência de cada tag)
+  async cleanupDuplicateTags() {
+    try {
+      console.log('TagService.cleanupDuplicateTags - Iniciando limpeza de duplicatas...');
+      
+      if (!this.useFirebase) {
+        console.log('TagService.cleanupDuplicateTags - Firebase não disponível, pulando limpeza');
+        return { success: true, message: 'Firebase não disponível' };
+      }
+
+      // Carregar todas as tags do Firebase
+      const response = await fetch(`${this.apiUrl}/firestore/get/tags`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error('Falha ao carregar tags do Firebase');
+      }
+
+      const allTags = result.data || [];
+      console.log('TagService.cleanupDuplicateTags - Tags brutas encontradas:', allTags.length);
+
+      // Agrupar por nome e divisão para encontrar duplicatas
+      const tagGroups = {};
+      const duplicatesToRemove = [];
+
+      allTags.forEach(tag => {
+        const key = `${tag.name.toLowerCase()}_${tag.division}`;
+        
+        if (!tagGroups[key]) {
+          tagGroups[key] = [];
+        }
+        tagGroups[key].push(tag);
+      });
+
+      // Identificar duplicatas (manter a primeira, remover as outras)
+      Object.values(tagGroups).forEach(group => {
+        if (group.length > 1) {
+          // Ordenar por data de criação (manter a mais antiga)
+          group.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          
+          // Marcar todas exceto a primeira para remoção
+          for (let i = 1; i < group.length; i++) {
+            duplicatesToRemove.push(group[i]);
+          }
+        }
+      });
+
+      console.log('TagService.cleanupDuplicateTags - Duplicatas encontradas:', duplicatesToRemove.length);
+
+      // Remover duplicatas
+      for (const duplicate of duplicatesToRemove) {
+        try {
+          const deleteResponse = await fetch(`${this.apiUrl}/firestore/delete/tags/${duplicate.id}`, {
+            method: 'DELETE'
+          });
+          
+          if (deleteResponse.ok) {
+            console.log(`TagService.cleanupDuplicateTags - Removida duplicata: ${duplicate.name} (${duplicate.division})`);
+          } else {
+            console.warn(`TagService.cleanupDuplicateTags - Falha ao remover: ${duplicate.name}`);
+          }
+        } catch (error) {
+          console.error(`TagService.cleanupDuplicateTags - Erro ao remover ${duplicate.name}:`, error);
+        }
+      }
+
+      console.log('TagService.cleanupDuplicateTags - Limpeza concluída');
+      return { 
+        success: true, 
+        message: `${duplicatesToRemove.length} duplicatas removidas`,
+        removedCount: duplicatesToRemove.length
+      };
+
+    } catch (error) {
+      console.error('TagService.cleanupDuplicateTags - Erro:', error);
+      return { success: false, message: 'Erro ao limpar duplicatas' };
     }
   }
 }

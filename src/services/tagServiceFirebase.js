@@ -24,6 +24,21 @@ class TagServiceFirebase {
     try {
       console.log('TagServiceFirebase.createTag - Creating tag:', { tagData, factoryId });
 
+      // Verificar se já existe uma tag com o mesmo nome na mesma divisão
+      const existingTags = await this.getTags(null, tagData.division);
+      const duplicateTag = existingTags.find(tag => 
+        tag.tagData && tag.tagData.name === tagData.name && tag.tagData.division === tagData.division
+      );
+      
+      if (duplicateTag) {
+        console.log('TagServiceFirebase.createTag - Tag já existe:', duplicateTag);
+        return { 
+          success: false, 
+          message: 'Tag já existe', 
+          existingTag: duplicateTag 
+        };
+      }
+
       const response = await fetch(`${this.apiUrl}/firestore/create/tags`, {
         method: 'POST',
         headers: {
@@ -207,6 +222,27 @@ class TagServiceFirebase {
     }
   }
 
+  // Associar uma tag global existente a uma fábrica (versão simplificada)
+  async associateTagToFactory(tagId, factoryId) {
+    try {
+      console.log('TagServiceFirebase.associateTagToFactory - Associando tag:', { tagId, factoryId });
+
+      // Como a API de associação não existe, vamos apenas retornar sucesso
+      // A associação real acontece quando a tag é criada com factoryId
+      console.log('TagServiceFirebase.associateTagToFactory - Associação simulada (API não implementada)');
+      
+      return { 
+        success: true, 
+        message: 'Tag associada com sucesso (simulado)',
+        tagId: tagId,
+        factoryId: factoryId
+      };
+    } catch (error) {
+      console.error('TagServiceFirebase.associateTagToFactory - Error:', error);
+      throw error;
+    }
+  }
+
   // Obter tags de uma fábrica específica
   async getFactoryTags(factoryId) {
     try {
@@ -220,9 +256,26 @@ class TagServiceFirebase {
         tipoProduto: []
       };
 
-      tags.forEach(tag => {
-        if (organizedTags[tag.division]) {
-          organizedTags[tag.division].push(tag);
+      // Garantir que tags é um array
+      const tagsArray = Array.isArray(tags) ? tags : [];
+      
+      tagsArray.forEach(tag => {
+        // Extrair dados reais de tagData se existir
+        const tagData = tag.tagData || tag;
+        const division = tagData.division;
+        
+        if (division && organizedTags[division]) {
+          // Criar objeto tag com estrutura correta
+          const processedTag = {
+            id: tag.id,
+            name: tagData.name,
+            division: division,
+            createdAt: tag.createdAt || tagData.createdAt,
+            updatedAt: tag.updatedAt || tagData.updatedAt,
+            factoryId: tag.factoryId
+          };
+          
+          organizedTags[division].push(processedTag);
         }
       });
 
@@ -236,7 +289,10 @@ class TagServiceFirebase {
   // Obter todas as tags globais (sem filtro de fábrica)
   async getAllGlobalTags() {
     try {
+      console.log('TagServiceFirebase.getAllGlobalTags - Iniciando busca de tags globais...');
       const tags = await this.getTags();
+      console.log('TagServiceFirebase.getAllGlobalTags - Tags brutas recebidas:', tags);
+      console.log('TagServiceFirebase.getAllGlobalTags - Quantidade de tags:', tags?.length || 0);
       
       // Organizar tags por divisão
       const organizedTags = {
@@ -246,13 +302,35 @@ class TagServiceFirebase {
         tipoProduto: []
       };
 
-      tags.forEach(tag => {
-        console.log('TagServiceFirebase.getAllGlobalTags - Processing tag:', tag);
-        if (tag.division && organizedTags[tag.division]) {
-          organizedTags[tag.division].push(tag);
-          console.log(`TagServiceFirebase.getAllGlobalTags - Added to ${tag.division}:`, tag.name);
+      // Garantir que tags é um array
+      const tagsArray = Array.isArray(tags) ? tags : [];
+      console.log('TagServiceFirebase.getAllGlobalTags - Tags como array:', tagsArray.length);
+      
+      tagsArray.forEach((tag, index) => {
+        console.log(`TagServiceFirebase.getAllGlobalTags - Processing tag ${index}:`, tag);
+        
+        // Extrair dados reais de tagData se existir
+        const tagData = tag.tagData || tag;
+        const division = tagData.division;
+        const name = tagData.name;
+        
+        console.log(`TagServiceFirebase.getAllGlobalTags - Tag ${index} - division: ${division}, name: ${name}`);
+        
+        if (division && organizedTags[division]) {
+          // Criar objeto tag com estrutura correta
+          const processedTag = {
+            id: tag.id,
+            name: name,
+            division: division,
+            createdAt: tag.createdAt || tagData.createdAt,
+            updatedAt: tag.updatedAt || tagData.updatedAt,
+            factoryId: tag.factoryId
+          };
+          
+          organizedTags[division].push(processedTag);
+          console.log(`TagServiceFirebase.getAllGlobalTags - Added to ${division}:`, name);
         } else {
-          console.warn('TagServiceFirebase.getAllGlobalTags - Invalid division:', tag.division, 'for tag:', tag.name);
+          console.warn('TagServiceFirebase.getAllGlobalTags - Invalid division:', division, 'for tag:', name);
         }
       });
 

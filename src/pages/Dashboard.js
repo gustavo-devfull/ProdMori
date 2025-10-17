@@ -10,13 +10,26 @@ import {
   Pagination
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import optimizedFirebaseService from '../services/optimizedFirebaseService';
+import factoryServiceAPI from '../services/factoryServiceAPI';
 import tagService from '../services/tagService';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  // CSS customizado para garantir que os estilos das tags sejam aplicados
+  const customStyles = `
+    .tag-unselected {
+      background-color: #ababab !important;
+      color: white !important;
+      border: none !important;
+    }
+    .tag-selected {
+      color: white !important;
+      border: none !important;
+    }
+  `;
   const [loading, setLoading] = useState(true);
   const [allFactories, setAllFactories] = useState([]);
   const [error, setError] = useState(null);
@@ -31,10 +44,12 @@ const Dashboard = () => {
     tipoProduto: []
   });
 
+  // Estado para armazenar tags de cada fábrica
+  const [factoryTagsMap, setFactoryTagsMap] = useState({});
+
   // Estados para paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [pageSize] = useState(12); // Fábricas por página
 
   const loadFactories = useCallback(async (page = currentPage, forceRefresh = false) => {
     console.log('🔄 Iniciando loadFactories...', {
@@ -45,36 +60,15 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      console.log('Carregando fábricas com paginação...', { page, forceRefresh });
+      console.log('Carregando fábricas via factoryServiceAPI...');
       
-      // Usar optimizedFirebaseService
-      console.log('Tentando carregar fábricas via optimizedFirebaseService...');
-      const result = await optimizedFirebaseService.getFactories(page, pageSize);
-      console.log('Dashboard - Resultado do optimizedFirebaseService:', result);
+      // Usar factoryServiceAPI.getAllFactories() como na página Factories
+      const factories = await factoryServiceAPI.getAllFactories();
+      console.log('Dashboard - Fábricas carregadas via factoryServiceAPI:', factories.length);
       
-      if (result.success && result.data) {
-        console.log('Dashboard - Estrutura dos dados:', {
-          data: result.data,
-          dataType: typeof result.data,
-          isArray: Array.isArray(result.data),
-          length: result.data.length,
-          factories: result.data.factories,
-          factoriesType: typeof result.data.factories,
-          factoriesLength: result.data.factories?.length
-        });
-        
-        // Verificar se result.data é um array diretamente ou tem propriedade factories
-        const factories = Array.isArray(result.data) ? result.data : result.data.factories || [];
-        const total = Array.isArray(result.data) ? result.data.length : result.data.total || 0;
-        
-        setAllFactories(factories);
-        setTotalPages(Math.ceil(total / pageSize));
-        console.log('Dashboard - Fábricas carregadas:', factories.length);
-      } else {
-        console.log('Dashboard - Resultado não teve sucesso, usando array vazio');
-        setAllFactories([]);
-        setTotalPages(1);
-      }
+      setAllFactories(factories);
+      setTotalPages(1); // Sem paginação por enquanto
+      console.log('Dashboard - Fábricas carregadas:', factories.length);
       
     } catch (err) {
       console.error('Erro ao carregar fábricas:', err);
@@ -83,7 +77,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, t]);
+  }, [currentPage, t]);
 
   // Função para carregar tags disponíveis
   const loadAvailableTags = useCallback(async () => {
@@ -110,33 +104,44 @@ const Dashboard = () => {
     }
   }, []);
 
+  // Função para carregar tags de cada fábrica
+  const loadFactoryTags = useCallback(async (factoryId) => {
+    try {
+      const factoryTags = await tagService.getFactoryTagsWithAssociations(factoryId);
+      setFactoryTagsMap(prev => ({
+        ...prev,
+        [factoryId]: factoryTags
+      }));
+    } catch (error) {
+      console.error(`Erro ao carregar tags da fábrica ${factoryId}:`, error);
+    }
+  }, []);
+
+  // Carregar dados iniciais apenas uma vez
   useEffect(() => {
+    console.log('Dashboard - Carregando dados iniciais...');
     loadFactories();
     loadAvailableTags();
-  }, [loadFactories, loadAvailableTags]);
+  }, [loadFactories, loadAvailableTags]); // Incluir dependências para evitar warning
 
-  // Listener para detectar quando o usuário volta para o Dashboard
+  // Carregar tags de cada fábrica quando as fábricas forem carregadas (otimizado)
   useEffect(() => {
-    let refreshTimeout;
-    
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('Dashboard visível novamente - agendando refresh...');
-        clearTimeout(refreshTimeout);
-        refreshTimeout = setTimeout(() => {
-          loadFactories(currentPage, true);
-        }, 5000);
-      }
-    };
+    if (allFactories.length > 0) {
+      console.log(`Dashboard - Carregando tags para ${allFactories.length} fábricas...`);
+      
+      // Carregar tags de todas as fábricas em paralelo
+      const loadAllFactoryTags = async () => {
+        const promises = allFactories.map(factory => loadFactoryTags(factory.id));
+        await Promise.all(promises);
+        console.log('Dashboard - Todas as tags das fábricas foram carregadas');
+      };
+      
+      loadAllFactoryTags();
+    }
+  }, [allFactories, loadFactoryTags]);
 
-    const handleFocus = () => {
-      console.log('Dashboard recebeu foco - agendando refresh...');
-      clearTimeout(refreshTimeout);
-      refreshTimeout = setTimeout(() => {
-        loadFactories(currentPage, true);
-      }, 5000);
-    };
-
+  // Listener para detectar mudanças no cache de fábricas (simplificado)
+  useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key && e.key.includes('factories')) {
         console.log('Dashboard - Cache de fábricas alterado, recarregando...');
@@ -144,23 +149,13 @@ const Dashboard = () => {
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      clearTimeout(refreshTimeout);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [loadFactories, currentPage]);
 
-  // Forçar refresh inicial para garantir dados frescos
-  useEffect(() => {
-    console.log('Dashboard montado - forçando refresh inicial...');
-    loadFactories(currentPage, true);
-  }, [loadFactories, currentPage]);
 
   useEffect(() => {
     setFilteredFactories(allFactories);
@@ -185,15 +180,28 @@ const Dashboard = () => {
     // A fábrica deve ter TODOS os tags selecionados
     if (selectedTags.length > 0) {
       filtered = filtered.filter(factory => {
-        // Para cada fábrica, verificar se ela tem todas as tags selecionadas
-        // Como as tags são carregadas dinamicamente, vamos usar uma abordagem diferente
-        // Por enquanto, vamos manter o filtro por texto e implementar o filtro por tags depois
-        return true; // Temporário - será implementado quando necessário
+        const factoryTags = factoryTagsMap[factory.id];
+        if (!factoryTags) return false; // Se não temos as tags da fábrica ainda, não mostrar
+        
+        // Verificar se a fábrica tem todas as tags selecionadas
+        return selectedTags.every(selectedTag => {
+          // Verificar se a fábrica tem esta tag específica
+          const allFactoryTags = [
+            ...(factoryTags.regiao || []),
+            ...(factoryTags.material || []),
+            ...(factoryTags.outros || []),
+            ...(factoryTags.tipoProduto || [])
+          ];
+          
+          return allFactoryTags.some(tag => 
+            tag.id === selectedTag.id || tag.name === selectedTag.name
+          );
+        });
       });
     }
 
     setFilteredFactories(filtered);
-  }, [allFactories, selectedTags, factorySearchTerm]);
+  }, [allFactories, selectedTags, factorySearchTerm, factoryTagsMap]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -218,27 +226,8 @@ const Dashboard = () => {
 
   // Componente para exibir tags da fábrica
   const FactoryTagsDisplay = ({ factoryId }) => {
-    const [factoryTags, setFactoryTags] = useState({ regiao: [], material: [], outros: [], tipoProduto: [] });
-    const [loadingTags, setLoadingTags] = useState(true);
-
-    useEffect(() => {
-      const loadTags = async () => {
-        try {
-          const tags = await tagService.getFactoryTags(factoryId);
-          setFactoryTags(tags || { regiao: [], material: [], outros: [], tipoProduto: [] });
-        } catch (error) {
-          console.error('Erro ao carregar tags da fábrica:', error);
-          setFactoryTags({ regiao: [], material: [], outros: [], tipoProduto: [] });
-        } finally {
-          setLoadingTags(false);
-        }
-      };
-      loadTags();
-    }, [factoryId]);
-
-    if (loadingTags) {
-      return <Spinner animation="border" size="sm" />;
-    }
+    // Usar o factoryTagsMap em vez de fazer chamadas separadas
+    const factoryTags = factoryTagsMap[factoryId] || { regiao: [], material: [], outros: [], tipoProduto: [] };
 
     const allTags = [
       ...(factoryTags.regiao || []),
@@ -281,6 +270,7 @@ const Dashboard = () => {
 
   return (
     <div>
+      <style>{customStyles}</style>
       
       {/* Botão Cadastrar Fábrica */}
       <Button 
@@ -358,9 +348,13 @@ const Dashboard = () => {
                     availableTags.regiao.map(tag => (
                       <Badge 
                         key={tag.id} 
-                        bg={selectedTags.some(t => t.id === tag.id) ? 'primary' : 'outline-primary'}
-                        className="d-flex align-items-center gap-1"
-                        style={{ cursor: 'pointer' }}
+                        style={{ 
+                          backgroundColor: selectedTags.some(t => t.id === tag.id) ? '#0d6efd' : '#ababab',
+                          color: 'white',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                        className={`d-flex align-items-center gap-1 ${selectedTags.some(t => t.id === tag.id) ? 'tag-selected' : 'tag-unselected'}`}
                         onClick={() => handleTagToggle(tag)}
                       >
                         {tag.name}
@@ -381,9 +375,14 @@ const Dashboard = () => {
                     availableTags.tipoProduto.map(tag => (
                       <Badge 
                         key={tag.id} 
-                        bg={selectedTags.some(t => t.id === tag.id) ? 'info' : 'outline-info'}
-                        className="d-flex align-items-center gap-1"
-                        style={{ cursor: 'pointer' }}
+                        bg={selectedTags.some(t => t.id === tag.id) ? 'info' : undefined}
+                        style={{ 
+                          backgroundColor: selectedTags.some(t => t.id === tag.id) ? undefined : '#ababab',
+                          color: 'white',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                        className={`d-flex align-items-center gap-1 ${selectedTags.some(t => t.id === tag.id) ? 'tag-selected' : 'tag-unselected'}`}
                         onClick={() => handleTagToggle(tag)}
                       >
                         {tag.name}
@@ -404,9 +403,13 @@ const Dashboard = () => {
                     availableTags.material.map(tag => (
                       <Badge 
                         key={tag.id} 
-                        bg={selectedTags.some(t => t.id === tag.id) ? 'success' : 'outline-success'}
-                        className="d-flex align-items-center gap-1"
-                        style={{ cursor: 'pointer' }}
+                        style={{ 
+                          backgroundColor: selectedTags.some(t => t.id === tag.id) ? '#198754' : '#ababab',
+                          color: 'white',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                        className={`d-flex align-items-center gap-1 ${selectedTags.some(t => t.id === tag.id) ? 'tag-selected' : 'tag-unselected'}`}
                         onClick={() => handleTagToggle(tag)}
                       >
                         {tag.name}
@@ -427,9 +430,13 @@ const Dashboard = () => {
                     availableTags.outros.map(tag => (
                       <Badge 
                         key={tag.id} 
-                        bg={selectedTags.some(t => t.id === tag.id) ? 'danger' : 'outline-danger'}
-                        className="d-flex align-items-center gap-1"
-                        style={{ cursor: 'pointer' }}
+                        style={{ 
+                          backgroundColor: selectedTags.some(t => t.id === tag.id) ? '#dc3545' : '#ababab',
+                          color: 'white',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                        className={`d-flex align-items-center gap-1 ${selectedTags.some(t => t.id === tag.id) ? 'tag-selected' : 'tag-unselected'}`}
                         onClick={() => handleTagToggle(tag)}
                       >
                         {tag.name}

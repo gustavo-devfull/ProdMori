@@ -42,13 +42,13 @@ const FactoryCreate = () => {
   });
   const [error, setError] = useState(null);
 
-  // Função para carregar tags disponíveis
+  // Função para carregar tags disponíveis diretamente do Firebase
   const loadAvailableTags = useCallback(async () => {
     try {
-      console.log('FactoryCreate - Carregando tags globais...');
+      console.log('FactoryCreate - Carregando tags globais do Firebase...');
       
-      const tags = await tagService.getAllTags();
-      console.log('FactoryCreate - Tags globais carregadas:', tags);
+      const tags = await tagService.getAllTagsFromFirebase();
+      console.log('FactoryCreate - Tags globais carregadas do Firebase:', tags);
       
       setAvailableTags(tags || {
         regiao: [],
@@ -57,7 +57,8 @@ const FactoryCreate = () => {
         tipoProduto: []
       });
     } catch (error) {
-      console.error('Erro ao carregar tags globais:', error);
+      console.error('Erro ao carregar tags globais do Firebase:', error);
+      // Em caso de erro, mostrar mensagem mas não usar localStorage
       setAvailableTags({
         regiao: [],
         material: [],
@@ -86,7 +87,7 @@ const FactoryCreate = () => {
     }));
   };
 
-  const addNewTagToFactory = (division) => {
+  const addNewTagToFactory = async (division) => {
     const tagName = newTagInputs[division].trim();
     if (!tagName) return;
 
@@ -100,9 +101,27 @@ const FactoryCreate = () => {
       name: tagName,
       division: division,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      isNewTag: true // Marcar como tag nova
     };
 
+    // Criar a tag globalmente primeiro
+    try {
+      const result = await tagService.addTag(newTag);
+      if (result.success) {
+        console.log('Tag criada globalmente:', result);
+        
+        // Atualizar tags globais disponíveis
+        const globalTagsData = await tagService.getAllTagsFromFirebase();
+        setAvailableTags(globalTagsData);
+      } else {
+        console.warn('Tag já existe globalmente:', result.message);
+      }
+    } catch (error) {
+      console.error('Erro ao criar tag globalmente:', error);
+    }
+
+    // Adicionar à fábrica atual (sempre, mesmo se já existir globalmente)
     addTagToFactory(newTag, division);
     setNewTagInputs(prev => ({ ...prev, [division]: '' }));
   };
@@ -120,7 +139,13 @@ const FactoryCreate = () => {
       return;
     }
 
-    addTagToFactory(tag, tag.division);
+    // Marcar como tag global existente (não nova)
+    const tagToAdd = {
+      ...tag,
+      isNewTag: false
+    };
+
+    addTagToFactory(tagToAdd, tag.division);
   };
 
   const resetFactoryTags = () => {
@@ -181,10 +206,8 @@ const FactoryCreate = () => {
           console.log('Saving factory tags:', allFactoryTags);
           
           for (const tag of allFactoryTags) {
-            await tagService.addTag({
-              ...tag,
-              factoryId: result.id
-            });
+            // Todas as tags (novas e existentes) devem ser associadas à fábrica
+            await tagService.createTagAssociation(tag, result.id);
           }
           
           console.log('Factory tags saved successfully');
