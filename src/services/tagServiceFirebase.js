@@ -26,9 +26,10 @@ class TagServiceFirebase {
 
       // Verificar se já existe uma tag com o mesmo nome na mesma divisão
       const existingTags = await this.getTags(null, tagData.division);
-      const duplicateTag = existingTags.find(tag => 
-        tag.tagData && tag.tagData.name === tagData.name && tag.tagData.division === tagData.division
-      );
+      const duplicateTag = existingTags.find(tag => {
+        const tagDataToCheck = tag.tagData || tag;
+        return tagDataToCheck.name === tagData.name && tagDataToCheck.division === tagData.division;
+      });
       
       if (duplicateTag) {
         console.log('TagServiceFirebase.createTag - Tag já existe:', duplicateTag);
@@ -151,14 +152,24 @@ class TagServiceFirebase {
       }
       
       // Extrair os dados das tags do formato Firebase
-      const extractedTags = result.data.map(item => ({
-        id: item.id,
-        name: item.tagData.name,
-        division: item.tagData.division,
-        createdAt: item.tagData.createdAt,
-        updatedAt: item.tagData.updatedAt,
-        factoryId: item.factoryId
-      }));
+      const extractedTags = result.data.map(item => {
+        // Verificar se tem estrutura tagData ou se é plano
+        const tagData = item.tagData || item;
+        
+        // Para backups de associação, usar tagName e tagDivision
+        const name = tagData.name || item.tagName || item.name;
+        const division = tagData.division || item.tagDivision || item.division;
+        
+        return {
+          id: item.id,
+          name: name,
+          division: division,
+          createdAt: tagData.createdAt || item.createdAt,
+          updatedAt: tagData.updatedAt || item.updatedAt,
+          factoryId: item.factoryId || null,
+          type: item.type || null
+        };
+      }).filter(tag => tag.name && tag.division); // Filtrar tags válidas
       
       return extractedTags;
     } catch (error) {
@@ -311,12 +322,15 @@ class TagServiceFirebase {
         
         // Extrair dados reais de tagData se existir
         const tagData = tag.tagData || tag;
-        const division = tagData.division;
-        const name = tagData.name;
+        
+        // Para backups de associação, usar tagName e tagDivision
+        const name = tagData.name || tag.tagName || tag.name;
+        const division = tagData.division || tag.tagDivision || tag.division;
         
         console.log(`TagServiceFirebase.getAllGlobalTags - Tag ${index} - division: ${division}, name: ${name}`);
         
-        if (division && organizedTags[division]) {
+        // Filtrar apenas tags válidas e não backups de associação
+        if (division && name && organizedTags[division] && tag.type !== 'association_backup') {
           // Criar objeto tag com estrutura correta
           const processedTag = {
             id: tag.id,
@@ -329,6 +343,8 @@ class TagServiceFirebase {
           
           organizedTags[division].push(processedTag);
           console.log(`TagServiceFirebase.getAllGlobalTags - Added to ${division}:`, name);
+        } else if (tag.type === 'association_backup') {
+          console.log(`TagServiceFirebase.getAllGlobalTags - Skipping association backup:`, name);
         } else {
           console.warn('TagServiceFirebase.getAllGlobalTags - Invalid division:', division, 'for tag:', name);
         }

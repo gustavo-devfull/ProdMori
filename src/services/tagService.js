@@ -582,12 +582,67 @@ class TagService {
     }
   }
 
-  // Associar uma tag existente a uma fábrica (criando associação separada)
+  // Associar uma tag existente a uma fábrica (sistema híbrido Firebase + localStorage)
   async createTagAssociation(tag, factoryId) {
     try {
       console.log('TagService.createTagAssociation - Associando tag global:', { tag: tag.name, factoryId });
       
-      // Criar associação no localStorage (sistema simples e eficiente)
+      // 1. Salvar associação no localStorage (sistema principal)
+      const localResult = this.saveAssociationToLocalStorage(tag, factoryId);
+      
+      // 2. Tentar sincronizar com Firebase (opcional, para backup)
+      try {
+        await this.syncAssociationToFirebase(tag, factoryId);
+        console.log('TagService.createTagAssociation - Associação sincronizada com Firebase');
+      } catch (firebaseError) {
+        console.warn('TagService.createTagAssociation - Falha na sincronização Firebase (continuando):', firebaseError.message);
+      }
+      
+      return localResult;
+    } catch (error) {
+      console.error('TagService.createTagAssociation - Erro geral:', error);
+      return { success: false, message: 'Erro ao criar associação da tag' };
+    }
+  }
+
+  // Sincronizar associação com Firebase (backup)
+  async syncAssociationToFirebase(tag, factoryId) {
+    try {
+      // Criar um documento de backup no Firebase
+      const backupData = {
+        tagId: tag.id,
+        tagName: tag.name,
+        tagDivision: tag.division,
+        factoryId: factoryId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        type: 'association_backup'
+      };
+
+      // Usar o endpoint de tags existente para criar um documento de backup
+      const response = await fetch(`${this.tagServiceFirebase.apiUrl}/firestore/create/tags`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(backupData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao sincronizar com Firebase');
+      }
+
+      console.log('TagService.syncAssociationToFirebase - Backup criado no Firebase');
+      return { success: true };
+    } catch (error) {
+      console.error('TagService.syncAssociationToFirebase - Erro:', error);
+      throw error;
+    }
+  }
+
+  // Salvar associação no localStorage (cache local)
+  saveAssociationToLocalStorage(tag, factoryId) {
+    try {
       const associationKey = `factory_tags_${factoryId}`;
       let associations = JSON.parse(localStorage.getItem(associationKey) || '{}');
       
@@ -600,7 +655,7 @@ class TagService {
       const alreadyAssociated = associations[tag.division].some(t => t.id === tag.id);
       
       if (alreadyAssociated) {
-        console.log('TagService.createTagAssociation - Tag já está associada a esta fábrica');
+        console.log('TagService.saveAssociationToLocalStorage - Tag já está associada localmente');
         return { success: true, message: 'Tag já associada' };
       }
       
@@ -614,25 +669,131 @@ class TagService {
       // Salvar no localStorage
       localStorage.setItem(associationKey, JSON.stringify(associations));
       
-      console.log('TagService.createTagAssociation - Associação salva:', associations);
+      console.log('TagService.saveAssociationToLocalStorage - Associação salva localmente:', associations);
       
-      return { success: true, message: 'Tag associada à fábrica' };
+      return { success: true, message: 'Tag associada localmente' };
     } catch (error) {
-      console.error('TagService.createTagAssociation - Erro geral:', error);
-      return { success: false, message: 'Erro ao criar associação da tag' };
+      console.error('TagService.saveAssociationToLocalStorage - Erro:', error);
+      return { success: false, message: 'Erro ao salvar localmente' };
     }
   }
 
-  // Carregar tags associadas a uma fábrica (usando associações locais)
+  // Carregar tags associadas a uma fábrica (localStorage principal + Firebase backup)
   async getFactoryTagsWithAssociations(factoryId) {
     try {
       console.log('TagService.getFactoryTagsWithAssociations - Carregando tags da fábrica:', factoryId);
       
-      // Carregar associações locais da fábrica
+      // 1. Carregar do localStorage (sistema principal)
+      const localAssociations = this.loadAssociationsFromLocalStorage(factoryId);
+      
+      // 2. Tentar sincronizar com Firebase (opcional)
+      try {
+        await this.syncFromFirebaseBackup(factoryId, localAssociations);
+      } catch (firebaseError) {
+        console.warn('TagService.getFactoryTagsWithAssociations - Falha na sincronização Firebase (continuando):', firebaseError.message);
+      }
+      
+      console.log('TagService.getFactoryTagsWithAssociations - Resultado final:', localAssociations);
+      return localAssociations;
+      
+    } catch (error) {
+      console.error('TagService.getFactoryTagsWithAssociations - Erro:', error);
+      // Fallback para estrutura vazia em caso de erro
+      return {
+        regiao: [],
+        material: [],
+        outros: [],
+        tipoProduto: []
+      };
+    }
+  }
+
+  // Sincronizar com backup do Firebase (opcional)
+  async syncFromFirebaseBackup(factoryId, localAssociations) {
+    try {
+      // Buscar backups de associações no Firebase
+      const response = await fetch(`${this.tagServiceFirebase.apiUrl}/firestore/get/tags`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao buscar backups do Firebase');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Filtrar apenas backups de associações para esta fábrica
+        const backupAssociations = result.data.filter(tag => 
+          tag.type === 'association_backup' && tag.factoryId === factoryId
+        );
+        
+        if (backupAssociations.length > 0) {
+          console.log('TagService.syncFromFirebaseBackup - Encontrados backups:', backupAssociations.length);
+          
+          // Se não há associações locais mas há backups, restaurar do Firebase
+          const hasLocalAssociations = Object.values(localAssociations).some(division => division.length > 0);
+          
+          if (!hasLocalAssociations) {
+            console.log('TagService.syncFromFirebaseBackup - Restaurando do backup Firebase');
+            
+            // Restaurar associações do backup
+            backupAssociations.forEach(backup => {
+              if (localAssociations[backup.tagDivision]) {
+                localAssociations[backup.tagDivision].push({
+                  id: backup.tagId,
+                  name: backup.tagName,
+                  division: backup.tagDivision,
+                  createdAt: backup.createdAt,
+                  updatedAt: backup.updatedAt
+                });
+              }
+            });
+            
+            // Salvar no localStorage
+            this.saveRestoredAssociationsToLocalStorage(factoryId, localAssociations);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('TagService.syncFromFirebaseBackup - Erro:', error);
+      throw error;
+    }
+  }
+
+  // Salvar associações restauradas no localStorage
+  saveRestoredAssociationsToLocalStorage(factoryId, associations) {
+    try {
+      const associationKey = `factory_tags_${factoryId}`;
+      const localAssociations = {};
+      
+      Object.keys(associations).forEach(division => {
+        if (associations[division].length > 0) {
+          localAssociations[division] = associations[division].map(tag => ({
+            id: tag.id,
+            name: tag.name,
+            division: tag.division
+          }));
+        }
+      });
+      
+      localStorage.setItem(associationKey, JSON.stringify(localAssociations));
+      console.log('TagService.saveRestoredAssociationsToLocalStorage - Associações restauradas:', localAssociations);
+    } catch (error) {
+      console.error('TagService.saveRestoredAssociationsToLocalStorage - Erro:', error);
+    }
+  }
+
+  // Carregar associações do localStorage (sistema principal)
+  loadAssociationsFromLocalStorage(factoryId) {
+    try {
       const associationKey = `factory_tags_${factoryId}`;
       const associations = JSON.parse(localStorage.getItem(associationKey) || '{}');
       
-      console.log('TagService.getFactoryTagsWithAssociations - Associações encontradas:', associations);
+      console.log('TagService.loadAssociationsFromLocalStorage - Associações encontradas:', associations);
       
       // Organizar tags por divisão
       const result = {
@@ -655,10 +816,10 @@ class TagService {
         }
       });
       
-      console.log('TagService.getFactoryTagsWithAssociations - Resultado final:', result);
+      console.log('TagService.loadAssociationsFromLocalStorage - Resultado final:', result);
       return result;
     } catch (error) {
-      console.error('TagService.getFactoryTagsWithAssociations - Erro:', error);
+      console.error('TagService.loadAssociationsFromLocalStorage - Erro:', error);
       return {
         regiao: [],
         material: [],
