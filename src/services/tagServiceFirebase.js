@@ -298,4 +298,9 @@ class TagServiceFirebase {
 
 const tagServiceFirebase = new TagServiceFirebase();
 
+// Verificar se todos os métodos estão disponíveis
+if (!tagServiceFirebase.createTag) {
+  console.error('TagServiceFirebase.createTag method is missing');
+}
+
 export default tagServiceFirebase;
