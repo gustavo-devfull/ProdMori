@@ -137,13 +137,22 @@ const Dashboard = () => {
       }, 5000);
     };
 
+    const handleStorageChange = (e) => {
+      if (e.key && e.key.includes('factories')) {
+        console.log('Dashboard - Cache de fábricas alterado, recarregando...');
+        loadFactories(currentPage, true);
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       clearTimeout(refreshTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [loadFactories, currentPage]);
 
