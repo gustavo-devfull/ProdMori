@@ -161,17 +161,6 @@ const Dashboard = () => {
   useEffect(() => {
     let filtered = allFactories;
 
-    // Filtrar por tags selecionadas
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(factory => {
-        return selectedTags.every(selectedTag => {
-          return factory.tags && factory.tags.some(tag => 
-            tag.id === selectedTag.id || tag.name === selectedTag.name
-          );
-        });
-      });
-    }
-
     // Filtrar por termo de busca
     if (factorySearchTerm.trim()) {
       const searchTerm = factorySearchTerm.toLowerCase();
@@ -182,6 +171,11 @@ const Dashboard = () => {
         factory.description?.toLowerCase().includes(searchTerm)
       );
     }
+
+    // Para filtros por tags, vamos usar uma abordagem diferente
+    // As tags são carregadas dinamicamente pelo FactoryTagsDisplay
+    // Por enquanto, vamos manter apenas o filtro por texto
+    // TODO: Implementar filtro por tags quando necessário
 
     setFilteredFactories(filtered);
   }, [allFactories, selectedTags, factorySearchTerm]);

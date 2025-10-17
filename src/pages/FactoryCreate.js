@@ -166,7 +166,7 @@ const FactoryCreate = () => {
       // Criar fábrica
       const result = await factoryServiceAPI.createFactory(factoryData);
       
-      if (result.ok) {
+      if (result && result.id) {
         console.log('Factory created successfully:', result);
         
         // Salvar tags da fábrica
@@ -197,7 +197,7 @@ const FactoryCreate = () => {
         // Navegar de volta para o Dashboard
         navigate('/dashboard');
       } else {
-        throw new Error(result.message || 'Erro ao criar fábrica');
+        throw new Error('Fábrica criada mas sem ID válido');
       }
     } catch (err) {
       console.error('Erro ao criar fábrica:', err);
