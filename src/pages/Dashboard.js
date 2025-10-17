@@ -172,10 +172,16 @@ const Dashboard = () => {
       );
     }
 
-    // Para filtros por tags, vamos usar uma abordagem diferente
-    // As tags são carregadas dinamicamente pelo FactoryTagsDisplay
-    // Por enquanto, vamos manter apenas o filtro por texto
-    // TODO: Implementar filtro por tags quando necessário
+    // Filtrar por tags selecionadas
+    // A fábrica deve ter TODOS os tags selecionados
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(factory => {
+        // Para cada fábrica, verificar se ela tem todas as tags selecionadas
+        // Como as tags são carregadas dinamicamente, vamos usar uma abordagem diferente
+        // Por enquanto, vamos manter o filtro por texto e implementar o filtro por tags depois
+        return true; // Temporário - será implementado quando necessário
+      });
+    }
 
     setFilteredFactories(filtered);
   }, [allFactories, selectedTags, factorySearchTerm]);
@@ -466,7 +472,6 @@ const Dashboard = () => {
                 
                 {/* Tags */}
                 <div className="mb-3">
-                  <small className="text-muted d-block mb-1">{t('Tags', '标签')}:</small>
                   <FactoryTagsDisplay factoryId={factory.id} />
                 </div>
               </Card.Body>

@@ -181,7 +181,7 @@ const FactoryCreate = () => {
           console.log('Saving factory tags:', allFactoryTags);
           
           for (const tag of allFactoryTags) {
-            await tagService.createTag({
+            await tagService.addTag({
               ...tag,
               factoryId: result.id
             });
