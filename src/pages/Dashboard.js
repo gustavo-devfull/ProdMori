@@ -724,12 +724,14 @@ const Dashboard = () => {
     setFactoryTags({
       regiao: [],
       material: [],
-      outros: []
+      outros: [],
+      tipoProduto: []
     });
     setNewTagInputs({
       regiao: '',
       material: '',
-      outros: ''
+      outros: '',
+      tipoProduto: ''
     });
   };
 
@@ -1135,7 +1137,7 @@ const Dashboard = () => {
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold">{t('Tags Região', '地区标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                {factoryTags.regiao.map(tag => (
+                {(factoryTags.regiao || []).map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="primary" 
@@ -1193,10 +1195,10 @@ const Dashboard = () => {
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold">{t('Tags Tipo de Produto', '产品类型标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                {factoryTags.tipoProduto.map(tag => (
+                {(factoryTags.tipoProduto || []).map(tag => (
                   <Badge 
                     key={tag.id} 
-                    bg="warning" 
+                    bg="info" 
                     className="d-flex align-items-center gap-1"
                     style={{ cursor: 'pointer', fontSize: '14px' }}
                     onClick={() => removeTagFromFactory(tag.id, 'tipoProduto')}
@@ -1251,7 +1253,7 @@ const Dashboard = () => {
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold">{t('Tags Material', '材料标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                {factoryTags.material.map(tag => (
+                {(factoryTags.material || []).map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="success" 
@@ -1309,7 +1311,7 @@ const Dashboard = () => {
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold">{t('Tags Outros', '其他标签')}</Form.Label>
               <div className="d-flex flex-wrap gap-2 mb-2">
-                {factoryTags.outros.map(tag => (
+                {(factoryTags.outros || []).map(tag => (
                   <Badge 
                     key={tag.id} 
                     bg="danger" 
