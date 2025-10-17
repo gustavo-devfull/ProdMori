@@ -226,7 +226,8 @@ const FactoryDetail = () => {
       'T.G.W',
       'N.W',
       'T.N.W',
-      'Peso Unitário(g)'
+      'Peso Unitário(g)',
+      'Link da Foto'
     ];
 
     // Preparar os dados dos produtos
@@ -239,7 +240,8 @@ const FactoryDetail = () => {
       };
 
       // Calcular campos derivados
-      const ctns = toNumber(product.ctns || product.unitCtns);
+      // CTNS é um campo separado, se não existir, usar 1 como padrão
+      const ctns = toNumber(product.ctns) || 1;
       const unitCtn = toNumber(product.unitCtn || product.unitCtns);
       const qty = ctns * unitCtn;
       const uPrice = toNumber(product.uPrice);
@@ -278,7 +280,8 @@ const FactoryDetail = () => {
         tGW,
         nW,
         tNW,
-        unitWeight
+        unitWeight,
+        product.imageUrl || ''
       ];
     });
 
@@ -1216,32 +1219,43 @@ const FactoryDetail = () => {
               </Col>
             </Row>
 
-            {/* UNIT/CTNS | CBM */}
+            {/* CTNS | UNIT/CTN */}
             <Row className="mb-3">
               <Col xs={6}>
                 <Form.Group>
-                  <Form.Label>{t('UNIT/CTNS', '单位/箱')}</Form.Label>
+                  <Form.Label>{t('CTNS', '箱数')}</Form.Label>
                   <Form.Control
                     type="number"
-                    name="unitCtns"
-                    defaultValue={editingProduct?.unitCtns || ''}
+                    name="ctns"
+                    defaultValue={editingProduct?.ctns || ''}
+                    placeholder={t('Número de caixas', '箱数')}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={6}>
+                <Form.Group>
+                  <Form.Label>{t('UNIT/CTN', '单位/箱')}</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="unitCtn"
+                    defaultValue={editingProduct?.unitCtn || editingProduct?.unitCtns || ''}
                     placeholder={t('Unidades por caixa', '每箱单位')}
                   />
                 </Form.Group>
               </Col>
-              <Col xs={6}>
-                <Form.Group>
-                  <Form.Label>{t('CBM', '立方米')}</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="0.001"
-                    name="cbm"
-                    defaultValue={editingProduct?.cbm || ''}
-                    placeholder={t('Volume', '体积')}
-                  />
-                </Form.Group>
-              </Col>
             </Row>
+
+            {/* CBM */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('CBM', '立方米')}</Form.Label>
+              <Form.Control
+                type="number"
+                step="0.001"
+                name="cbm"
+                defaultValue={editingProduct?.cbm || ''}
+                placeholder={t('Volume', '体积')}
+              />
+            </Form.Group>
 
             {/* Peso unitário (g) */}
             <Form.Group className="mb-3">
