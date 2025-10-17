@@ -18,6 +18,7 @@ import tagService from '../services/tagService';
 import CustomImage from '../components/CustomImage';
 import AudioRecorder from '../components/AudioRecorder';
 import { useLanguage } from '../contexts/LanguageContext';
+import * as XLSX from 'xlsx';
 
 const FactoryDetail = () => {
   const { factoryId } = useParams();
@@ -193,6 +194,109 @@ const FactoryDetail = () => {
   const handlePreview = (imageUrl) => {
     setPreviewImage(imageUrl);
     setPreviewVisible(true);
+  };
+
+  const exportFactoryToExcel = () => {
+    if (!products || products.length === 0) {
+      alert(t('Nenhum produto para exportar', '没有产品可导出'));
+      return;
+    }
+
+    // Definir os cabeçalhos das colunas
+    const headers = [
+      'REF',
+      'DESCRIPTION',
+      'NAME',
+      'REMARK',
+      'OBS',
+      'NCM',
+      'English Description',
+      'CTNS',
+      'UNIT/CTN',
+      'QTY',
+      'U.PRICE',
+      'UNIT',
+      'AMOUNT',
+      'L',
+      'W',
+      'H',
+      'CBM',
+      'CBM TOTAL',
+      'G.W',
+      'T.G.W',
+      'N.W',
+      'T.N.W',
+      'Peso Unitário(g)'
+    ];
+
+    // Preparar os dados dos produtos
+    const excelData = products.map(product => {
+      // Função auxiliar para converter valores para número ou retornar 0 se vazio
+      const toNumber = (value) => {
+        if (value === null || value === undefined || value === '') return 0;
+        const num = parseFloat(value);
+        return isNaN(num) ? 0 : num;
+      };
+
+      // Calcular campos derivados
+      const ctns = toNumber(product.ctns || product.unitCtns);
+      const unitCtn = toNumber(product.unitCtn || product.unitCtns);
+      const qty = ctns * unitCtn;
+      const uPrice = toNumber(product.uPrice);
+      const amount = qty * uPrice;
+      const length = toNumber(product.length || product.l);
+      const width = toNumber(product.width || product.w);
+      const height = toNumber(product.height || product.h);
+      const cbm = (length * width * height) / 1000000;
+      const cbmTotal = ctns * cbm;
+      const gW = toNumber(product.gW);
+      const tGW = gW * ctns;
+      const unitWeight = toNumber(product.unitWeight);
+      const nW = unitWeight * unitCtn;
+      const tNW = nW * ctns;
+
+      return [
+        product.ref || '',
+        product.description || '',
+        product.name || '',
+        product.remark || '',
+        product.obs || '',
+        product.ncm || '',
+        product.englishDescription || '',
+        ctns,
+        unitCtn,
+        qty,
+        uPrice,
+        product.unit || '',
+        amount,
+        length,
+        width,
+        height,
+        cbm,
+        cbmTotal,
+        gW,
+        tGW,
+        nW,
+        tNW,
+        unitWeight
+      ];
+    });
+
+    // Criar o workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Criar a planilha com cabeçalhos e dados
+    const wsData = [headers, ...excelData];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Adicionar a planilha ao workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+    
+    // Gerar o nome do arquivo
+    const fileName = `${factory.name || 'Factory'}_Produtos_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Fazer o download
+    XLSX.writeFile(wb, fileName);
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -968,6 +1072,21 @@ const FactoryDetail = () => {
             )}
         </Card.Body>
       </Card>
+
+      {/* Botão de Exportação */}
+      {products && products.length > 0 && (
+        <div className="text-center mb-4">
+          <Button 
+            variant="success" 
+            size="lg"
+            onClick={exportFactoryToExcel}
+            className="px-4 py-2"
+          >
+            <i className="bi bi-file-earmark-excel me-2"></i>
+            {t('EXPORTAR Fábrica', '导出工厂')}
+          </Button>
+        </div>
+      )}
 
       {/* Modal para cadastrar produto */}
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
