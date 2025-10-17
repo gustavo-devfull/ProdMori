@@ -47,9 +47,23 @@ const Dashboard = () => {
       console.log('Dashboard - Resultado do optimizedFirebaseService:', result);
       
       if (result.success && result.data) {
-        setAllFactories(result.data.factories || []);
-        setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
-        console.log('Dashboard - Fábricas carregadas via optimizedFirebaseService:', result.data.factories?.length || 0);
+        console.log('Dashboard - Estrutura dos dados:', {
+          data: result.data,
+          dataType: typeof result.data,
+          isArray: Array.isArray(result.data),
+          length: result.data.length,
+          factories: result.data.factories,
+          factoriesType: typeof result.data.factories,
+          factoriesLength: result.data.factories?.length
+        });
+        
+        // Verificar se result.data é um array diretamente ou tem propriedade factories
+        const factories = Array.isArray(result.data) ? result.data : result.data.factories || [];
+        const total = Array.isArray(result.data) ? result.data.length : result.data.total || 0;
+        
+        setAllFactories(factories);
+        setTotalPages(Math.ceil(total / pageSize));
+        console.log('Dashboard - Fábricas carregadas:', factories.length);
       } else {
         console.log('Dashboard - Resultado não teve sucesso, usando array vazio');
         setAllFactories([]);
