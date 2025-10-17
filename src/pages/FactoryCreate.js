@@ -11,7 +11,6 @@ import {
   Container
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import optimizedFirebaseService from '../services/optimizedFirebaseService';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
 import factoryServiceAPI from '../services/factoryServiceAPI';
