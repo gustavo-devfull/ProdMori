@@ -469,31 +469,6 @@ const Dashboard = () => {
                   <small className="text-muted d-block mb-1">{t('Tags', '标签')}:</small>
                   <FactoryTagsDisplay factoryId={factory.id} />
                 </div>
-                
-                {/* Informações adicionais */}
-                <div className="small text-muted">
-                  {factory.contactName && (
-                    <div className="mb-1">
-                      <strong>{t('Contato', '联系人')}:</strong> {factory.contactName}
-                    </div>
-                  )}
-                  
-                  {factory.phone && (
-                    <div className="mb-1">
-                      <strong>{t('Telefone', '电话')}:</strong> {factory.phone}
-                    </div>
-                  )}
-                  
-                  {factory.address && (
-                    <div className="mb-1">
-                      <strong>{t('Endereço', '地址')}:</strong> {factory.address}
-                    </div>
-                  )}
-                  
-                  <div className="text-muted">
-                    {new Date(factory.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
               </Card.Body>
             </Card>
           </Col>
