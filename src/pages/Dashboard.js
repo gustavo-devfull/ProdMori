@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import optimizedFirebaseService from '../services/optimizedFirebaseService';
 import tagService from '../services/tagService';
+import factoryServiceAPI from '../services/factoryServiceAPI';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Dashboard = () => {
@@ -30,9 +31,6 @@ const Dashboard = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(12); // Fábricas por página
 
-  // Cache duration: 5 minutes
-  const CACHE_DURATION = 5 * 60 * 1000;
-
   const loadFactories = useCallback(async (page = currentPage, forceRefresh = false) => {
     console.log('🔄 Iniciando loadFactories...', {
       page,
@@ -44,96 +42,78 @@ const Dashboard = () => {
       
       console.log('Carregando fábricas com paginação...', { page, forceRefresh });
       
-      // Se forçar refresh, invalidar cache primeiro
-      if (forceRefresh) {
-        console.log('Forçando refresh - invalidando cache...');
-        await optimizedFirebaseService.invalidateCache('factories');
+      // Tentar primeiro com factoryServiceAPI (mais direto)
+      try {
+        console.log('Tentando carregar fábricas via factoryServiceAPI...');
+        const result = await factoryServiceAPI.getFactories(page, pageSize);
+        console.log('Dashboard - Resultado do factoryServiceAPI:', result);
         
-        // Limpar TODOS os caches relacionados a fábricas
-        const cacheKeys = [
-          'factoriesCache',
-          'factoriesCacheTime',
-          'cache_factories_page_1_limit_12',
-          'cache_time_factories_page_1_limit_12',
-          'cache_dashboard_initial_data',
-          'cache_time_dashboard_initial_data',
-        ];
-        
-        cacheKeys.forEach(key => {
-          localStorage.removeItem(key);
-          console.log(`Cache removido: ${key}`);
-        });
-      }
-      
-      const result = await optimizedFirebaseService.getFactories(page, pageSize);
-      console.log('Dashboard - Resultado do Firebase:', result);
-      
-      if (result.success && result.data) {
-        setAllFactories(result.data.factories || []);
-        setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
-        console.log('Dashboard - Fábricas carregadas:', result.data.factories?.length || 0);
-      } else {
-        console.log('Dashboard - Usando fallback do localStorage...');
-        
-        // Fallback para localStorage
-        const cachedData = localStorage.getItem('factoriesCache');
-        const cacheTime = localStorage.getItem('factoriesCacheTime');
-        
-        if (cachedData && cacheTime) {
-          const timeDiff = Date.now() - parseInt(cacheTime);
-          if (timeDiff < CACHE_DURATION) {
-            const parsedData = JSON.parse(cachedData);
-            setAllFactories(parsedData.factories || []);
-            setTotalPages(Math.ceil((parsedData.total || 0) / pageSize));
-            console.log('Dashboard - Dados carregados do cache:', parsedData.factories?.length || 0);
-          } else {
-            console.log('Dashboard - Cache expirado, usando dados de exemplo...');
-            setAllFactories([]);
-            setTotalPages(1);
-          }
-        } else {
-          console.log('Dashboard - Nenhum cache encontrado, usando dados de exemplo...');
-          setAllFactories([]);
-          setTotalPages(1);
+        if (result.success && result.data) {
+          setAllFactories(result.data.factories || []);
+          setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
+          console.log('Dashboard - Fábricas carregadas via factoryServiceAPI:', result.data.factories?.length || 0);
+          return; // Sucesso, sair da função
         }
+      } catch (apiError) {
+        console.error('Erro no factoryServiceAPI:', apiError);
       }
       
-      // Se ainda não funcionou, tentar busca direta sem cache
-      if (forceRefresh && result.fallback) {
-        console.log('Tentando busca direta sem cache...');
-        try {
-          const apiUrl = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('gpreto.space') || window.location.hostname !== 'localhost' 
-            ? '/api' 
-            : 'http://localhost:3001/api';
-          
-          const params = new URLSearchParams();
-          params.append('col', 'factories');
-          params.append('page', page.toString());
-          params.append('limit', pageSize.toString());
-          params.append('orderBy', 'createdAt');
-          params.append('orderDirection', 'desc');
+      // Fallback para optimizedFirebaseService
+      try {
+        console.log('Tentando carregar fábricas via optimizedFirebaseService...');
+        const result = await optimizedFirebaseService.getFactories(page, pageSize);
+        console.log('Dashboard - Resultado do optimizedFirebaseService:', result);
+        
+        if (result.success && result.data) {
+          setAllFactories(result.data.factories || []);
+          setTotalPages(Math.ceil((result.data.total || 0) / pageSize));
+          console.log('Dashboard - Fábricas carregadas via optimizedFirebaseService:', result.data.factories?.length || 0);
+          return; // Sucesso, sair da função
+        }
+      } catch (firebaseError) {
+        console.error('Erro no optimizedFirebaseService:', firebaseError);
+      }
+      
+      // Se ainda não funcionou, tentar busca direta via API
+      console.log('Tentando busca direta via API...');
+      try {
+        const apiUrl = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('gpreto.space') || window.location.hostname !== 'localhost' 
+          ? '/api' 
+          : 'http://localhost:3001/api';
+        
+        const params = new URLSearchParams();
+        params.append('col', 'factories');
+        params.append('page', page.toString());
+        params.append('limit', pageSize.toString());
+        params.append('orderBy', 'createdAt');
+        params.append('orderDirection', 'desc');
 
-          const response = await fetch(`${apiUrl}/firestore/get?${params.toString()}`);
-          const directResult = await response.json();
-          
-          if (directResult.success && directResult.data) {
-            setAllFactories(directResult.data.factories || []);
-            setTotalPages(Math.ceil((directResult.data.total || 0) / pageSize));
-            console.log('Dashboard - Dados carregados diretamente:', directResult.data.factories?.length || 0);
-          }
-        } catch (directError) {
-          console.error('Erro na busca direta:', directError);
+        const response = await fetch(`${apiUrl}/firestore/get?${params.toString()}`);
+        const directResult = await response.json();
+        
+        if (directResult.success && directResult.data) {
+          setAllFactories(directResult.data.factories || []);
+          setTotalPages(Math.ceil((directResult.data.total || 0) / pageSize));
+          console.log('Dashboard - Dados carregados diretamente:', directResult.data.factories?.length || 0);
+          return; // Sucesso, sair da função
         }
+      } catch (directError) {
+        console.error('Erro na busca direta:', directError);
       }
+      
+      // Se chegou até aqui, nenhum método funcionou
+      console.log('Nenhum método de carregamento funcionou, usando array vazio');
+      setAllFactories([]);
+      setTotalPages(1);
       
     } catch (err) {
-      console.error('Erro ao carregar fábricas:', err);
+      console.error('Erro geral ao carregar fábricas:', err);
       setError(t('Erro ao carregar fábricas', '加载工厂时出错'));
       setAllFactories([]);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, t, CACHE_DURATION]);
+  }, [currentPage, pageSize, t]);
 
   // Função para carregar tags disponíveis
   const loadAvailableTags = useCallback(async () => {
