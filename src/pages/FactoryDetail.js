@@ -70,8 +70,12 @@ const FactoryDetail = () => {
   const forceRefreshIfMobile = () => {
     console.log('🔍 forceRefreshIfMobile chamada - isMobile:', isMobile);
     console.log('🔍 navigator.userAgent:', navigator.userAgent);
+    console.log('🔍 window.innerWidth:', window.innerWidth);
     
-    if (isMobile) {
+    // Detectar mobile de forma mais específica
+    const isActuallyMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isActuallyMobile) {
       console.log('📱 Mobile detectado - Forçando refresh completo da página');
       
       // Limpeza agressiva de cache
@@ -97,30 +101,38 @@ const FactoryDetail = () => {
 
   const loadFactoryData = useCallback(async () => {
     try {
+      console.log('🔄 Iniciando loadFactoryData...');
       setLoading(true);
       
       // Carregar dados da fábrica
+      console.log('📋 Carregando dados da fábrica...');
       const factoryData = await factoryServiceAPI.getFactoryById(factoryId);
       if (!factoryData) {
+        console.error('❌ Fábrica não encontrada');
         setError(t('Fábrica não encontrada', '工厂未找到'));
         return;
       }
       
-      console.log('Dados da fábrica carregados do Firebase:', factoryData);
+      console.log('✅ Dados da fábrica carregados:', factoryData);
       setFactory(factoryData);
       
       // Carregar produtos da fábrica
+      console.log('📦 Carregando produtos da fábrica...');
       const productsData = await factoryServiceAPI.getProductsByFactory(factoryId);
+      console.log('📦 Produtos brutos carregados:', productsData);
+      
       // Ordenar produtos pelos mais recentes primeiro
       const sortedProducts = productsData.sort((a, b) => {
         const dateA = new Date(a.createdAt || 0);
         const dateB = new Date(b.createdAt || 0);
         return dateB - dateA; // Ordem decrescente (mais recente primeiro)
       });
+      
+      console.log('📦 Produtos ordenados:', sortedProducts);
       setProducts(sortedProducts);
       
       // Carregar tags da fábrica
-      console.log('=== CARREGANDO TAGS DA FÁBRICA ===');
+      console.log('🏷️ Carregando tags da fábrica...');
       try {
         // Forçar sincronização completa para garantir dados atualizados
         await tagService.forceSyncFromFirebase(factoryId);
@@ -614,6 +626,7 @@ const FactoryDetail = () => {
           console.log('📱 Refresh foi executado, redirecionando após refresh...');
           // No mobile, o refresh vai recarregar a página, então vamos redirecionar após o refresh
           setTimeout(() => {
+            console.log('🏠 Redirecionando para Dashboard via window.location...');
             window.location.href = '/dashboard';
           }, 1000);
           return; // Refresh foi feito, não precisa continuar
@@ -621,8 +634,14 @@ const FactoryDetail = () => {
         console.log('💻 Não é mobile ou refresh não foi necessário, redirecionando...');
         
         // Redirecionar para o Dashboard
-        console.log('🏠 Redirecionando para o Dashboard...');
+        console.log('🏠 Redirecionando para o Dashboard via navigate...');
         navigate('/dashboard');
+        
+        // Fallback: se navigate não funcionar, usar window.location
+        setTimeout(() => {
+          console.log('🏠 Fallback: Redirecionando via window.location...');
+          window.location.href = '/dashboard';
+        }, 100);
       } catch (error) {
         console.error('Erro ao excluir fábrica:', error);
         alert(t('Erro ao excluir fábrica', '删除工厂时出错'));
