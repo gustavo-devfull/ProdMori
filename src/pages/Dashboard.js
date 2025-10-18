@@ -12,7 +12,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import tagService from '../services/tagService';
-import firebasePersistence from '../utils/firebasePersistence';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Dashboard = () => {
@@ -250,9 +249,9 @@ const Dashboard = () => {
       });
     } catch (error) {
       console.error('Erro ao carregar tags globais:', error);
-      setAvailableTags({
-        regiao: [],
-        material: [],
+        setAvailableTags({
+          regiao: [],
+          material: [],
         outros: [],
         tipoProduto: []
       });
@@ -284,7 +283,7 @@ const Dashboard = () => {
         ...prev,
         [factoryId]: safeTags
       }));
-    } catch (error) {
+          } catch (error) {
       console.error(`Erro ao carregar tags da fábrica ${factoryId}:`, error);
       // Em caso de erro, definir estrutura vazia
       setFactoryTagsMap(prev => ({
@@ -340,7 +339,7 @@ const Dashboard = () => {
       try {
         await syncWithFirebase();
         console.log('Dashboard - Sincronização após exclusão concluída');
-      } catch (error) {
+    } catch (error) {
         console.warn('Erro na sincronização após exclusão, usando método padrão:', error);
         loadFactories(1, true);
       }
@@ -615,7 +614,7 @@ const Dashboard = () => {
         <Card className="mb-4">
           <Card.Header>
             <h5 className="mb-0">{t('Filtrar Fábricas', '筛选工厂')}</h5>
-          </Card.Header>
+        </Card.Header>
           <Card.Body>
             {/* Busca por texto */}
             <div className="mb-3">
@@ -635,7 +634,7 @@ const Dashboard = () => {
                 <label className="form-label">{t('Tags Selecionadas', '已选标签')}</label>
                 <div className="d-flex flex-wrap gap-1">
                   {selectedTags.map((tag, index) => (
-                    <Badge 
+              <Badge
                       key={tag.id || `selected-${tag.name}-${index}`} 
                       bg={
                         tag.division === 'regiao' ? 'primary' : 
@@ -644,13 +643,13 @@ const Dashboard = () => {
                         'danger'
                       }
                       className="d-flex align-items-center gap-1"
-                      style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
                       onClick={() => handleTagToggle(tag)}
-                    >
-                      {tag.name}
+              >
+                {tag.name}
                       <i className="bi bi-x"></i>
-                    </Badge>
-                  ))}
+              </Badge>
+            ))}
                 </div>
               </div>
             )}
@@ -663,7 +662,7 @@ const Dashboard = () => {
                 <div className="d-flex flex-wrap gap-1">
                   {availableTags.regiao && availableTags.regiao.length > 0 ? 
                     availableTags.regiao.map((tag, index) => (
-                      <Badge 
+              <Badge
                         key={tag.id || `regiao-${tag.name}-${index}`} 
                         style={{ 
                           backgroundColor: selectedTags.some(t => t.id === tag.id) ? '#0d6efd' : '#ababab',
@@ -673,10 +672,10 @@ const Dashboard = () => {
                         }}
                         className={`d-flex align-items-center gap-1 ${selectedTags.some(t => t.id === tag.id) ? 'tag-selected' : 'tag-unselected'}`}
                         onClick={() => handleTagToggle(tag)}
-                      >
-                        {tag.name}
+              >
+                {tag.name}
                         {selectedTags.some(t => t.id === tag.id) && <i className="bi bi-check"></i>}
-                      </Badge>
+              </Badge>
                     )) : (
                       <small className="text-muted">{t('Nenhuma tag disponível', '无可用标签')}</small>
                     )
@@ -690,7 +689,7 @@ const Dashboard = () => {
                 <div className="d-flex flex-wrap gap-1">
                   {availableTags.tipoProduto && availableTags.tipoProduto.length > 0 ? 
                     availableTags.tipoProduto.map((tag, index) => (
-                      <Badge 
+              <Badge
                         key={tag.id || `tipoProduto-${tag.name}-${index}`} 
                         bg={selectedTags.some(t => t.id === tag.id) ? 'info' : undefined}
                         style={{ 
@@ -701,10 +700,10 @@ const Dashboard = () => {
                         }}
                         className={`d-flex align-items-center gap-1 ${selectedTags.some(t => t.id === tag.id) ? 'tag-selected' : 'tag-unselected'}`}
                         onClick={() => handleTagToggle(tag)}
-                      >
-                        {tag.name}
+              >
+                {tag.name}
                         {selectedTags.some(t => t.id === tag.id) && <i className="bi bi-check"></i>}
-                      </Badge>
+              </Badge>
                     )) : (
                       <small className="text-muted">{t('Nenhuma tag disponível', '无可用标签')}</small>
                     )
@@ -772,11 +771,11 @@ const Dashboard = () => {
               <Button variant="outline-secondary" size="sm" onClick={clearFilters}>
                 {t('Limpar Filtros', '清除筛选')}
               </Button>
-            </div>
-          </Card.Body>
-        </Card>
+          </div>
+        </Card.Body>
+      </Card>
       )}
-
+      
       {/* Exibir erro se houver */}
       {error && (
         <Alert variant="danger" className="mb-3">
