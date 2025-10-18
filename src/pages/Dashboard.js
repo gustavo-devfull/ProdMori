@@ -52,13 +52,27 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Detectar se é mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
   // Função utilitária para sincronizar com Firebase
-  const syncWithFirebase = async () => {
+  const syncWithFirebase = useCallback(async () => {
     try {
-      console.log('🔄 Sincronizando com Firebase...');
+      console.log('🔄 Sincronizando com Firebase...', { isMobile });
       
-      // Buscar fábricas diretamente do Firebase
-      const factoriesResponse = await fetch('/api/firestore/get/factories');
+      // Cache-busting para mobile
+      const timestamp = Date.now();
+      const cacheBustingParams = isMobile ? `?t=${timestamp}&mobile=1` : '';
+      
+      // Buscar fábricas diretamente do Firebase com cache-busting
+      const factoriesResponse = await fetch(`/api/firestore/get/factories${cacheBustingParams}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
       if (factoriesResponse.ok) {
         const factoriesData = await factoriesResponse.json();
         console.log('Dados frescos de fábricas carregados do Firebase:', factoriesData);
@@ -70,8 +84,15 @@ const Dashboard = () => {
         }
       }
       
-      // Buscar tags diretamente do Firebase
-      const tagsResponse = await fetch('/api/firestore/get/tags');
+      // Buscar tags diretamente do Firebase com cache-busting
+      const tagsResponse = await fetch(`/api/firestore/get/tags${cacheBustingParams}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
       if (tagsResponse.ok) {
         const tagsData = await tagsResponse.json();
         console.log('Dados frescos de tags carregados do Firebase:', tagsData);
@@ -103,57 +124,94 @@ const Dashboard = () => {
       console.error('❌ Erro ao sincronizar com Firebase:', error);
       throw error;
     }
-  };
+  }, [isMobile]);
+
+  // Função para limpeza agressiva de cache (especialmente para mobile)
+  const aggressiveCacheClear = useCallback(() => {
+    console.log('🧹 Limpeza agressiva de cache iniciada...', { isMobile });
+    
+    // Limpar todo o cache relacionado a fábricas
+    const cacheKeys = [
+      'factoriesCache',
+      'factoriesCacheTime',
+      'cache_factories_page_1_limit_12',
+      'cache_time_factories_page_1_limit_12',
+      'cache_dashboard_initial_data',
+      'cache_time_dashboard_initial_data',
+      'factories_page_1_{}',
+      'cache_factories_page_1_{}',
+      'cache_time_factories_page_1_{}',
+      'PMR_Cache',
+      'global_tags'
+    ];
+    
+    // Limpar localStorage
+    cacheKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // Limpar todas as chaves que começam com 'factories_' ou 'cache_factories_'
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('factories_') || 
+        key.startsWith('cache_factories_') ||
+        key.startsWith('cache_time_factories_') ||
+        key.startsWith('tags_') ||
+        key.startsWith('cache_') ||
+        key.includes('factory') ||
+        key.includes('tag')
+      )) {
+        localStorage.removeItem(key);
+      }
+    }
+    
+    // Limpeza mais agressiva para mobile
+    if (isMobile) {
+      console.log('📱 Limpeza extra agressiva para mobile...');
+      
+      // Limpar todo o localStorage se for mobile
+      try {
+        localStorage.clear();
+        console.log('📱 localStorage completamente limpo no mobile');
+      } catch (e) {
+        console.warn('Erro ao limpar localStorage:', e);
+      }
+      
+      // Limpar sessionStorage também
+      try {
+        sessionStorage.clear();
+        console.log('📱 sessionStorage limpo no mobile');
+      } catch (e) {
+        console.warn('Erro ao limpar sessionStorage:', e);
+      }
+    }
+    
+    // Limpar IndexedDB se disponível
+    if ('indexedDB' in window) {
+      try {
+        const deleteReq = indexedDB.deleteDatabase('PMR_Cache');
+        deleteReq.onsuccess = () => {
+          console.log('IndexedDB cache cleared');
+        };
+        deleteReq.onerror = () => {
+          console.warn('Erro ao deletar IndexedDB');
+        };
+      } catch (e) {
+        console.warn('Could not clear IndexedDB:', e);
+      }
+    }
+    
+    console.log('✅ Limpeza agressiva de cache concluída');
+  }, [isMobile]);
 
   // Função para forçar refresh completo do cache
   const forceRefreshAll = async () => {
     try {
       setRefreshing(true);
       
-      // Limpar todo o cache relacionado a fábricas
-      const cacheKeys = [
-        'factoriesCache',
-        'factoriesCacheTime',
-        'cache_factories_page_1_limit_12',
-        'cache_time_factories_page_1_limit_12',
-        'cache_dashboard_initial_data',
-        'cache_time_dashboard_initial_data',
-        'factories_page_1_{}',
-        'cache_factories_page_1_{}',
-        'cache_time_factories_page_1_{}',
-        'PMR_Cache',
-        'global_tags'
-      ];
-      
-      // Limpar localStorage
-      cacheKeys.forEach(key => {
-        localStorage.removeItem(key);
-      });
-      
-      // Limpar todas as chaves que começam com 'factories_' ou 'cache_factories_'
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.startsWith('factories_') || 
-          key.startsWith('cache_factories_') ||
-          key.startsWith('cache_time_factories_') ||
-          key.startsWith('tags_')
-        )) {
-          localStorage.removeItem(key);
-        }
-      }
-      
-      // Limpar IndexedDB se disponível
-      if ('indexedDB' in window) {
-        try {
-          const deleteReq = indexedDB.deleteDatabase('PMR_Cache');
-          deleteReq.onsuccess = () => {
-            console.log('IndexedDB cache cleared');
-          };
-        } catch (e) {
-          console.warn('Could not clear IndexedDB:', e);
-        }
-      }
+      // Limpeza agressiva de cache
+      aggressiveCacheClear();
       
       console.log('Cache completamente limpo - buscando dados frescos do Firebase');
       
@@ -289,28 +347,8 @@ const Dashboard = () => {
         
         console.log('Dashboard - Fábrica removida da lista local imediatamente');
         
-        // Limpar cache local adicional para garantir sincronização
-        try {
-          const cacheKeys = [
-            'factoriesCache',
-            'factoriesCacheTime',
-            'cache_factories_page_1_limit_12',
-            'cache_time_factories_page_1_limit_12',
-            'cache_dashboard_initial_data',
-            'cache_time_dashboard_initial_data',
-            'factories_page_1_{}',
-            'cache_factories_page_1_{}',
-            'cache_time_factories_page_1_{}'
-          ];
-          
-          cacheKeys.forEach(key => {
-            localStorage.removeItem(key);
-          });
-          
-          console.log('Dashboard - Cache local adicional limpo');
-        } catch (error) {
-          console.warn('Erro ao limpar cache local:', error);
-        }
+        // Limpeza agressiva de cache local para garantir sincronização
+        aggressiveCacheClear();
       }
       
       // Sincronizar com Firebase para buscar dados frescos
@@ -356,7 +394,7 @@ const Dashboard = () => {
       window.removeEventListener('factoryCreated', handleFactoryCreated);
       window.removeEventListener('factoryUpdated', handleFactoryUpdated);
     };
-  }, [loadFactories]);
+  }, [loadFactories, aggressiveCacheClear, syncWithFirebase]);
 
   // Carregar tags de cada fábrica quando as fábricas forem carregadas (otimizado)
   useEffect(() => {

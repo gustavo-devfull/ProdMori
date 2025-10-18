@@ -98,10 +98,16 @@ class FactoryServiceAPI {
     }
   }
 
+  // Detectar se é mobile
+  isMobile() {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
   // Função para sincronizar com Firebase e limpar cache
   async syncWithFirebaseAndClearCache() {
     try {
-      console.log('🔄 factoryServiceAPI - Sincronizando com Firebase...');
+      const isMobile = this.isMobile();
+      console.log('🔄 factoryServiceAPI - Sincronizando com Firebase...', { isMobile });
       
       // Limpar cache do serviço otimizado
       const optimizedService = await import('./optimizedFirebaseService');
@@ -134,9 +140,33 @@ class FactoryServiceAPI {
           key.startsWith('factories_') || 
           key.startsWith('cache_factories_') ||
           key.startsWith('cache_time_factories_') ||
-          key.startsWith('tags_')
+          key.startsWith('tags_') ||
+          key.startsWith('cache_') ||
+          key.includes('factory') ||
+          key.includes('tag')
         )) {
           localStorage.removeItem(key);
+        }
+      }
+      
+      // Limpeza mais agressiva para mobile
+      if (isMobile) {
+        console.log('📱 Limpeza extra agressiva para mobile no factoryServiceAPI...');
+        
+        // Limpar todo o localStorage se for mobile
+        try {
+          localStorage.clear();
+          console.log('📱 localStorage completamente limpo no mobile');
+        } catch (e) {
+          console.warn('Erro ao limpar localStorage:', e);
+        }
+        
+        // Limpar sessionStorage também
+        try {
+          sessionStorage.clear();
+          console.log('📱 sessionStorage limpo no mobile');
+        } catch (e) {
+          console.warn('Erro ao limpar sessionStorage:', e);
         }
       }
       
@@ -146,6 +176,9 @@ class FactoryServiceAPI {
           const deleteReq = indexedDB.deleteDatabase('PMR_Cache');
           deleteReq.onsuccess = () => {
             console.log('IndexedDB cache cleared');
+          };
+          deleteReq.onerror = () => {
+            console.warn('Erro ao deletar IndexedDB');
           };
         } catch (e) {
           console.warn('Could not clear IndexedDB:', e);
