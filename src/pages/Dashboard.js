@@ -108,12 +108,26 @@ const Dashboard = () => {
   const loadFactoryTags = useCallback(async (factoryId) => {
     try {
       const factoryTags = await tagService.getFactoryTagsWithAssociations(factoryId);
+      
+      // Garantir estrutura consistente
+      const safeTags = {
+        regiao: Array.isArray(factoryTags?.regiao) ? factoryTags.regiao : [],
+        material: Array.isArray(factoryTags?.material) ? factoryTags.material : [],
+        outros: Array.isArray(factoryTags?.outros) ? factoryTags.outros : [],
+        tipoProduto: Array.isArray(factoryTags?.tipoProduto) ? factoryTags.tipoProduto : []
+      };
+      
       setFactoryTagsMap(prev => ({
         ...prev,
-        [factoryId]: factoryTags
+        [factoryId]: safeTags
       }));
     } catch (error) {
       console.error(`Erro ao carregar tags da fábrica ${factoryId}:`, error);
+      // Em caso de erro, definir estrutura vazia
+      setFactoryTagsMap(prev => ({
+        ...prev,
+        [factoryId]: { regiao: [], material: [], outros: [], tipoProduto: [] }
+      }));
     }
   }, []);
 
@@ -256,26 +270,61 @@ const Dashboard = () => {
   };
 
   // Componente para exibir tags da fábrica
-  const FactoryTagsDisplay = ({ factoryId }) => {
-    // Usar o factoryTagsMap em vez de fazer chamadas separadas
-    const factoryTags = factoryTagsMap[factoryId] || { regiao: [], material: [], outros: [], tipoProduto: [] };
+  const FactoryTagsDisplay = React.memo(({ factoryId }) => {
+    const [tags, setTags] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const allTags = [
-      ...(factoryTags.regiao || []),
-      ...(factoryTags.material || []),
-      ...(factoryTags.outros || []),
-      ...(factoryTags.tipoProduto || [])
-    ];
+    useEffect(() => {
+      const loadFactoryTags = async () => {
+        try {
+          setIsLoading(true);
+          const factoryTags = factoryTagsMap[factoryId] || { regiao: [], material: [], outros: [], tipoProduto: [] };
 
-    if (allTags.length === 0) {
+          const allTags = [
+            ...(factoryTags.regiao || []),
+            ...(factoryTags.material || []),
+            ...(factoryTags.outros || []),
+            ...(factoryTags.tipoProduto || [])
+          ];
+
+          // Remover duplicatas baseado no ID e nome
+          const uniqueTags = allTags.filter((tag, index, self) => 
+            index === self.findIndex(t => 
+              (t.id && tag.id && t.id === tag.id) || 
+              (!t.id && !tag.id && t.name === tag.name && t.division === tag.division)
+            )
+          );
+
+          // Debug: verificar duplicatas
+          if (allTags.length !== uniqueTags.length) {
+            console.log(`Dashboard - Removidas ${allTags.length - uniqueTags.length} tags duplicadas para fábrica ${factoryId}`);
+          }
+
+          setTags(uniqueTags);
+        } catch (error) {
+          console.error('Erro ao carregar tags da fábrica:', error);
+          setTags([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadFactoryTags();
+    }, [factoryId]);
+
+    if (isLoading) {
+      return <small className="text-muted">Carregando...</small>;
+    }
+
+    if (tags.length === 0) {
       return <small className="text-muted">{t('Sem tags', '无标签')}</small>;
     }
 
     return (
       <div className="d-flex flex-wrap gap-1">
-        {allTags.map(tag => (
+        {tags.map((tag, index) => (
           <Badge 
-            key={tag.id} 
+            key={`${factoryId}-${tag.id || tag.name}-${index}`} 
             bg={
               tag.division === 'regiao' ? 'primary' : 
               tag.division === 'material' ? 'success' : 
@@ -289,7 +338,7 @@ const Dashboard = () => {
         ))}
       </div>
     );
-  };
+  });
 
   if (loading) {
     return (
@@ -348,9 +397,9 @@ const Dashboard = () => {
               <div className="mb-3">
                 <label className="form-label">{t('Tags Selecionadas', '已选标签')}</label>
                 <div className="d-flex flex-wrap gap-1">
-                  {selectedTags.map(tag => (
+                  {selectedTags.map((tag, index) => (
                     <Badge 
-                      key={tag.id} 
+                      key={tag.id || `selected-${tag.name}-${index}`} 
                       bg={
                         tag.division === 'regiao' ? 'primary' : 
                         tag.division === 'material' ? 'success' : 
@@ -376,9 +425,9 @@ const Dashboard = () => {
                 <label className="form-label fw-bold">{t('Região', '地区')}</label>
                 <div className="d-flex flex-wrap gap-1">
                   {availableTags.regiao && availableTags.regiao.length > 0 ? 
-                    availableTags.regiao.map(tag => (
+                    availableTags.regiao.map((tag, index) => (
                       <Badge 
-                        key={tag.id} 
+                        key={tag.id || `regiao-${tag.name}-${index}`} 
                         style={{ 
                           backgroundColor: selectedTags.some(t => t.id === tag.id) ? '#0d6efd' : '#ababab',
                           color: 'white',
@@ -403,9 +452,9 @@ const Dashboard = () => {
                 <label className="form-label fw-bold">{t('Tipo de Produto', '产品类型')}</label>
                 <div className="d-flex flex-wrap gap-1">
                   {availableTags.tipoProduto && availableTags.tipoProduto.length > 0 ? 
-                    availableTags.tipoProduto.map(tag => (
+                    availableTags.tipoProduto.map((tag, index) => (
                       <Badge 
-                        key={tag.id} 
+                        key={tag.id || `tipoProduto-${tag.name}-${index}`} 
                         bg={selectedTags.some(t => t.id === tag.id) ? 'info' : undefined}
                         style={{ 
                           backgroundColor: selectedTags.some(t => t.id === tag.id) ? undefined : '#ababab',
@@ -431,9 +480,9 @@ const Dashboard = () => {
                 <label className="form-label fw-bold">{t('Material', '材料')}</label>
                 <div className="d-flex flex-wrap gap-1">
                   {availableTags.material && availableTags.material.length > 0 ? 
-                    availableTags.material.map(tag => (
+                    availableTags.material.map((tag, index) => (
                       <Badge 
-                        key={tag.id} 
+                        key={tag.id || `material-${tag.name}-${index}`} 
                         style={{ 
                           backgroundColor: selectedTags.some(t => t.id === tag.id) ? '#198754' : '#ababab',
                           color: 'white',
@@ -458,9 +507,9 @@ const Dashboard = () => {
                 <label className="form-label fw-bold">{t('Outros', '其他')}</label>
                 <div className="d-flex flex-wrap gap-1">
                   {availableTags.outros && availableTags.outros.length > 0 ? 
-                    availableTags.outros.map(tag => (
+                    availableTags.outros.map((tag, index) => (
                       <Badge 
-                        key={tag.id} 
+                        key={tag.id || `outros-${tag.name}-${index}`} 
                         style={{ 
                           backgroundColor: selectedTags.some(t => t.id === tag.id) ? '#dc3545' : '#ababab',
                           color: 'white',
