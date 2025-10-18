@@ -1272,11 +1272,10 @@ const FactoryDetail = () => {
                 <Form.Group>
                   <Form.Label>{t('U.PRICE', '单价')}</Form.Label>
                   <Form.Control
-                    type="number"
-                    step="0.01"
+                    type="text"
                     name="uPrice"
                     defaultValue={editingProduct?.uPrice || ''}
-                    placeholder={t('Preço unitário', '单价')}
+                    placeholder={t('Digite o preço unitário', '输入单价')}
                   />
                 </Form.Group>
               </Col>
@@ -1287,7 +1286,7 @@ const FactoryDetail = () => {
                     type="text"
                     name="unit"
                     defaultValue={editingProduct?.unit || 'PC'}
-                    placeholder={t('Unidade', '单位')}
+                    placeholder={t('Digite a unidade', '输入单位')}
                   />
                 </Form.Group>
               </Col>
@@ -1299,22 +1298,21 @@ const FactoryDetail = () => {
                 <Form.Group>
                   <Form.Label>{t('UNIT/CTN', '单位/箱')}</Form.Label>
                   <Form.Control
-                    type="number"
+                    type="text"
                     name="unitCtn"
                     defaultValue={editingProduct?.unitCtn || editingProduct?.unitCtns || ''}
-                    placeholder={t('Unidades por caixa', '每箱单位')}
+                    placeholder={t('Digite unidades por caixa', '输入每箱单位')}
                   />
                 </Form.Group>
               </Col>
               <Col xs={6}>
                 <Form.Group>
-                  <Form.Label>{t('CBM', '立方米')}</Form.Label>
+                  <Form.Label>{t('CBM', 'CBM')}</Form.Label>
                   <Form.Control
-                    type="number"
-                    step="0.001"
+                    type="text"
                     name="cbm"
                     defaultValue={editingProduct?.cbm || ''}
-                    placeholder={t('Volume', '体积')}
+                    placeholder={t('Digite o CBM', '输入CBM')}
                   />
                 </Form.Group>
               </Col>
@@ -1336,36 +1334,33 @@ const FactoryDetail = () => {
             <Row className="mb-3">
               <Col xs={4}>
                 <Form.Group>
-                  <Form.Label>{t('L', '长')}</Form.Label>
+                  <Form.Label>{t('L', 'L')}</Form.Label>
                   <Form.Control
-                    type="number"
-                    step="0.1"
-                    name="length"
-                    defaultValue={editingProduct?.length || ''}
+                    type="text"
+                    name="l"
+                    defaultValue={editingProduct?.l || ''}
                     placeholder={t('Comprimento', '长度')}
                   />
                 </Form.Group>
               </Col>
               <Col xs={4}>
                 <Form.Group>
-                  <Form.Label>{t('W', '宽')}</Form.Label>
+                  <Form.Label>{t('W', 'W')}</Form.Label>
                   <Form.Control
-                    type="number"
-                    step="0.1"
-                    name="width"
-                    defaultValue={editingProduct?.width || ''}
+                    type="text"
+                    name="w"
+                    defaultValue={editingProduct?.w || ''}
                     placeholder={t('Largura', '宽度')}
                   />
                 </Form.Group>
               </Col>
               <Col xs={4}>
                 <Form.Group>
-                  <Form.Label>{t('H', '高')}</Form.Label>
+                  <Form.Label>{t('H', 'H')}</Form.Label>
                   <Form.Control
-                    type="number"
-                    step="0.1"
-                    name="height"
-                    defaultValue={editingProduct?.height || ''}
+                    type="text"
+                    name="h"
+                    defaultValue={editingProduct?.h || ''}
                     placeholder={t('Altura', '高度')}
                   />
                 </Form.Group>
@@ -1374,10 +1369,9 @@ const FactoryDetail = () => {
 
             {/* G.W */}
             <Form.Group className="mb-3">
-              <Form.Label>{t('G.W', '毛重')}</Form.Label>
+              <Form.Label>{t('G.W', 'G.W')}</Form.Label>
               <Form.Control
-                type="number"
-                step="0.1"
+                type="text"
                 name="gW"
                 defaultValue={editingProduct?.gW || ''}
                 placeholder={t('Digite o peso bruto', '输入毛重')}

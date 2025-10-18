@@ -275,43 +275,27 @@ const Products = () => {
     
     const searchLower = searchTerm.toLowerCase();
     
-    // Buscar no nome do produto
-    const matchesName = product.name?.toLowerCase().includes(searchLower);
+    // Buscar no REF
+    const matchesRef = product.ref?.toLowerCase().includes(searchLower);
     
-    // Buscar no segmento do produto
-    const matchesSegment = product.segment?.toLowerCase().includes(searchLower);
+    // Buscar no REMARK
+    const matchesRemark = product.remark?.toLowerCase().includes(searchLower);
     
     // Buscar no nome da fábrica
     const matchesFactoryName = product.factory?.name?.toLowerCase().includes(searchLower);
     
-    // Buscar no campo REF
-    const matchesRef = product.ref?.toLowerCase().includes(searchLower);
+    // Buscar no U.PRICE
+    const matchesUPrice = product.uPrice?.toString().toLowerCase().includes(searchLower);
     
-    // Buscar nas tags da fábrica
-    let matchesFactoryTags = false;
-    if (product.factory?.tags) {
-      const factoryTags = product.factory.tags;
-      // Verificar tags de região
-      if (factoryTags.regiao && Array.isArray(factoryTags.regiao)) {
-        matchesFactoryTags = factoryTags.regiao.some(tag => 
-          (typeof tag === 'string' ? tag : tag.name)?.toLowerCase().includes(searchLower)
-        );
-      }
-      // Verificar tags de material
-      if (!matchesFactoryTags && factoryTags.material && Array.isArray(factoryTags.material)) {
-        matchesFactoryTags = factoryTags.material.some(tag => 
-          (typeof tag === 'string' ? tag : tag.name)?.toLowerCase().includes(searchLower)
-        );
-      }
-      // Verificar tags de outros
-      if (!matchesFactoryTags && factoryTags.outros && Array.isArray(factoryTags.outros)) {
-        matchesFactoryTags = factoryTags.outros.some(tag => 
-          (typeof tag === 'string' ? tag : tag.name)?.toLowerCase().includes(searchLower)
-        );
-      }
+    return matchesRef || matchesRemark || matchesFactoryName || matchesUPrice;
+  }).sort((a, b) => {
+    // Ordenar por data de criação (mais recentes primeiro)
+    if (a.createdAt && b.createdAt) {
+      const dateA = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB - dateA;
     }
-    
-    return matchesName || matchesSegment || matchesFactoryName || matchesRef || matchesFactoryTags;
+    return 0;
   });
 
   // Agrupar produtos por fábrica
@@ -335,57 +319,59 @@ const Products = () => {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="mb-3">{t('Todos os Produtos', '所有产品')}</h2>
-        <div className="d-flex gap-2 flex-wrap">
-          {bulkDeleteMode && (
-            <>
-              <Button 
-                variant="outline-secondary" 
-                onClick={handleSelectAll}
-                className="d-flex align-items-center"
-              >
-                <i className="bi bi-check-square me-1"></i>
-                {selectedProducts.length === filteredProducts.length 
-                  ? t('Desmarcar Todos', '取消全选') 
-                  : t('Selecionar Todos', '全选')
-                }
-              </Button>
-              <Button 
-                variant="danger" 
-                onClick={handleBulkDelete}
-                disabled={selectedProducts.length === 0 || submitting}
-                className="d-flex align-items-center"
-              >
-                {submitting ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    {t('Excluindo...', '删除中...')}
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-trash me-1"></i>
-                    {t('Excluir Selecionados', '删除选中')} ({selectedProducts.length})
-                  </>
-                )}
-              </Button>
-            </>
-          )}
-          <Button 
-            variant={bulkDeleteMode ? "secondary" : "outline-danger"} 
-            onClick={toggleBulkDeleteMode}
-            className="d-flex align-items-center"
-          >
-            <i className={`bi ${bulkDeleteMode ? 'bi-x-circle' : 'bi-check-square'} me-1`}></i>
-            {bulkDeleteMode ? t('Cancelar Seleção', '取消选择') : t('Selecionar Produtos', '选择产品')}
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={() => setModalVisible(true)}
-            className="d-flex align-items-center"
-          >
-            <i className="bi bi-plus-circle me-2"></i>
-            {t('Novo Produto', '新产品')}
-          </Button>
+        <div className="d-flex align-items-center justify-content-between mb-3">
+          <h2 className="mb-0">{t('Produtos', '产品')}</h2>
+          <div className="d-flex gap-2">
+            {bulkDeleteMode && (
+              <>
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={handleSelectAll}
+                  className="d-flex align-items-center"
+                >
+                  <i className="bi bi-check-square me-1"></i>
+                  {selectedProducts.length === filteredProducts.length 
+                    ? t('Desmarcar Todos', '取消全选') 
+                    : t('Selecionar Todos', '全选')
+                  }
+                </Button>
+                <Button 
+                  variant="danger" 
+                  onClick={handleBulkDelete}
+                  disabled={selectedProducts.length === 0 || submitting}
+                  className="d-flex align-items-center"
+                >
+                  {submitting ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      {t('Excluindo...', '删除中...')}
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-trash me-1"></i>
+                      {t('Excluir Selecionados', '删除选中')} ({selectedProducts.length})
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+            <Button 
+              variant={bulkDeleteMode ? "secondary" : "outline-danger"} 
+              onClick={toggleBulkDeleteMode}
+              className="d-flex align-items-center"
+              title={bulkDeleteMode ? t('Cancelar Seleção', '取消选择') : t('Selecionar Produtos', '选择产品')}
+            >
+              <i className={`bi ${bulkDeleteMode ? 'bi-x-circle' : 'bi-check-square'}`}></i>
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={() => setModalVisible(true)}
+              className="d-flex align-items-center"
+              title={t('Novo Produto', '新产品')}
+            >
+              <i className="bi bi-plus-circle"></i>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -404,7 +390,7 @@ const Products = () => {
                 <Form.Label>{t('Buscar', '搜索')}</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder={t('Nome, REF, segmento, fábrica ou tags...', '名称、参考号、行业、工厂或标签...')}
+                  placeholder={t('REF, REMARK, Nome da fábrica ou U.PRICE...', '参考号、备注、工厂名称或单价...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
