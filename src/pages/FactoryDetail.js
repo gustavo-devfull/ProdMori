@@ -15,6 +15,7 @@ import factoryServiceAPI from '../services/factoryServiceAPI';
 import productServiceAPI from '../services/productServiceAPI';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
+import firebasePersistence from '../utils/firebasePersistence';
 import CustomImage from '../components/CustomImage';
 import AudioRecorder from '../components/AudioRecorder';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -78,11 +79,25 @@ const FactoryDetail = () => {
     if (isActuallyMobile) {
       console.log('📱 Mobile detectado - Forçando refresh completo da página');
       
-      // Limpeza agressiva de cache
+      // Limpeza agressiva de cache preservando autenticação
       try {
+        // Preservar dados de autenticação
+        const localUser = localStorage.getItem('localUser');
+        const authData = localStorage.getItem('authData');
+        
         localStorage.clear();
         sessionStorage.clear();
-        console.log('📱 Cache completamente limpo no mobile');
+        
+        // Restaurar dados de autenticação se existirem
+        if (localUser) {
+          localStorage.setItem('localUser', localUser);
+          console.log('🔐 Preservando usuário logado durante refresh mobile');
+        }
+        if (authData) {
+          localStorage.setItem('authData', authData);
+        }
+        
+        console.log('📱 Cache completamente limpo no mobile (preservando autenticação)');
       } catch (e) {
         console.warn('Erro ao limpar cache:', e);
       }
@@ -101,25 +116,32 @@ const FactoryDetail = () => {
 
   const loadFactoryData = useCallback(async () => {
     try {
-      console.log('🔄 Iniciando loadFactoryData...');
+      console.log('🔥 FactoryDetail - Iniciando carregamento com estratégia agressiva...');
       setLoading(true);
       
-      // Carregar dados da fábrica
-      console.log('📋 Carregando dados da fábrica...');
+      // Carregar dados normalmente sem forçar refresh
+      
+      // Carregar dados da fábrica usando estratégia agressiva
+      console.log('📋 Carregando dados da fábrica do Firebase...');
       const factoryData = await factoryServiceAPI.getFactoryById(factoryId);
       if (!factoryData) {
-        console.error('❌ Fábrica não encontrada');
-        setError(t('Fábrica não encontrada', '工厂未找到'));
+        console.error('❌ Fábrica não encontrada, redirecionando para dashboard');
+        setError(t('Fábrica não encontrada. Redirecionando...', '工厂未找到。正在重定向...'));
+        
+        // Redirecionar para dashboard após um breve delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
         return;
       }
       
-      console.log('✅ Dados da fábrica carregados:', factoryData);
+      console.log('✅ Dados da fábrica carregados do Firebase:', factoryData);
       setFactory(factoryData);
       
-      // Carregar produtos da fábrica
-      console.log('📦 Carregando produtos da fábrica...');
+      // Carregar produtos da fábrica usando estratégia agressiva
+      console.log('📦 Carregando produtos da fábrica do Firebase...');
       const productsData = await factoryServiceAPI.getProductsByFactory(factoryId);
-      console.log('📦 Produtos brutos carregados:', productsData);
+      console.log('📦 Produtos brutos carregados do Firebase:', productsData);
       
       // Ordenar produtos pelos mais recentes primeiro
       const sortedProducts = productsData.sort((a, b) => {
@@ -131,12 +153,9 @@ const FactoryDetail = () => {
       console.log('📦 Produtos ordenados:', sortedProducts);
       setProducts(sortedProducts);
       
-      // Carregar tags da fábrica
-      console.log('🏷️ Carregando tags da fábrica...');
+      // Carregar tags da fábrica usando estratégia agressiva
+      console.log('🏷️ Carregando tags da fábrica do Firebase...');
       try {
-        // Forçar sincronização completa para garantir dados atualizados
-        await tagService.forceSyncFromFirebase(factoryId);
-        
         const factoryTagsData = await tagService.getFactoryTagsWithAssociations(factoryId);
         console.log('loadFactoryData - Tags carregadas:', factoryTagsData);
         
@@ -172,8 +191,20 @@ const FactoryDetail = () => {
       
       setError(null);
     } catch (err) {
-      setError(t('Erro ao carregar dados da fábrica', '加载工厂数据时出错'));
-      console.error(err);
+      console.error('Erro ao carregar dados da fábrica:', err);
+      
+      // Se for erro de documento não encontrado, redirecionar para dashboard
+      if (err.message === 'Documento não encontrado') {
+        console.error('❌ Fábrica não encontrada, redirecionando para dashboard');
+        setError(t('Fábrica não encontrada. Redirecionando...', '工厂未找到。正在重定向...'));
+        
+        // Redirecionar para dashboard após um breve delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      } else {
+        setError(t('Erro ao carregar dados da fábrica', '加载工厂数据时出错'));
+      }
     } finally {
       setLoading(false);
     }
@@ -224,13 +255,8 @@ const FactoryDetail = () => {
         setEditingProduct(null);
       }
       
-      // Verificar se é mobile e forçar refresh
-      console.log('🔄 Verificando se deve fazer refresh após operação...');
-      if (forceRefreshIfMobile()) {
-        console.log('📱 Refresh foi executado, retornando...');
-        return; // Refresh foi feito, não precisa continuar
-      }
-      console.log('💻 Não é mobile ou refresh não foi necessário, continuando...');
+      // Recarregar dados normalmente sem forçar refresh
+      console.log('✅ Produto salvo com sucesso, recarregando dados...');
       
       setImageUrl('');
       await loadFactoryData();

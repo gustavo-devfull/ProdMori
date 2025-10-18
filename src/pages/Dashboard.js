@@ -169,10 +169,24 @@ const Dashboard = () => {
     if (isMobile) {
       console.log('📱 Limpeza extra agressiva para mobile...');
       
-      // Limpar todo o localStorage se for mobile
+      // Limpar todo o localStorage se for mobile, preservando autenticação
       try {
+        // Preservar dados de autenticação
+        const localUser = localStorage.getItem('localUser');
+        const authData = localStorage.getItem('authData');
+        
         localStorage.clear();
-        console.log('📱 localStorage completamente limpo no mobile');
+        
+        // Restaurar dados de autenticação se existirem
+        if (localUser) {
+          localStorage.setItem('localUser', localUser);
+          console.log('🔐 Preservando usuário logado durante limpeza mobile');
+        }
+        if (authData) {
+          localStorage.setItem('authData', authData);
+        }
+        
+        console.log('📱 localStorage completamente limpo no mobile (preservando autenticação)');
       } catch (e) {
         console.warn('Erro ao limpar localStorage:', e);
       }
@@ -263,9 +277,8 @@ const Dashboard = () => {
     try {
       console.log(`Dashboard.loadFactoryTags - Carregando tags para fábrica: ${factoryId}`);
       
-      // Forçar sincronização completa para garantir dados atualizados
-      await tagService.forceSyncFromFirebase(factoryId);
-      
+      // Não forçar sincronização para cada fábrica individualmente
+      // Isso pode causar muitas requisições simultâneas
       const factoryTags = await tagService.getFactoryTagsWithAssociations(factoryId);
       console.log(`Dashboard.loadFactoryTags - Tags carregadas para ${factoryId}:`, factoryTags);
       

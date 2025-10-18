@@ -168,6 +168,9 @@ class FactoryServiceAPI {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Documento não encontrado');
+        }
         const errorData = await response.json();
         throw new Error(errorData.error || 'Erro ao buscar fábrica');
       }

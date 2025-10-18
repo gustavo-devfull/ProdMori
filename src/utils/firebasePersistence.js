@@ -13,12 +13,25 @@ class FirebasePersistence {
   }
 
   /**
-   * Limpa completamente todos os caches locais
+   * Limpa completamente todos os caches locais, mas preserva dados de autenticação
    */
   clearAllLocalCache() {
     try {
+      // Preservar dados de autenticação
+      const localUser = localStorage.getItem('localUser');
+      const authData = localStorage.getItem('authData');
+      
       // Limpar localStorage
       localStorage.clear();
+      
+      // Restaurar dados de autenticação se existirem
+      if (localUser) {
+        localStorage.setItem('localUser', localUser);
+        console.log('🔐 Preservando usuário logado durante limpeza de cache');
+      }
+      if (authData) {
+        localStorage.setItem('authData', authData);
+      }
       
       // Limpar sessionStorage
       sessionStorage.clear();
@@ -45,7 +58,7 @@ class FirebasePersistence {
         });
       }
       
-      console.log('🧹 Cache local completamente limpo');
+      console.log('🧹 Cache local completamente limpo (preservando autenticação)');
     } catch (error) {
       console.warn('Erro ao limpar cache local:', error);
     }

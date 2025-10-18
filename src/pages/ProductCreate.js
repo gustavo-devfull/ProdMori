@@ -45,11 +45,25 @@ const ProductCreate = () => {
     if (isMobile) {
       console.log('📱 Mobile detectado - Forçando refresh completo da página');
       
-      // Limpeza agressiva de cache
+      // Limpeza agressiva de cache preservando autenticação
       try {
+        // Preservar dados de autenticação
+        const localUser = localStorage.getItem('localUser');
+        const authData = localStorage.getItem('authData');
+        
         localStorage.clear();
         sessionStorage.clear();
-        console.log('📱 Cache completamente limpo no mobile');
+        
+        // Restaurar dados de autenticação se existirem
+        if (localUser) {
+          localStorage.setItem('localUser', localUser);
+          console.log('🔐 Preservando usuário logado durante refresh mobile');
+        }
+        if (authData) {
+          localStorage.setItem('authData', authData);
+        }
+        
+        console.log('📱 Cache completamente limpo no mobile (preservando autenticação)');
       } catch (e) {
         console.warn('Erro ao limpar cache:', e);
       }
@@ -130,13 +144,8 @@ const ProductCreate = () => {
         await productServiceAPI.createProduct(finalValues);
       }
       
-      // Verificar se é mobile e forçar refresh
-      console.log('🔄 Verificando se deve fazer refresh após operação...');
-      if (forceRefreshIfMobile()) {
-        console.log('📱 Refresh foi executado, retornando...');
-        return; // Refresh foi feito, não precisa continuar
-      }
-      console.log('💻 Não é mobile ou refresh não foi necessário, continuando...');
+      // Redirecionar normalmente sem forçar refresh
+      console.log('✅ Produto salvo com sucesso, redirecionando...');
       
       setImageUrl('');
       
@@ -200,44 +209,43 @@ const ProductCreate = () => {
           )}
 
           <Form onSubmit={handleSubmit}>
-            {/* Botão salvar no topo */}
-            <div className="d-flex justify-content-end mb-3">
-              <Button 
-                variant="success" 
-                type="submit" 
-                disabled={submitting}
-                className="d-flex align-items-center"
-              >
-                {submitting ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    {t('Salvando...', '保存中...')}
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-check-lg me-1"></i>
-                    {t('Salvar', '保存')}
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Seleção da Fábrica */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Fábrica', '工厂')}</Form.Label>
-              <Form.Select
-                name="factoryId"
-                defaultValue={editingProduct?.factoryId || factoryId || ''}
-                required
-              >
-                <option value="">{t('Selecione uma fábrica', '选择工厂')}</option>
-                {factories.map(factory => (
-                  <option key={factory.id} value={factory.id}>
-                    {factory.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+            {/* Campo Fábrica e Botão Salvar */}
+            <Row className="mb-3">
+              <Col xs={8}>
+                <Form.Select
+                  name="factoryId"
+                  defaultValue={editingProduct?.factoryId || factoryId || ''}
+                  required
+                >
+                  <option value="">{t('Selecione uma fábrica', '选择工厂')}</option>
+                  {factories.map(factory => (
+                    <option key={factory.id} value={factory.id}>
+                      {factory.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col xs={4}>
+                <Button 
+                  variant="success" 
+                  type="submit" 
+                  disabled={submitting || uploadingImage}
+                  className="w-100"
+                >
+                  {submitting ? (
+                    <>
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      {t('Salvando...', '保存中...')}
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-lg me-1"></i>
+                      {editingProduct ? t('Atualizar', '更新') : t('Criar', '创建')}
+                    </>
+                  )}
+                </Button>
+              </Col>
+            </Row>
 
             {/* Foto do produto */}
             <Form.Group className="mb-3">
@@ -299,7 +307,8 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('U.PRICE', '单价')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.01"
                     name="uPrice"
                     defaultValue={editingProduct?.uPrice || ''}
                     placeholder={t('Digite o preço unitário', '输入单价')}
@@ -310,7 +319,8 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('UNIT', '单位')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="1"
                     name="unit"
                     defaultValue={editingProduct?.unit || 'PC'}
                     placeholder={t('Digite a unidade', '输入单位')}
@@ -325,7 +335,8 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('UNIT/CTN', '单位/箱')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="1"
                     name="unitCtn"
                     defaultValue={editingProduct?.unitCtn || ''}
                     placeholder={t('Digite unidades por caixa', '输入每箱单位')}
@@ -336,7 +347,8 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('CBM', 'CBM')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.001"
                     name="cbm"
                     defaultValue={editingProduct?.cbm || ''}
                     placeholder={t('Digite o CBM', '输入CBM')}
@@ -363,7 +375,8 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('L', 'L')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.1"
                     name="l"
                     defaultValue={editingProduct?.l || ''}
                     placeholder={t('Comprimento', '长度')}
@@ -374,7 +387,8 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('W', 'W')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.1"
                     name="w"
                     defaultValue={editingProduct?.w || ''}
                     placeholder={t('Largura', '宽度')}
@@ -385,7 +399,8 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('H', 'H')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.1"
                     name="h"
                     defaultValue={editingProduct?.h || ''}
                     placeholder={t('Altura', '高度')}
@@ -398,7 +413,8 @@ const ProductCreate = () => {
             <Form.Group className="mb-3">
               <Form.Label>{t('G.W', 'G.W')}</Form.Label>
               <Form.Control
-                type="text"
+                type="number"
+                step="0.1"
                 name="gW"
                 defaultValue={editingProduct?.gW || ''}
                 placeholder={t('Digite o peso bruto', '输入毛重')}
@@ -424,8 +440,10 @@ const ProductCreate = () => {
                   console.log('Áudio gravado:', blob, url);
                 }}
                 onAudioChange={(url) => {
-                  console.log('AudioRecorder onAudioChange chamado com URL:', url);
-                  setCurrentAudioUrl(url);
+                  if (url) {
+                    console.log('AudioRecorder onAudioChange chamado com URL:', url);
+                    setCurrentAudioUrl(url);
+                  }
                 }}
                 productId={editingProduct?.id || 'new'}
                 initialAudioUrl={editingProduct?.audioUrls?.[0]?.url || editingProduct?.audioUrl}
@@ -433,7 +451,7 @@ const ProductCreate = () => {
               />
             </Form.Group>
 
-            {/* Botões no final */}
+            {/* Botões Cancelar e Salvar */}
             <div className="d-flex justify-content-between">
               <Button variant="secondary" onClick={handleCancel}>
                 {t('Cancelar', '取消')}

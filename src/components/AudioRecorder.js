@@ -23,7 +23,7 @@ const AudioRecorder = ({ onAudioReady, onAudioChange, initialAudioUrl, disabled 
 
   // Notificar mudanças no áudio para o componente pai
   useEffect(() => {
-    if (onAudioChange) {
+    if (onAudioChange && audioUrl) {
       console.log('AudioRecorder: Notificando mudança de áudio para componente pai:', audioUrl);
       onAudioChange(audioUrl);
     }

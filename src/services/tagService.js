@@ -924,6 +924,13 @@ class TagService {
       }
     } catch (error) {
       console.error('TagService.forceSyncFromFirebase - Erro:', error);
+      
+      // Se for erro de conexão, não falhar completamente
+      if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+        console.warn('TagService.forceSyncFromFirebase - Erro de conexão, continuando com dados locais');
+        return; // Não falhar, apenas usar dados locais
+      }
+      
       throw error;
     }
   }
@@ -1002,6 +1009,13 @@ class TagService {
       }
     } catch (error) {
       console.error('TagService.syncFromFirebaseBackup - Erro:', error);
+      
+      // Se for erro de conexão, não falhar completamente
+      if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+        console.warn('TagService.syncFromFirebaseBackup - Erro de conexão, continuando com dados locais');
+        return; // Não falhar, apenas usar dados locais
+      }
+      
       throw error;
     }
   }

@@ -45,11 +45,25 @@ const Products = () => {
     if (isMobile) {
       console.log('📱 Mobile detectado - Forçando refresh completo da página');
       
-      // Limpeza agressiva de cache
+      // Limpeza agressiva de cache preservando autenticação
       try {
+        // Preservar dados de autenticação
+        const localUser = localStorage.getItem('localUser');
+        const authData = localStorage.getItem('authData');
+        
         localStorage.clear();
         sessionStorage.clear();
-        console.log('📱 Cache completamente limpo no mobile');
+        
+        // Restaurar dados de autenticação se existirem
+        if (localUser) {
+          localStorage.setItem('localUser', localUser);
+          console.log('🔐 Preservando usuário logado durante refresh mobile');
+        }
+        if (authData) {
+          localStorage.setItem('authData', authData);
+        }
+        
+        console.log('📱 Cache completamente limpo no mobile (preservando autenticação)');
       } catch (e) {
         console.warn('Erro ao limpar cache:', e);
       }
@@ -213,10 +227,8 @@ const Products = () => {
         await productServiceAPI.createProduct(productData);
       }
       
-      // Verificar se é mobile e forçar refresh
-      if (forceRefreshIfMobile()) {
-        return; // Refresh foi feito, não precisa continuar
-      }
+      // Recarregar dados e fechar modal normalmente
+      console.log('✅ Produto salvo com sucesso, recarregando dados...');
       
       await loadData();
       handleModalClose();
