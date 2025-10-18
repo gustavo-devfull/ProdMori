@@ -88,6 +88,9 @@ const FactoryDetail = () => {
       // Carregar tags da fábrica
       console.log('=== CARREGANDO TAGS DA FÁBRICA ===');
       try {
+        // Forçar sincronização completa para garantir dados atualizados
+        await tagService.forceSyncFromFirebase(factoryId);
+        
         const factoryTagsData = await tagService.getFactoryTagsWithAssociations(factoryId);
         console.log('loadFactoryData - Tags carregadas:', factoryTagsData);
         

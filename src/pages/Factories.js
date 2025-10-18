@@ -270,7 +270,10 @@ const Factories = () => {
     
     // Carregar tags da fábrica existente
     try {
-      const factoryTagsData = await tagService.getFactoryTags(factory.id);
+      // Forçar sincronização completa para garantir dados atualizados
+      await tagService.forceSyncFromFirebase(factory.id);
+      
+      const factoryTagsData = await tagService.getFactoryTagsWithAssociations(factory.id);
       console.log('handleEditFactory - Tags carregadas:', factoryTagsData);
       
       // Garantir que a estrutura está correta
@@ -432,24 +435,12 @@ const Factories = () => {
     try {
       console.log('loadFactoryTags - Factory ID:', factoryId);
       
-      // Tentar carregar tags do Firebase primeiro
-      let factoryTags;
-      try {
-        factoryTags = await tagService.getFactoryTags(factoryId);
-        console.log('loadFactoryTags - Tags carregadas do Firebase:', factoryTags);
-      } catch (firebaseError) {
-        console.warn('Erro ao carregar do Firebase, usando localStorage:', firebaseError);
-        // Fallback para localStorage
-        const savedTags = localStorage.getItem(`tags_${factoryId}`);
-        console.log('loadFactoryTags - Saved tags (localStorage):', savedTags);
-        
-        if (!savedTags) {
-          console.log('loadFactoryTags - No saved tags found');
-          return;
-        }
-        
-        factoryTags = JSON.parse(savedTags);
-      }
+      // Forçar sincronização completa para garantir dados atualizados
+      await tagService.forceSyncFromFirebase(factoryId);
+      
+      // Usar o mesmo método que outras páginas para consistência
+      const factoryTags = await tagService.getFactoryTagsWithAssociations(factoryId);
+      console.log('loadFactoryTags - Tags carregadas:', factoryTags);
       
       console.log('loadFactoryTags - Parsed tags:', factoryTags);
       

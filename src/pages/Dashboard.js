@@ -107,7 +107,13 @@ const Dashboard = () => {
   // Função para carregar tags de cada fábrica
   const loadFactoryTags = useCallback(async (factoryId) => {
     try {
+      console.log(`Dashboard.loadFactoryTags - Carregando tags para fábrica: ${factoryId}`);
+      
+      // Forçar sincronização completa para garantir dados atualizados
+      await tagService.forceSyncFromFirebase(factoryId);
+      
       const factoryTags = await tagService.getFactoryTagsWithAssociations(factoryId);
+      console.log(`Dashboard.loadFactoryTags - Tags carregadas para ${factoryId}:`, factoryTags);
       
       // Garantir estrutura consistente
       const safeTags = {
@@ -116,6 +122,8 @@ const Dashboard = () => {
         outros: Array.isArray(factoryTags?.outros) ? factoryTags.outros : [],
         tipoProduto: Array.isArray(factoryTags?.tipoProduto) ? factoryTags.tipoProduto : []
       };
+      
+      console.log(`Dashboard.loadFactoryTags - Estrutura final para ${factoryId}:`, safeTags);
       
       setFactoryTagsMap(prev => ({
         ...prev,

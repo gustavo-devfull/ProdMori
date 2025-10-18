@@ -802,6 +802,7 @@ class TagService {
       
       // 1. Carregar do localStorage (sistema principal)
       const localAssociations = this.loadAssociationsFromLocalStorage(factoryId);
+      console.log('TagService.getFactoryTagsWithAssociations - Associações locais carregadas:', localAssociations);
       
       // 2. Tentar sincronizar com Firebase (sempre tentar)
       try {
@@ -810,12 +811,31 @@ class TagService {
         // Após sincronização, recarregar do localStorage para pegar dados atualizados
         const updatedLocalAssociations = this.loadAssociationsFromLocalStorage(factoryId);
         console.log('TagService.getFactoryTagsWithAssociations - Resultado após sincronização:', updatedLocalAssociations);
-        return updatedLocalAssociations;
+        
+        // Garantir estrutura consistente
+        const safeAssociations = {
+          regiao: Array.isArray(updatedLocalAssociations?.regiao) ? updatedLocalAssociations.regiao : [],
+          material: Array.isArray(updatedLocalAssociations?.material) ? updatedLocalAssociations.material : [],
+          outros: Array.isArray(updatedLocalAssociations?.outros) ? updatedLocalAssociations.outros : [],
+          tipoProduto: Array.isArray(updatedLocalAssociations?.tipoProduto) ? updatedLocalAssociations.tipoProduto : []
+        };
+        
+        console.log('TagService.getFactoryTagsWithAssociations - Estrutura final:', safeAssociations);
+        return safeAssociations;
         
       } catch (firebaseError) {
         console.warn('TagService.getFactoryTagsWithAssociations - Falha na sincronização Firebase (continuando):', firebaseError.message);
         console.log('TagService.getFactoryTagsWithAssociations - Usando apenas localStorage:', localAssociations);
-        return localAssociations;
+        
+        // Garantir estrutura consistente mesmo no fallback
+        const safeAssociations = {
+          regiao: Array.isArray(localAssociations?.regiao) ? localAssociations.regiao : [],
+          material: Array.isArray(localAssociations?.material) ? localAssociations.material : [],
+          outros: Array.isArray(localAssociations?.outros) ? localAssociations.outros : [],
+          tipoProduto: Array.isArray(localAssociations?.tipoProduto) ? localAssociations.tipoProduto : []
+        };
+        
+        return safeAssociations;
       }
       
     } catch (error) {
