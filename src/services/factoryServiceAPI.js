@@ -53,10 +53,20 @@ class FactoryServiceAPI {
 
   async getAllFactories() {
     try {
-      const result = await apiFetch(`${this.apiUrl}/firestore/get?col=factories&limit=100&orderBy=createdAt&orderDirection=desc`, {
-        cache: 'no-store'
+      const isMobile = this.isMobile();
+      const timestamp = Date.now();
+      const cacheBustingParams = isMobile ? `&t=${timestamp}&mobile=1&force=1` : `&t=${timestamp}`;
+      
+      const result = await apiFetch(`${this.apiUrl}/firestore/get?col=factories&limit=100&orderBy=createdAt&orderDirection=desc${cacheBustingParams}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
 
+      console.log('factoryServiceAPI - Fábricas carregadas:', result.data?.length || 0, { isMobile });
       return result.data;
     } catch (error) {
       console.error('Erro ao buscar fábricas:', error);

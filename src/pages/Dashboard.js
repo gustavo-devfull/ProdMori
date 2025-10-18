@@ -213,6 +213,15 @@ const Dashboard = () => {
       // Limpeza agressiva de cache
       aggressiveCacheClear();
       
+      if (isMobile) {
+        console.log('📱 Mobile detectado - Forçando refresh completo da página');
+        // Refresh forçado da página
+        setTimeout(() => {
+          window.location.reload(true);
+        }, 500);
+        return;
+      }
+      
       console.log('Cache completamente limpo - buscando dados frescos do Firebase');
       
       // Usar função utilitária para sincronizar com Firebase
@@ -351,6 +360,17 @@ const Dashboard = () => {
         aggressiveCacheClear();
       }
       
+      if (isMobile) {
+        console.log('📱 Mobile detectado - Forçando refresh completo da página');
+        // Limpar todo cache antes do refresh
+        aggressiveCacheClear();
+        // Refresh forçado da página
+        setTimeout(() => {
+          window.location.reload(true);
+        }, 500);
+        return;
+      }
+      
       // Sincronizar com Firebase para buscar dados frescos
       try {
         await syncWithFirebase();
@@ -363,6 +383,18 @@ const Dashboard = () => {
 
     const handleFactoryCreated = async (event) => {
       console.log('Dashboard - Nova fábrica criada detectada:', event.detail);
+      
+      if (isMobile) {
+        console.log('📱 Mobile detectado - Forçando refresh completo da página');
+        // Limpar todo cache antes do refresh
+        aggressiveCacheClear();
+        // Refresh forçado da página
+        setTimeout(() => {
+          window.location.reload(true);
+        }, 500);
+        return;
+      }
+      
       // Sincronizar com Firebase para buscar dados frescos
       try {
         await syncWithFirebase();
@@ -375,6 +407,18 @@ const Dashboard = () => {
 
     const handleFactoryUpdated = async (event) => {
       console.log('Dashboard - Fábrica atualizada detectada:', event.detail);
+      
+      if (isMobile) {
+        console.log('📱 Mobile detectado - Forçando refresh completo da página');
+        // Limpar todo cache antes do refresh
+        aggressiveCacheClear();
+        // Refresh forçado da página
+        setTimeout(() => {
+          window.location.reload(true);
+        }, 500);
+        return;
+      }
+      
       // Sincronizar com Firebase para buscar dados frescos
       try {
         await syncWithFirebase();
@@ -394,7 +438,7 @@ const Dashboard = () => {
       window.removeEventListener('factoryCreated', handleFactoryCreated);
       window.removeEventListener('factoryUpdated', handleFactoryUpdated);
     };
-  }, [loadFactories, aggressiveCacheClear, syncWithFirebase]);
+  }, [loadFactories, aggressiveCacheClear, syncWithFirebase, isMobile]);
 
   // Carregar tags de cada fábrica quando as fábricas forem carregadas (otimizado)
   useEffect(() => {
@@ -610,12 +654,12 @@ const Dashboard = () => {
         {refreshing ? (
           <>
             <Spinner animation="border" size="sm" className="me-2" />
-            {t('Sincronizando...', '同步中...')}
+            {isMobile ? t('Atualizando página...', '更新页面中...') : t('Sincronizando...', '同步中...')}
           </>
         ) : (
           <>
-            <i className="bi bi-cloud-download me-2"></i>
-            {t('Sincronizar com Firebase', '与Firebase同步')}
+            <i className={`bi ${isMobile ? 'bi-arrow-clockwise' : 'bi-cloud-download'} me-2`}></i>
+            {isMobile ? t('Atualizar Página', '更新页面') : t('Sincronizar com Firebase', '与Firebase同步')}
           </>
         )}
       </Button>
