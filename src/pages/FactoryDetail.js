@@ -466,22 +466,49 @@ const FactoryDetail = () => {
       await factoryServiceAPI.updateFactory(factoryId, finalValues);
       console.log('Factory updated successfully');
       
-      // Salvar as tags da fábrica usando o serviço
-      console.log('Saving factory tags:', factoryTags);
+      // Gerenciar associações de tags da fábrica
+      console.log('Managing factory tags:', factoryTags);
       console.log('Factory tags tipoProduto:', factoryTags.tipoProduto);
       console.log('Factory tags tipoProduto length:', factoryTags.tipoProduto?.length);
       console.log('Factory ID:', factoryId);
       
-      Object.keys(factoryTags).forEach(division => {
+      // Carregar tags atuais da fábrica para comparação
+      const currentFactoryTags = await tagService.getFactoryTagsWithAssociations(factoryId);
+      console.log('Current factory tags for comparison:', currentFactoryTags);
+      
+      // Processar cada divisão de tags
+      Object.keys(factoryTags).forEach(async (division) => {
         console.log(`Processing division: ${division}`);
-        console.log(`Tags in ${division}:`, factoryTags[division]);
-        factoryTags[division].forEach(async (tag) => {
-          console.log(`Saving tag: ${tag.name} (${tag.id}) to factory ${factoryId} in division ${division}`);
-          console.log(`Tag isNewTag: ${tag.isNewTag}`);
-          
-          // Todas as tags (novas e existentes) devem ser associadas à fábrica
-          await tagService.createTagAssociation(tag, factoryId);
-        });
+        console.log(`New tags in ${division}:`, factoryTags[division]);
+        console.log(`Current tags in ${division}:`, currentFactoryTags[division] || []);
+        
+        const newTags = factoryTags[division] || [];
+        const currentTags = currentFactoryTags[division] || [];
+        
+        // Encontrar tags que foram removidas (estavam associadas mas não estão mais)
+        const removedTags = currentTags.filter(currentTag => 
+          !newTags.some(newTag => newTag.id === currentTag.id)
+        );
+        
+        // Encontrar tags que foram adicionadas (não estavam associadas mas estão agora)
+        const addedTags = newTags.filter(newTag => 
+          !currentTags.some(currentTag => currentTag.id === newTag.id)
+        );
+        
+        console.log(`Removed tags in ${division}:`, removedTags);
+        console.log(`Added tags in ${division}:`, addedTags);
+        
+        // Remover associações das tags desmarcadas
+        for (const removedTag of removedTags) {
+          console.log(`Removing association for tag: ${removedTag.name} (${removedTag.id}) from factory ${factoryId}`);
+          await tagService.removeTagAssociation(removedTag, factoryId);
+        }
+        
+        // Adicionar associações das tags marcadas
+        for (const addedTag of addedTags) {
+          console.log(`Adding association for tag: ${addedTag.name} (${addedTag.id}) to factory ${factoryId}`);
+          await tagService.createTagAssociation(addedTag, factoryId);
+        }
       });
       
       // Sincronizar tags globais após salvar

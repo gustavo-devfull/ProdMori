@@ -678,6 +678,117 @@ class TagService {
     }
   }
 
+  // Remover associação de uma tag de uma fábrica
+  async removeTagAssociation(tag, factoryId) {
+    try {
+      console.log('TagService.removeTagAssociation - Removendo associação:', { tag: tag.name, factoryId });
+      
+      // 1. Remover do localStorage (sistema principal)
+      const localResult = this.removeAssociationFromLocalStorage(tag, factoryId);
+      
+      // 2. Tentar remover do Firebase (opcional, para backup)
+      try {
+        await this.removeAssociationFromFirebase(tag, factoryId);
+        console.log('TagService.removeTagAssociation - Associação removida do Firebase');
+      } catch (firebaseError) {
+        console.warn('TagService.removeTagAssociation - Falha na remoção Firebase (continuando):', firebaseError.message);
+      }
+      
+      return localResult;
+    } catch (error) {
+      console.error('TagService.removeTagAssociation - Erro geral:', error);
+      return { success: false, message: 'Erro ao remover associação da tag' };
+    }
+  }
+
+  // Remover associação do localStorage
+  removeAssociationFromLocalStorage(tag, factoryId) {
+    try {
+      const associationKey = `factory_tags_${factoryId}`;
+      let associations = JSON.parse(localStorage.getItem(associationKey) || '{}');
+      
+      // Garantir que a divisão existe
+      if (!associations[tag.division]) {
+        associations[tag.division] = [];
+      }
+      
+      // Remover a tag da divisão
+      const initialLength = associations[tag.division].length;
+      associations[tag.division] = associations[tag.division].filter(t => t.id !== tag.id);
+      const finalLength = associations[tag.division].length;
+      
+      // Se a divisão ficou vazia, removê-la
+      if (associations[tag.division].length === 0) {
+        delete associations[tag.division];
+      }
+      
+      // Salvar no localStorage
+      localStorage.setItem(associationKey, JSON.stringify(associations));
+      
+      console.log('TagService.removeAssociationFromLocalStorage - Associação removida localmente:', {
+        tag: tag.name,
+        removed: initialLength > finalLength,
+        associations
+      });
+      
+      return { success: true, message: 'Associação removida localmente' };
+    } catch (error) {
+      console.error('TagService.removeAssociationFromLocalStorage - Erro:', error);
+      return { success: false, message: 'Erro ao remover localmente' };
+    }
+  }
+
+  // Remover associação do Firebase (backup)
+  async removeAssociationFromFirebase(tag, factoryId) {
+    try {
+      // Buscar backups de associação no Firebase
+      const response = await fetch(`${this.tagServiceFirebase.apiUrl}/firestore/get/tags`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao buscar backups do Firebase');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Encontrar backup de associação para esta tag e fábrica
+        const backupAssociation = result.data.find(backup => 
+          backup.type === 'association_backup' && 
+          backup.tagId === tag.id && 
+          backup.factoryId === factoryId
+        );
+        
+        if (backupAssociation) {
+          console.log('TagService.removeAssociationFromFirebase - Removendo backup:', backupAssociation.id);
+          
+          // Remover o backup do Firebase
+          const deleteResponse = await fetch(`${this.tagServiceFirebase.apiUrl}/firestore/delete/tags/${backupAssociation.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!deleteResponse.ok) {
+            throw new Error('Falha ao remover backup do Firebase');
+          }
+
+          console.log('TagService.removeAssociationFromFirebase - Backup removido do Firebase');
+        }
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('TagService.removeAssociationFromFirebase - Erro:', error);
+      throw error;
+    }
+  }
+
   // Carregar tags associadas a uma fábrica (localStorage principal + Firebase backup)
   async getFactoryTagsWithAssociations(factoryId) {
     try {
