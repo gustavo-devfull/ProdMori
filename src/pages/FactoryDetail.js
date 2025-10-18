@@ -24,6 +24,10 @@ const FactoryDetail = () => {
   const { factoryId } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  
+  // Detectar se é mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
   const [factory, setFactory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +64,30 @@ const FactoryDetail = () => {
   const [uploadingImages, setUploadingImages] = useState({ image1: false, image2: false });
   const [imageUrls, setImageUrls] = useState({ image1: '', image2: '' });
   const [showAdditionalFields, setShowAdditionalFields] = useState(false);
+
+  // Função para limpeza agressiva de cache e refresh forçado no mobile
+  const forceRefreshIfMobile = () => {
+    if (isMobile) {
+      console.log('📱 Mobile detectado - Forçando refresh completo da página');
+      
+      // Limpeza agressiva de cache
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        console.log('📱 Cache completamente limpo no mobile');
+      } catch (e) {
+        console.warn('Erro ao limpar cache:', e);
+      }
+      
+      // Refresh forçado da página
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 500);
+      
+      return true; // Indica que foi feito refresh
+    }
+    return false; // Não é mobile, não fez refresh
+  };
 
   const loadFactoryData = useCallback(async () => {
     try {
@@ -176,6 +204,11 @@ const FactoryDetail = () => {
         await productServiceAPI.createProduct(finalValues);
         setModalVisible(false);
         setEditingProduct(null);
+      }
+      
+      // Verificar se é mobile e forçar refresh
+      if (forceRefreshIfMobile()) {
+        return; // Refresh foi feito, não precisa continuar
       }
       
       setImageUrl('');
@@ -333,6 +366,11 @@ const FactoryDetail = () => {
       console.log('Calling productServiceAPI.deleteProduct...');
       await productServiceAPI.deleteProduct(productId);
       console.log('Product deleted successfully');
+      
+      // Verificar se é mobile e forçar refresh
+      if (forceRefreshIfMobile()) {
+        return; // Refresh foi feito, não precisa continuar
+      }
       
       console.log('Reloading factory data...');
       await loadFactoryData();
@@ -519,6 +557,12 @@ const FactoryDetail = () => {
       console.log('Factory tags saved and synced');
       
       setFactoryEditModalVisible(false);
+      
+      // Verificar se é mobile e forçar refresh
+      if (forceRefreshIfMobile()) {
+        return; // Refresh foi feito, não precisa continuar
+      }
+      
       await loadFactoryData();
       console.log('Factory data reloaded');
       
@@ -548,6 +592,11 @@ const FactoryDetail = () => {
         window.dispatchEvent(new CustomEvent('factoryDeleted', { 
           detail: { factoryId: factoryId } 
         }));
+        
+        // Verificar se é mobile e forçar refresh
+        if (forceRefreshIfMobile()) {
+          return; // Refresh foi feito, não precisa continuar
+        }
         
         // Redirecionar para o Dashboard
         navigate('/dashboard');
