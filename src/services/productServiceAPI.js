@@ -18,12 +18,18 @@ class ProductServiceAPI {
 
   async createProduct(productData) {
     try {
+      console.log('ProductServiceAPI.createProduct - Dados recebidos:', productData);
+      
       // Remover campos undefined/vazios
       const cleanData = Object.fromEntries(
         Object.entries(productData).filter(([key, value]) => 
           value !== undefined && value !== null && value !== ''
         )
       );
+      
+      console.log('ProductServiceAPI.createProduct - Dados limpos:', cleanData);
+      console.log('ProductServiceAPI.createProduct - audioUrl original:', productData.audioUrl);
+      console.log('ProductServiceAPI.createProduct - audioUrl limpo:', cleanData.audioUrl);
 
       const response = await fetch(`${this.apiUrl}/firestore/create/products`, {
         method: 'POST',
@@ -99,15 +105,24 @@ class ProductServiceAPI {
 
   async deleteProduct(id) {
     try {
+      console.log('ProductServiceAPI.deleteProduct - Tentando excluir produto:', id);
+      console.log('ProductServiceAPI.deleteProduct - URL:', `${this.apiUrl}/firestore/delete/products/${id}`);
+      
       const response = await fetch(`${this.apiUrl}/firestore/delete/products/${id}`, {
         method: 'DELETE',
       });
 
+      console.log('ProductServiceAPI.deleteProduct - Response status:', response.status);
+      console.log('ProductServiceAPI.deleteProduct - Response ok:', response.ok);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('ProductServiceAPI.deleteProduct - Erro na resposta:', errorData);
         throw new Error(errorData.error || 'Erro ao deletar produto');
       }
 
+      const result = await response.json();
+      console.log('ProductServiceAPI.deleteProduct - Sucesso:', result);
       return true;
     } catch (error) {
       console.error('Erro ao deletar produto:', error);

@@ -28,10 +28,11 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
-  const [audioUrls, setAudioUrls] = useState([]);
   const [currentAudioUrl, setCurrentAudioUrl] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
+  const [imageUrl, setImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -59,11 +60,16 @@ const Products = () => {
 
   const handleImageUpload = async (file) => {
     try {
-      const imageUrl = await imageService.uploadFile(file);
-      return imageUrl;
+      setUploadingImage(true);
+      const uploadedImageUrl = await imageService.uploadFile(file);
+      setImageUrl(uploadedImageUrl);
+      return uploadedImageUrl;
     } catch (error) {
       console.error('Erro no upload:', error);
+      setError(t('Erro no upload da imagem', '图片上传时出错'));
       throw error;
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -126,8 +132,15 @@ const Products = () => {
   };
 
   const toggleBulkDeleteMode = () => {
-    setBulkDeleteMode(!bulkDeleteMode);
-    setSelectedProducts([]);
+    if (!bulkDeleteMode) {
+      // Entrando no modo de seleção - selecionar todos os produtos filtrados
+      setBulkDeleteMode(true);
+      setSelectedProducts(filteredProducts.map(product => product.id));
+    } else {
+      // Saindo do modo de seleção - limpar seleção
+      setBulkDeleteMode(false);
+      setSelectedProducts([]);
+    }
   };
 
 
@@ -135,8 +148,8 @@ const Products = () => {
     setModalVisible(false);
     setEditingProduct(null);
     setError(null);
-    setAudioUrls([]);
     setCurrentAudioUrl('');
+    setImageUrl('');
   };
 
   const handleSubmit = async (e) => {
@@ -150,9 +163,14 @@ const Products = () => {
       const productData = {
         ...values,
         factoryId: values.factoryId,
-        audioUrls: audioUrls, // Incluir lista de URLs de áudio
         audioUrl: currentAudioUrl || values.audioUrl // Incluir áudio atual
       };
+      
+      console.log('=== HANDLE SUBMIT PRODUCTS ===');
+      console.log('Current audioUrl:', currentAudioUrl);
+      console.log('Values audioUrl:', values.audioUrl);
+      console.log('Final audioUrl:', productData.audioUrl);
+      console.log('Product data:', productData);
 
       if (editingProduct) {
         await productServiceAPI.updateProduct(editingProduct.id, productData);
@@ -170,17 +188,41 @@ const Products = () => {
     }
   };
 
+  const handleEditProduct = (product) => {
+    console.log('Editando produto:', product);
+    setEditingProduct(product);
+    setImageUrl(product.imageUrl || '');
+    setCurrentAudioUrl(product.audioUrls?.[0]?.url || product.audioUrl || '');
+    setModalVisible(true);
+  };
+
   const handleDelete = async (productId) => {
+    console.log('Products.handleDelete - Tentando excluir produto:', productId);
+    
     if (!window.confirm(t('Tem certeza que deseja excluir este produto?', '确定要删除这个产品吗？'))) {
+      console.log('Products.handleDelete - Exclusão cancelada pelo usuário');
       return;
     }
 
     try {
+      setSubmitting(true);
+      console.log('Products.handleDelete - Chamando productServiceAPI.deleteProduct');
       await productServiceAPI.deleteProduct(productId);
+      console.log('Products.handleDelete - Produto excluído com sucesso');
+      
+      console.log('Products.handleDelete - Recarregando dados');
       await loadData();
+      console.log('Products.handleDelete - Dados recarregados');
+      
+      // Fechar modal se estiver aberto
+      if (modalVisible) {
+        handleModalClose();
+      }
     } catch (err) {
+      console.error('Products.handleDelete - Erro ao excluir produto:', err);
       setError(t('Erro ao excluir produto', '删除产品时出错'));
-      console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -360,15 +402,14 @@ const Products = () => {
                   >
                     <Card className="h-100 shadow-sm">
                       <Card.Body className="d-flex flex-column">
-                        {/* Checkbox de seleção */}
+                        {/* Checkbox de seleção - acima da imagem */}
                         {bulkDeleteMode && (
-                          <div className="position-absolute top-0 start-0 p-2">
+                          <div className="mb-2 d-flex justify-content-center">
                             <Form.Check
                               type="checkbox"
                               checked={selectedProducts.includes(product.id)}
                               onChange={() => handleProductSelect(product.id)}
-                              className="bg-white rounded shadow-sm"
-                              style={{ zIndex: 10 }}
+                              className="bg-white rounded shadow-sm p-2"
                             />
                           </div>
                         )}
@@ -419,6 +460,28 @@ const Products = () => {
                             collapsed={true}
                             disabled={false}
                           />
+                        </div>
+
+                        {/* Botões EDITAR | EXCLUIR */}
+                        <div className="d-flex gap-2 mt-auto">
+                          <Button 
+                            variant="outline-primary" 
+                            size="sm"
+                            className="flex-fill"
+                            onClick={() => handleEditProduct(product)}
+                          >
+                            <i className="bi bi-pencil me-1"></i>
+                            {t('EDITAR', '编辑')}
+                          </Button>
+                          <Button 
+                            variant="outline-danger" 
+                            size="sm"
+                            className="flex-fill"
+                            onClick={() => handleDelete(product.id)}
+                          >
+                            <i className="bi bi-trash me-1"></i>
+                            {t('EXCLUIR', '删除')}
+                          </Button>
                         </div>
                       </Card.Body>
                     </Card>
@@ -488,18 +551,24 @@ const Products = () => {
                   const file = e.target.files[0];
                   if (file) {
                     try {
-                      const imageUrl = await handleImageUpload(file);
-                      e.target.form.imageUrl.value = imageUrl;
+                      await handleImageUpload(file);
                     } catch (err) {
                       console.error('Erro no upload:', err);
                     }
                   }
                 }}
+                disabled={uploadingImage}
               />
-              {editingProduct?.imageUrl && (
+              {uploadingImage && (
+                <div className="mt-2 text-center">
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  {t('Enviando imagem...', '上传图片中...')}
+                </div>
+              )}
+              {imageUrl && (
                 <div className="mt-2">
                   <CustomImage
-                    src={editingProduct.imageUrl}
+                    src={imageUrl}
                     alt="Preview"
                     className="img-fluid rounded"
                     style={{ maxHeight: '200px', maxWidth: '100%' }}
@@ -511,32 +580,10 @@ const Products = () => {
               <Form.Control
                 type="hidden"
                 name="imageUrl"
-                defaultValue={editingProduct?.imageUrl || ''}
+                value={imageUrl}
               />
             </Form.Group>
 
-            {/* Nome do produto */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Nome do produto', '产品名称')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                defaultValue={editingProduct?.name || ''}
-                placeholder={t('Digite o nome do produto', '输入产品名称')}
-                required
-              />
-            </Form.Group>
-
-            {/* Segmento */}
-            <Form.Group className="mb-3">
-              <Form.Label>{t('Segmento', '行业')}</Form.Label>
-              <Form.Control
-                type="text"
-                name="segment"
-                defaultValue={editingProduct?.segment || ''}
-                placeholder={t('Digite o segmento', '输入行业')}
-              />
-            </Form.Group>
 
             {/* REF */}
             <Form.Group className="mb-3">
@@ -601,6 +648,18 @@ const Products = () => {
               </Col>
             </Row>
 
+            {/* Peso unitário (g) */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('Peso unitário (g)', '单位重量(克)')}</Form.Label>
+              <Form.Control
+                type="number"
+                step="0.1"
+                name="unitWeight"
+                defaultValue={editingProduct?.unitWeight || ''}
+                placeholder={t('Peso em gramas', '重量(克)')}
+              />
+            </Form.Group>
+
             {/* L | W | H */}
             <Row className="mb-3">
               <Col xs={4}>
@@ -649,6 +708,18 @@ const Products = () => {
               />
             </Form.Group>
 
+            {/* REMARK */}
+            <Form.Group className="mb-3">
+              <Form.Label>{t('REMARK', '备注')}</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                name="remark"
+                defaultValue={editingProduct?.remark || ''}
+                placeholder={t('Digite observações adicionais', '输入额外备注')}
+              />
+            </Form.Group>
+
             {/* Gravação de Áudio */}
             <Form.Group className="mb-3">
               <AudioRecorder 
@@ -656,6 +727,7 @@ const Products = () => {
                   console.log('Áudio gravado:', blob, url);
                 }}
                 onAudioChange={(url) => {
+                  console.log('AudioRecorder onAudioChange chamado com URL:', url);
                   setCurrentAudioUrl(url);
                 }}
                 productId={editingProduct?.id || 'new'}
@@ -671,7 +743,12 @@ const Products = () => {
             {editingProduct && (
               <Button 
                 variant="danger" 
-                onClick={() => handleDelete(editingProduct.id)}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDelete(editingProduct.id);
+                }}
                 disabled={submitting}
                 style={{ marginRight: 'auto' }}
               >
