@@ -102,11 +102,59 @@ const Dashboard = () => {
         }
       }
       
-      console.log('Cache completamente limpo - forçando refresh');
+      console.log('Cache completamente limpo - buscando dados frescos do Firebase');
       
-      // Recarregar dados
-      await loadFactories(1, true);
-      await loadAvailableTags();
+      // Buscar dados frescos diretamente do Firebase (bypassando cache)
+      try {
+        // Carregar fábricas diretamente do Firebase
+        const factoriesResponse = await fetch('/api/firestore/get/factories');
+        if (factoriesResponse.ok) {
+          const factoriesData = await factoriesResponse.json();
+          console.log('Dados frescos de fábricas carregados do Firebase:', factoriesData);
+          
+          if (factoriesData && Array.isArray(factoriesData)) {
+            setAllFactories(factoriesData);
+            setFilteredFactories(factoriesData);
+            console.log('Lista de fábricas atualizada com dados do Firebase');
+          }
+        }
+        
+        // Carregar tags diretamente do Firebase
+        const tagsResponse = await fetch('/api/firestore/get/tags');
+        if (tagsResponse.ok) {
+          const tagsData = await tagsResponse.json();
+          console.log('Dados frescos de tags carregados do Firebase:', tagsData);
+          
+          if (tagsData && Array.isArray(tagsData)) {
+            // Organizar tags por divisão
+            const organizedTags = {
+              regiao: [],
+              material: [],
+              outros: [],
+              tipoProduto: []
+            };
+            
+            tagsData.forEach(tag => {
+              const tagData = tag.tagData || tag;
+              if (tagData && tagData.division && organizedTags[tagData.division]) {
+                organizedTags[tagData.division].push(tagData);
+              }
+            });
+            
+            setAvailableTags(organizedTags);
+            console.log('Tags organizadas e atualizadas:', organizedTags);
+          }
+        }
+        
+        // Recarregar tags de todas as fábricas
+        // As tags das fábricas serão carregadas automaticamente quando necessário
+        
+      } catch (firebaseError) {
+        console.warn('Erro ao buscar dados do Firebase, usando método padrão:', firebaseError);
+        // Fallback para método padrão
+        await loadFactories(1, true);
+        await loadAvailableTags();
+      }
       
     } catch (error) {
       console.error('Erro ao forçar refresh:', error);
@@ -495,12 +543,12 @@ const Dashboard = () => {
         {refreshing ? (
           <>
             <Spinner animation="border" size="sm" className="me-2" />
-            {t('Atualizando...', '更新中...')}
+            {t('Sincronizando...', '同步中...')}
           </>
         ) : (
           <>
-            <i className="bi bi-arrow-clockwise me-2"></i>
-            {t('Atualizar Cache', '更新缓存')}
+            <i className="bi bi-cloud-download me-2"></i>
+            {t('Sincronizar com Firebase', '与Firebase同步')}
           </>
         )}
       </Button>
