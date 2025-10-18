@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Button,
@@ -17,6 +18,7 @@ import imageService from '../services/imageService';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Products = () => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
   
   // Detectar se é mobile
@@ -363,14 +365,14 @@ const Products = () => {
             >
               <i className={`bi ${bulkDeleteMode ? 'bi-x-circle' : 'bi-check-square'}`}></i>
             </Button>
-            <Button 
-              variant="primary" 
-              onClick={() => setModalVisible(true)}
-              className="d-flex align-items-center"
-              title={t('Novo Produto', '新产品')}
-            >
-              <i className="bi bi-plus-circle"></i>
-            </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => navigate('/product/create')}
+            className="d-flex align-items-center"
+            title={t('Novo Produto', '新产品')}
+          >
+            <i className="bi bi-plus-circle"></i>
+          </Button>
           </div>
         </div>
       </div>

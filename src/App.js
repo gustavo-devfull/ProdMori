@@ -10,6 +10,7 @@ import Factories from './pages/Factories';
 import Products from './pages/Products';
 import FactoryDetail from './pages/FactoryDetail';
 import FactoryCreate from './pages/FactoryCreate';
+import ProductCreate from './pages/ProductCreate';
 import Tags from './pages/Tags';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -33,6 +34,8 @@ function App() {
                       <Route path="/products" element={<Products />} />
                       <Route path="/factory/:factoryId" element={<FactoryDetail />} />
                       <Route path="/factory/create" element={<FactoryCreate />} />
+                      <Route path="/product/create" element={<ProductCreate />} />
+                      <Route path="/product/create/:factoryId" element={<ProductCreate />} />
                       <Route path="/tags" element={<Tags />} />
                     </Routes>
                   </ErrorBoundary>

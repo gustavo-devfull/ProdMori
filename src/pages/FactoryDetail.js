@@ -1065,7 +1065,7 @@ const FactoryDetail = () => {
         variant="success" 
         className="w-100 mb-4"
         size="lg"
-        onClick={() => setModalVisible(true)}
+        onClick={() => navigate(`/product/create/${factoryId}`)}
       >
         <i className="bi bi-plus-circle me-2"></i>
         {t('Cadastrar Produto', '注册产品')}
@@ -1155,9 +1155,9 @@ const FactoryDetail = () => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     console.log('Edit button clicked from card');
-                                    setEditingProduct(product);
-                                    setModalVisible(true);
-                                    setImageUrl(product.imageUrl || '');
+                                    navigate(`/product/create/${factoryId}`, {
+                                      state: { editingProduct: product }
+                                    });
                                   }}
                                   title={t('Editar produto', '编辑产品')}
                                 >
