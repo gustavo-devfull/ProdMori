@@ -609,11 +609,19 @@ const FactoryDetail = () => {
         }));
         
         // Verificar se é mobile e forçar refresh
+        console.log('🔄 Verificando se deve fazer refresh após exclusão da fábrica...');
         if (forceRefreshIfMobile()) {
+          console.log('📱 Refresh foi executado, redirecionando após refresh...');
+          // No mobile, o refresh vai recarregar a página, então vamos redirecionar após o refresh
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
           return; // Refresh foi feito, não precisa continuar
         }
+        console.log('💻 Não é mobile ou refresh não foi necessário, redirecionando...');
         
         // Redirecionar para o Dashboard
+        console.log('🏠 Redirecionando para o Dashboard...');
         navigate('/dashboard');
       } catch (error) {
         console.error('Erro ao excluir fábrica:', error);
