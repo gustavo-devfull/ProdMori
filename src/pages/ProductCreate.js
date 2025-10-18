@@ -23,10 +23,6 @@ const ProductCreate = () => {
   const location = useLocation();
   const { t } = useLanguage();
   
-  // Detectar se é mobile
-  const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                   window.innerWidth <= 768;
-  
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
