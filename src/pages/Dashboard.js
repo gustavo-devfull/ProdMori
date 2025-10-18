@@ -644,25 +644,6 @@ const Dashboard = () => {
         {t('Filtrar Fábrica', '筛选工厂')}
       </Button>
 
-      {/* Botão Refresh Cache */}
-      <Button 
-        variant="outline-warning" 
-        className="w-100 mb-3"
-        onClick={forceRefreshAll}
-        disabled={refreshing}
-      >
-        {refreshing ? (
-          <>
-            <Spinner animation="border" size="sm" className="me-2" />
-            {isMobile ? t('Atualizando página...', '更新页面中...') : t('Sincronizando...', '同步中...')}
-          </>
-        ) : (
-          <>
-            <i className={`bi ${isMobile ? 'bi-arrow-clockwise' : 'bi-cloud-download'} me-2`}></i>
-            {isMobile ? t('Atualizar Página', '更新页面') : t('Sincronizar com Firebase', '与Firebase同步')}
-          </>
-        )}
-      </Button>
 
       {/* Card de filtros */}
       {showFilterCard && (

@@ -16,6 +16,11 @@ class ProductServiceAPI {
       : 'http://localhost:3001/api';  // Servidor local
   }
 
+  // Detectar se é mobile
+  isMobile() {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
   async createProduct(productData) {
     try {
       console.log('ProductServiceAPI.createProduct - Dados recebidos:', productData);
@@ -54,9 +59,20 @@ class ProductServiceAPI {
 
   async getAllProducts() {
     try {
-      const result = await apiFetch(`${this.apiUrl}/firestore/products-with-factory?limit=100`, {
-        cache: 'no-store' // Sempre buscar dados frescos
+      const isMobile = this.isMobile();
+      const timestamp = Date.now();
+      const cacheBustingParams = isMobile ? `&t=${timestamp}&mobile=1&force=1` : `&t=${timestamp}`;
+      
+      const result = await apiFetch(`${this.apiUrl}/firestore/products-with-factory?limit=100${cacheBustingParams}`, {
+        cache: 'no-store', // Sempre buscar dados frescos
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
+
+      console.log('ProductServiceAPI - Produtos carregados:', result.data?.length || 0, { isMobile });
 
       const products = result.data.map(product => {
         // Converter preço para número se existir

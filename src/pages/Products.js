@@ -18,6 +18,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 const Products = () => {
   const { t } = useLanguage();
+  
+  // Detectar se é mobile
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
   const [products, setProducts] = useState([]);
   const [factories, setFactories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,6 +37,30 @@ const Products = () => {
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Função para limpeza agressiva de cache e refresh forçado no mobile
+  const forceRefreshIfMobile = () => {
+    if (isMobile) {
+      console.log('📱 Mobile detectado - Forçando refresh completo da página');
+      
+      // Limpeza agressiva de cache
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        console.log('📱 Cache completamente limpo no mobile');
+      } catch (e) {
+        console.warn('Erro ao limpar cache:', e);
+      }
+      
+      // Refresh forçado da página
+      setTimeout(() => {
+        window.location.reload(true);
+      }, 500);
+      
+      return true; // Indica que foi feito refresh
+    }
+    return false; // Não é mobile, não fez refresh
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -119,6 +147,11 @@ const Products = () => {
         )
       );
       
+      // Verificar se é mobile e forçar refresh
+      if (forceRefreshIfMobile()) {
+        return; // Refresh foi feito, não precisa continuar
+      }
+      
       await loadData();
       setSelectedProducts([]);
       setBulkDeleteMode(false);
@@ -178,6 +211,11 @@ const Products = () => {
         await productServiceAPI.createProduct(productData);
       }
       
+      // Verificar se é mobile e forçar refresh
+      if (forceRefreshIfMobile()) {
+        return; // Refresh foi feito, não precisa continuar
+      }
+      
       await loadData();
       handleModalClose();
     } catch (err) {
@@ -209,6 +247,11 @@ const Products = () => {
       console.log('Products.handleDelete - Chamando productServiceAPI.deleteProduct');
       await productServiceAPI.deleteProduct(productId);
       console.log('Products.handleDelete - Produto excluído com sucesso');
+      
+      // Verificar se é mobile e forçar refresh
+      if (forceRefreshIfMobile()) {
+        return; // Refresh foi feito, não precisa continuar
+      }
       
       console.log('Products.handleDelete - Recarregando dados');
       await loadData();
