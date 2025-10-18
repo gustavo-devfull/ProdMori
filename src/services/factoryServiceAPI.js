@@ -34,8 +34,8 @@ class FactoryServiceAPI {
       const result = await response.json();
       const newFactory = { id: result.id, ...factoryData };
       
-      // Limpar cache agressivamente após criação
-      await this.clearAllFactoryCache();
+      // Limpar cache e preparar para sincronização
+      await this.syncWithFirebaseAndClearCache();
       
       // Disparar evento customizado para notificar componentes
       window.dispatchEvent(new CustomEvent('factoryCreated', { 
@@ -81,8 +81,8 @@ class FactoryServiceAPI {
 
       const result = { id, ...factoryData };
       
-      // Limpar cache agressivamente após atualização
-      await this.clearAllFactoryCache();
+      // Limpar cache e preparar para sincronização
+      await this.syncWithFirebaseAndClearCache();
       
       // Disparar evento customizado para notificar componentes
       window.dispatchEvent(new CustomEvent('factoryUpdated', { 
@@ -98,9 +98,11 @@ class FactoryServiceAPI {
     }
   }
 
-  // Função para limpar cache agressivamente no Vercel
-  async clearAllFactoryCache() {
+  // Função para sincronizar com Firebase e limpar cache
+  async syncWithFirebaseAndClearCache() {
     try {
+      console.log('🔄 factoryServiceAPI - Sincronizando com Firebase...');
+      
       // Limpar cache do serviço otimizado
       const optimizedService = await import('./optimizedFirebaseService');
       await optimizedService.default.invalidateCache('factories');
@@ -150,7 +152,7 @@ class FactoryServiceAPI {
         }
       }
       
-      console.log('Cache agressivamente limpo para fábricas');
+      console.log('✅ factoryServiceAPI - Cache limpo e pronto para sincronização');
     } catch (error) {
       console.warn('Erro ao limpar cache:', error);
     }
@@ -167,8 +169,8 @@ class FactoryServiceAPI {
         throw new Error(errorData.error || 'Erro ao deletar fábrica');
       }
 
-      // Limpar cache agressivamente após exclusão
-      await this.clearAllFactoryCache();
+      // Limpar cache e preparar para sincronização
+      await this.syncWithFirebaseAndClearCache();
       
       // Disparar evento customizado para notificar componentes
       window.dispatchEvent(new CustomEvent('factoryDeleted', { 

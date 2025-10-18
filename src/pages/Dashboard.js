@@ -52,6 +52,59 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Função utilitária para sincronizar com Firebase
+  const syncWithFirebase = async () => {
+    try {
+      console.log('🔄 Sincronizando com Firebase...');
+      
+      // Buscar fábricas diretamente do Firebase
+      const factoriesResponse = await fetch('/api/firestore/get/factories');
+      if (factoriesResponse.ok) {
+        const factoriesData = await factoriesResponse.json();
+        console.log('Dados frescos de fábricas carregados do Firebase:', factoriesData);
+        
+        if (factoriesData && Array.isArray(factoriesData)) {
+          setAllFactories(factoriesData);
+          setFilteredFactories(factoriesData);
+          console.log('Lista de fábricas atualizada com dados do Firebase');
+        }
+      }
+      
+      // Buscar tags diretamente do Firebase
+      const tagsResponse = await fetch('/api/firestore/get/tags');
+      if (tagsResponse.ok) {
+        const tagsData = await tagsResponse.json();
+        console.log('Dados frescos de tags carregados do Firebase:', tagsData);
+        
+        if (tagsData && Array.isArray(tagsData)) {
+          // Organizar tags por divisão
+          const organizedTags = {
+            regiao: [],
+            material: [],
+            outros: [],
+            tipoProduto: []
+          };
+          
+          tagsData.forEach(tag => {
+            const tagData = tag.tagData || tag;
+            if (tagData && tagData.division && organizedTags[tagData.division]) {
+              organizedTags[tagData.division].push(tagData);
+            }
+          });
+          
+          setAvailableTags(organizedTags);
+          console.log('Tags organizadas e atualizadas:', organizedTags);
+        }
+      }
+      
+      console.log('✅ Sincronização com Firebase concluída');
+      
+    } catch (error) {
+      console.error('❌ Erro ao sincronizar com Firebase:', error);
+      throw error;
+    }
+  };
+
   // Função para forçar refresh completo do cache
   const forceRefreshAll = async () => {
     try {
@@ -104,51 +157,9 @@ const Dashboard = () => {
       
       console.log('Cache completamente limpo - buscando dados frescos do Firebase');
       
-      // Buscar dados frescos diretamente do Firebase (bypassando cache)
+      // Usar função utilitária para sincronizar com Firebase
       try {
-        // Carregar fábricas diretamente do Firebase
-        const factoriesResponse = await fetch('/api/firestore/get/factories');
-        if (factoriesResponse.ok) {
-          const factoriesData = await factoriesResponse.json();
-          console.log('Dados frescos de fábricas carregados do Firebase:', factoriesData);
-          
-          if (factoriesData && Array.isArray(factoriesData)) {
-            setAllFactories(factoriesData);
-            setFilteredFactories(factoriesData);
-            console.log('Lista de fábricas atualizada com dados do Firebase');
-          }
-        }
-        
-        // Carregar tags diretamente do Firebase
-        const tagsResponse = await fetch('/api/firestore/get/tags');
-        if (tagsResponse.ok) {
-          const tagsData = await tagsResponse.json();
-          console.log('Dados frescos de tags carregados do Firebase:', tagsData);
-          
-          if (tagsData && Array.isArray(tagsData)) {
-            // Organizar tags por divisão
-            const organizedTags = {
-              regiao: [],
-              material: [],
-              outros: [],
-              tipoProduto: []
-            };
-            
-            tagsData.forEach(tag => {
-              const tagData = tag.tagData || tag;
-              if (tagData && tagData.division && organizedTags[tagData.division]) {
-                organizedTags[tagData.division].push(tagData);
-              }
-            });
-            
-            setAvailableTags(organizedTags);
-            console.log('Tags organizadas e atualizadas:', organizedTags);
-          }
-        }
-        
-        // Recarregar tags de todas as fábricas
-        // As tags das fábricas serão carregadas automaticamente quando necessário
-        
+        await syncWithFirebase();
       } catch (firebaseError) {
         console.warn('Erro ao buscar dados do Firebase, usando método padrão:', firebaseError);
         // Fallback para método padrão
@@ -260,7 +271,7 @@ const Dashboard = () => {
 
   // Escutar eventos de exclusão de fábricas
   useEffect(() => {
-    const handleFactoryDeleted = (event) => {
+    const handleFactoryDeleted = async (event) => {
       console.log('Dashboard - Fábrica excluída detectada:', event.detail);
       const deletedFactoryId = event.detail?.factoryId;
       
@@ -302,20 +313,38 @@ const Dashboard = () => {
         }
       }
       
-      // Recarregar fábricas do servidor para garantir sincronização
-      loadFactories(1, true);
+      // Sincronizar com Firebase para buscar dados frescos
+      try {
+        await syncWithFirebase();
+        console.log('Dashboard - Sincronização após exclusão concluída');
+      } catch (error) {
+        console.warn('Erro na sincronização após exclusão, usando método padrão:', error);
+        loadFactories(1, true);
+      }
     };
 
-    const handleFactoryCreated = (event) => {
+    const handleFactoryCreated = async (event) => {
       console.log('Dashboard - Nova fábrica criada detectada:', event.detail);
-      // Recarregar fábricas imediatamente
-      loadFactories(1, true);
+      // Sincronizar com Firebase para buscar dados frescos
+      try {
+        await syncWithFirebase();
+        console.log('Dashboard - Sincronização após criação concluída');
+      } catch (error) {
+        console.warn('Erro na sincronização após criação, usando método padrão:', error);
+        loadFactories(1, true);
+      }
     };
 
-    const handleFactoryUpdated = (event) => {
+    const handleFactoryUpdated = async (event) => {
       console.log('Dashboard - Fábrica atualizada detectada:', event.detail);
-      // Recarregar fábricas imediatamente
-      loadFactories(1, true);
+      // Sincronizar com Firebase para buscar dados frescos
+      try {
+        await syncWithFirebase();
+        console.log('Dashboard - Sincronização após atualização concluída');
+      } catch (error) {
+        console.warn('Erro na sincronização após atualização, usando método padrão:', error);
+        loadFactories(1, true);
+      }
     };
 
     window.addEventListener('factoryDeleted', handleFactoryDeleted);
