@@ -40,44 +40,6 @@ const ProductCreate = () => {
   // Dados do produto sendo editado (se vier da URL)
   const editingProduct = location.state?.editingProduct || null;
 
-  // Função para limpeza agressiva de cache e refresh forçado no mobile
-  const forceRefreshIfMobile = () => {
-    if (isMobile) {
-      console.log('📱 Mobile detectado - Forçando refresh completo da página');
-      
-      // Limpeza agressiva de cache preservando autenticação
-      try {
-        // Preservar dados de autenticação
-        const localUser = localStorage.getItem('localUser');
-        const authData = localStorage.getItem('authData');
-        
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Restaurar dados de autenticação se existirem
-        if (localUser) {
-          localStorage.setItem('localUser', localUser);
-          console.log('🔐 Preservando usuário logado durante refresh mobile');
-        }
-        if (authData) {
-          localStorage.setItem('authData', authData);
-        }
-        
-        console.log('📱 Cache completamente limpo no mobile (preservando autenticação)');
-      } catch (e) {
-        console.warn('Erro ao limpar cache:', e);
-      }
-      
-      // Refresh forçado da página
-      setTimeout(() => {
-        window.location.reload(true);
-      }, 500);
-      
-      return true; // Indica que foi feito refresh
-    }
-    return false; // Não é mobile, não fez refresh
-  };
-
   const loadData = useCallback(async () => {
     try {
       setLoading(true);

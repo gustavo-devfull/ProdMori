@@ -15,7 +15,6 @@ import factoryServiceAPI from '../services/factoryServiceAPI';
 import productServiceAPI from '../services/productServiceAPI';
 import imageService from '../services/imageService';
 import tagService from '../services/tagService';
-import firebasePersistence from '../utils/firebasePersistence';
 import CustomImage from '../components/CustomImage';
 import AudioRecorder from '../components/AudioRecorder';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -208,7 +207,7 @@ const FactoryDetail = () => {
     } finally {
       setLoading(false);
     }
-  }, [factoryId, t]);
+  }, [factoryId, t, navigate]);
 
   useEffect(() => {
     loadFactoryData();
