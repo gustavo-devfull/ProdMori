@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, Button, Dropdown } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
+  const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
@@ -30,22 +32,33 @@ const AppHeader = () => {
     navigate(path);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
   return (
     <Navbar bg="dark" variant="dark" className="px-3">
       <Navbar.Brand className="d-flex align-items-center">
-        <img 
-          src="/RAVI-LOGO-COLOR.svg" 
-          alt="RAVI Logo" 
-          style={{ 
-            height: isMobile ? '32px' : '40px'
-          }}
-        />
+        {/* Logo Ravi - oculto em mobile */}
+        {!isMobile && (
+          <img 
+            src="/RAVI-LOGO-COLOR.svg" 
+            alt="RAVI Logo" 
+            style={{ 
+              height: '40px'
+            }}
+          />
+        )}
         
         {/* Ícone de Tradução */}
         <Dropdown 
           show={showLanguageDropdown} 
           onToggle={setShowLanguageDropdown}
-          className="ms-3"
+          className={!isMobile ? "ms-3" : ""}
         >
           <Dropdown.Toggle 
             variant="outline-light" 
@@ -92,7 +105,7 @@ const AppHeader = () => {
         </Dropdown>
       </Navbar.Brand>
       
-      <Nav className="ms-auto d-flex align-items-center gap-3">
+      <Nav className="ms-auto d-flex align-items-center" style={{ gap: isMobile ? '8px' : '12px' }}>
         <Button
           variant="primary"
           onClick={() => handleNavigation('/')}
@@ -136,6 +149,24 @@ const AppHeader = () => {
           title={t('Tags', '标签')}
         >
           <i className="bi bi-tags"></i>
+        </Button>
+
+        {/* Botão de Logout */}
+        <Button
+          variant="outline-danger"
+          onClick={handleLogout}
+          size={isMobile ? 'sm' : 'md'}
+          className="px-3 d-flex align-items-center"
+          style={{
+            backgroundColor: 'transparent',
+            borderColor: '#dc3545',
+            color: '#dc3545',
+            minWidth: isMobile ? '40px' : 'auto'
+          }}
+          title={t('Sair', '退出')}
+        >
+          <i className="bi bi-box-arrow-right"></i>
+          {!isMobile && <span className="ms-1">{t('Sair', '退出')}</span>}
         </Button>
       </Nav>
     </Navbar>
