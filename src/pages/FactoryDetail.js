@@ -544,6 +544,11 @@ const FactoryDetail = () => {
         await factoryServiceAPI.deleteFactory(factoryId);
         console.log('Fábrica excluída com sucesso');
         
+        // Disparar evento customizado para notificar o Dashboard imediatamente
+        window.dispatchEvent(new CustomEvent('factoryDeleted', { 
+          detail: { factoryId: factoryId } 
+        }));
+        
         // Redirecionar para o Dashboard
         navigate('/dashboard');
       } catch (error) {

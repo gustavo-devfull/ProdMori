@@ -150,7 +150,24 @@ const Dashboard = () => {
   useEffect(() => {
     const handleFactoryDeleted = (event) => {
       console.log('Dashboard - Fábrica excluída detectada:', event.detail);
-      // Recarregar fábricas imediatamente
+      const deletedFactoryId = event.detail?.factoryId;
+      
+      if (deletedFactoryId) {
+        // Remover imediatamente da lista local para feedback instantâneo
+        setAllFactories(prev => prev.filter(factory => factory.id !== deletedFactoryId));
+        setFilteredFactories(prev => prev.filter(factory => factory.id !== deletedFactoryId));
+        
+        // Limpar tags da fábrica excluída do mapa
+        setFactoryTagsMap(prev => {
+          const newMap = { ...prev };
+          delete newMap[deletedFactoryId];
+          return newMap;
+        });
+        
+        console.log('Dashboard - Fábrica removida da lista local imediatamente');
+      }
+      
+      // Recarregar fábricas do servidor para garantir sincronização
       loadFactories(1, true);
     };
 

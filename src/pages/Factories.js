@@ -211,6 +211,12 @@ const Factories = () => {
   const handleDelete = async (id) => {
     try {
       await factoryServiceAPI.deleteFactory(id);
+      
+      // Disparar evento customizado para notificar outros componentes
+      window.dispatchEvent(new CustomEvent('factoryDeleted', { 
+        detail: { factoryId: id } 
+      }));
+      
       await loadFactories();
     } catch (err) {
       setError(t('Erro ao excluir fábrica', '删除工厂时出错'));
