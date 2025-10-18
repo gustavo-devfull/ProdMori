@@ -1,4 +1,4 @@
-import { apiFetch } from '../utils/apiUtils';
+import firebasePersistence from '../utils/firebasePersistence';
 
 class ProductServiceAPI {
   constructor() {
@@ -59,20 +59,16 @@ class ProductServiceAPI {
 
   async getAllProducts() {
     try {
-      const isMobile = this.isMobile();
-      const timestamp = Date.now();
-      const cacheBustingParams = isMobile ? `&t=${timestamp}&mobile=1&force=1` : `&t=${timestamp}`;
+      console.log('🔥 Forçando dados frescos do Firebase para produtos...');
       
-      const result = await apiFetch(`${this.apiUrl}/firestore/products-with-factory?limit=100${cacheBustingParams}`, {
-        cache: 'no-store', // Sempre buscar dados frescos
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+      // Usar estratégia mais agressiva de persistência
+      const url = `${this.apiUrl}/firestore/products-with-factory?limit=100`;
+      
+      const result = await firebasePersistence.forceFirebaseData(url, {
+        method: 'GET'
       });
 
-      console.log('ProductServiceAPI - Produtos carregados:', result.data?.length || 0, { isMobile });
+      console.log('✅ Produtos carregados do Firebase:', result.data?.length || 0);
 
       const products = result.data.map(product => {
         // Converter preço para número se existir
@@ -82,10 +78,10 @@ class ProductServiceAPI {
         return product;
       });
       
-      console.log('ProductServiceAPI - Produtos com fábrica:', products);
+      console.log('✅ Produtos processados:', products);
       return products;
     } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
+      console.error('❌ Erro ao buscar produtos do Firebase:', error);
       throw error;
     }
   }

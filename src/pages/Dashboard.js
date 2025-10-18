@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import factoryServiceAPI from '../services/factoryServiceAPI';
 import tagService from '../services/tagService';
+import firebasePersistence from '../utils/firebasePersistence';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Dashboard = () => {
