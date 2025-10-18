@@ -34,20 +34,15 @@ class FactoryServiceAPI {
       const result = await response.json();
       const newFactory = { id: result.id, ...factoryData };
       
-      // Invalidar cache após criação
-      try {
-        const optimizedService = await import('./optimizedFirebaseService');
-        // Invalidar todo o cache de fábricas
-        await optimizedService.default.invalidateCache('factories');
-        // Disparar evento customizado para notificar componentes
-        window.dispatchEvent(new CustomEvent('factoryCreated', { 
-          detail: { factoryId: result.id } 
-        }));
-        
-        console.log('Cache invalidado e evento disparado após criação da fábrica');
-      } catch (cacheError) {
-        console.warn('Erro ao invalidar cache:', cacheError);
-      }
+      // Limpar cache agressivamente após criação
+      await this.clearAllFactoryCache();
+      
+      // Disparar evento customizado para notificar componentes
+      window.dispatchEvent(new CustomEvent('factoryCreated', { 
+        detail: { factoryId: result.id } 
+      }));
+      
+      console.log('Cache limpo e evento disparado após criação da fábrica');
       
       return newFactory;
     } catch (error) {
@@ -86,39 +81,78 @@ class FactoryServiceAPI {
 
       const result = { id, ...factoryData };
       
-      // Invalidar cache após atualização
-      try {
-        const optimizedService = await import('./optimizedFirebaseService');
-        await optimizedService.default.invalidateCache('factories');
-        
-        // Limpeza agressiva de cache relacionado a fábricas
-        const cacheKeys = [
-          'factoriesCache',
-          'factoriesCacheTime',
-          'cache_factories_page_1_limit_12',
-          'cache_time_factories_page_1_limit_12',
-          'cache_dashboard_initial_data',
-          'cache_time_dashboard_initial_data'
-        ];
-        
-        cacheKeys.forEach(key => {
-          localStorage.removeItem(key);
-        });
-        
-        // Disparar evento customizado para notificar componentes
-        window.dispatchEvent(new CustomEvent('factoryUpdated', { 
-          detail: { factoryId: id } 
-        }));
-        
-        console.log('Cache invalidado e evento disparado após atualização da fábrica');
-      } catch (cacheError) {
-        console.warn('Erro ao invalidar cache:', cacheError);
-      }
+      // Limpar cache agressivamente após atualização
+      await this.clearAllFactoryCache();
+      
+      // Disparar evento customizado para notificar componentes
+      window.dispatchEvent(new CustomEvent('factoryUpdated', { 
+        detail: { factoryId: id } 
+      }));
+      
+      console.log('Cache limpo e evento disparado após atualização da fábrica');
       
       return result;
     } catch (error) {
       console.error('Erro ao atualizar fábrica:', error);
       throw error;
+    }
+  }
+
+  // Função para limpar cache agressivamente no Vercel
+  async clearAllFactoryCache() {
+    try {
+      // Limpar cache do serviço otimizado
+      const optimizedService = await import('./optimizedFirebaseService');
+      await optimizedService.default.invalidateCache('factories');
+      
+      // Limpeza agressiva de todas as chaves relacionadas a fábricas
+      const cacheKeys = [
+        'factoriesCache',
+        'factoriesCacheTime',
+        'cache_factories_page_1_limit_12',
+        'cache_time_factories_page_1_limit_12',
+        'cache_dashboard_initial_data',
+        'cache_time_dashboard_initial_data',
+        'factories_page_1_{}',
+        'cache_factories_page_1_{}',
+        'cache_time_factories_page_1_{}',
+        'PMR_Cache',
+        'global_tags'
+      ];
+      
+      // Limpar localStorage
+      cacheKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      
+      // Limpar todas as chaves que começam com 'factories_' ou 'cache_factories_'
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith('factories_') || 
+          key.startsWith('cache_factories_') ||
+          key.startsWith('cache_time_factories_') ||
+          key.startsWith('tags_')
+        )) {
+          localStorage.removeItem(key);
+        }
+      }
+      
+      // Limpar IndexedDB se disponível
+      if ('indexedDB' in window) {
+        try {
+          const deleteReq = indexedDB.deleteDatabase('PMR_Cache');
+          deleteReq.onsuccess = () => {
+            console.log('IndexedDB cache cleared');
+          };
+        } catch (e) {
+          console.warn('Could not clear IndexedDB:', e);
+        }
+      }
+      
+      console.log('Cache agressivamente limpo para fábricas');
+    } catch (error) {
+      console.warn('Erro ao limpar cache:', error);
     }
   }
 
@@ -133,34 +167,15 @@ class FactoryServiceAPI {
         throw new Error(errorData.error || 'Erro ao deletar fábrica');
       }
 
-      // Invalidar cache após exclusão
-      try {
-        const optimizedService = await import('./optimizedFirebaseService');
-        await optimizedService.default.invalidateCache('factories');
-        
-        // Limpeza agressiva de cache relacionado a fábricas
-        const cacheKeys = [
-          'factoriesCache',
-          'factoriesCacheTime',
-          'cache_factories_page_1_limit_12',
-          'cache_time_factories_page_1_limit_12',
-          'cache_dashboard_initial_data',
-          'cache_time_dashboard_initial_data'
-        ];
-        
-        cacheKeys.forEach(key => {
-          localStorage.removeItem(key);
-        });
-        
-        // Disparar evento customizado para notificar componentes
-        window.dispatchEvent(new CustomEvent('factoryDeleted', { 
-          detail: { factoryId: id } 
-        }));
-        
-        console.log('Cache invalidado e evento disparado após exclusão da fábrica');
-      } catch (cacheError) {
-        console.warn('Erro ao invalidar cache:', cacheError);
-      }
+      // Limpar cache agressivamente após exclusão
+      await this.clearAllFactoryCache();
+      
+      // Disparar evento customizado para notificar componentes
+      window.dispatchEvent(new CustomEvent('factoryDeleted', { 
+        detail: { factoryId: id } 
+      }));
+      
+      console.log('Cache limpo e evento disparado após exclusão da fábrica');
 
       return true;
     } catch (error) {

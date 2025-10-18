@@ -37,6 +37,7 @@ const Dashboard = () => {
   const [filteredFactories, setFilteredFactories] = useState([]);
   const [factorySearchTerm, setFactorySearchTerm] = useState('');
   const [showFilterCard, setShowFilterCard] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [availableTags, setAvailableTags] = useState({
     regiao: [],
     material: [],
@@ -50,6 +51,69 @@ const Dashboard = () => {
   // Estados para paginação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Função para forçar refresh completo do cache
+  const forceRefreshAll = async () => {
+    try {
+      setRefreshing(true);
+      
+      // Limpar todo o cache relacionado a fábricas
+      const cacheKeys = [
+        'factoriesCache',
+        'factoriesCacheTime',
+        'cache_factories_page_1_limit_12',
+        'cache_time_factories_page_1_limit_12',
+        'cache_dashboard_initial_data',
+        'cache_time_dashboard_initial_data',
+        'factories_page_1_{}',
+        'cache_factories_page_1_{}',
+        'cache_time_factories_page_1_{}',
+        'PMR_Cache',
+        'global_tags'
+      ];
+      
+      // Limpar localStorage
+      cacheKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      
+      // Limpar todas as chaves que começam com 'factories_' ou 'cache_factories_'
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith('factories_') || 
+          key.startsWith('cache_factories_') ||
+          key.startsWith('cache_time_factories_') ||
+          key.startsWith('tags_')
+        )) {
+          localStorage.removeItem(key);
+        }
+      }
+      
+      // Limpar IndexedDB se disponível
+      if ('indexedDB' in window) {
+        try {
+          const deleteReq = indexedDB.deleteDatabase('PMR_Cache');
+          deleteReq.onsuccess = () => {
+            console.log('IndexedDB cache cleared');
+          };
+        } catch (e) {
+          console.warn('Could not clear IndexedDB:', e);
+        }
+      }
+      
+      console.log('Cache completamente limpo - forçando refresh');
+      
+      // Recarregar dados
+      await loadFactories(1, true);
+      await loadAvailableTags();
+      
+    } catch (error) {
+      console.error('Erro ao forçar refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const loadFactories = useCallback(async (page = currentPage, forceRefresh = false) => {
     console.log('🔄 Iniciando loadFactories...', {
@@ -165,6 +229,29 @@ const Dashboard = () => {
         });
         
         console.log('Dashboard - Fábrica removida da lista local imediatamente');
+        
+        // Limpar cache local adicional para garantir sincronização
+        try {
+          const cacheKeys = [
+            'factoriesCache',
+            'factoriesCacheTime',
+            'cache_factories_page_1_limit_12',
+            'cache_time_factories_page_1_limit_12',
+            'cache_dashboard_initial_data',
+            'cache_time_dashboard_initial_data',
+            'factories_page_1_{}',
+            'cache_factories_page_1_{}',
+            'cache_time_factories_page_1_{}'
+          ];
+          
+          cacheKeys.forEach(key => {
+            localStorage.removeItem(key);
+          });
+          
+          console.log('Dashboard - Cache local adicional limpo');
+        } catch (error) {
+          console.warn('Erro ao limpar cache local:', error);
+        }
       }
       
       // Recarregar fábricas do servidor para garantir sincronização
@@ -396,6 +483,26 @@ const Dashboard = () => {
       >
         <i className="bi bi-funnel me-2"></i>
         {t('Filtrar Fábrica', '筛选工厂')}
+      </Button>
+
+      {/* Botão Refresh Cache */}
+      <Button 
+        variant="outline-warning" 
+        className="w-100 mb-3"
+        onClick={forceRefreshAll}
+        disabled={refreshing}
+      >
+        {refreshing ? (
+          <>
+            <Spinner animation="border" size="sm" className="me-2" />
+            {t('Atualizando...', '更新中...')}
+          </>
+        ) : (
+          <>
+            <i className="bi bi-arrow-clockwise me-2"></i>
+            {t('Atualizar Cache', '更新缓存')}
+          </>
+        )}
       </Button>
 
       {/* Card de filtros */}
