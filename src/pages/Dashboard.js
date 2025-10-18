@@ -37,7 +37,6 @@ const Dashboard = () => {
   const [filteredFactories, setFilteredFactories] = useState([]);
   const [factorySearchTerm, setFactorySearchTerm] = useState('');
   const [showFilterCard, setShowFilterCard] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [availableTags, setAvailableTags] = useState({
     regiao: [],
     material: [],
@@ -205,41 +204,6 @@ const Dashboard = () => {
     console.log('✅ Limpeza agressiva de cache concluída');
   }, [isMobile]);
 
-  // Função para forçar refresh completo do cache
-  const forceRefreshAll = async () => {
-    try {
-      setRefreshing(true);
-      
-      // Limpeza agressiva de cache
-      aggressiveCacheClear();
-      
-      if (isMobile) {
-        console.log('📱 Mobile detectado - Forçando refresh completo da página');
-        // Refresh forçado da página
-        setTimeout(() => {
-          window.location.reload(true);
-        }, 500);
-        return;
-      }
-      
-      console.log('Cache completamente limpo - buscando dados frescos do Firebase');
-      
-      // Usar função utilitária para sincronizar com Firebase
-      try {
-        await syncWithFirebase();
-      } catch (firebaseError) {
-        console.warn('Erro ao buscar dados do Firebase, usando método padrão:', firebaseError);
-        // Fallback para método padrão
-        await loadFactories(1, true);
-        await loadAvailableTags();
-      }
-      
-    } catch (error) {
-      console.error('Erro ao forçar refresh:', error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const loadFactories = useCallback(async (page = currentPage, forceRefresh = false) => {
     console.log('🔄 Iniciando loadFactories...', {
