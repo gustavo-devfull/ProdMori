@@ -8,7 +8,7 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   

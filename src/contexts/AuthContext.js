@@ -2,8 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged,
-  User 
+  onAuthStateChanged
 } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../config/firebase';
