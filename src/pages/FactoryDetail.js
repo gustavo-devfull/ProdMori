@@ -26,7 +26,8 @@ const FactoryDetail = () => {
   const { t } = useLanguage();
   
   // Detectar se é mobile
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   window.innerWidth <= 768;
   
   const [factory, setFactory] = useState(null);
   const [products, setProducts] = useState([]);
@@ -67,6 +68,9 @@ const FactoryDetail = () => {
 
   // Função para limpeza agressiva de cache e refresh forçado no mobile
   const forceRefreshIfMobile = () => {
+    console.log('🔍 forceRefreshIfMobile chamada - isMobile:', isMobile);
+    console.log('🔍 navigator.userAgent:', navigator.userAgent);
+    
     if (isMobile) {
       console.log('📱 Mobile detectado - Forçando refresh completo da página');
       
@@ -81,11 +85,13 @@ const FactoryDetail = () => {
       
       // Refresh forçado da página
       setTimeout(() => {
+        console.log('📱 Executando window.location.reload(true)');
         window.location.reload(true);
       }, 500);
       
       return true; // Indica que foi feito refresh
     }
+    console.log('💻 Desktop detectado - Não fazendo refresh');
     return false; // Não é mobile, não fez refresh
   };
 
@@ -207,9 +213,12 @@ const FactoryDetail = () => {
       }
       
       // Verificar se é mobile e forçar refresh
+      console.log('🔄 Verificando se deve fazer refresh após operação...');
       if (forceRefreshIfMobile()) {
+        console.log('📱 Refresh foi executado, retornando...');
         return; // Refresh foi feito, não precisa continuar
       }
+      console.log('💻 Não é mobile ou refresh não foi necessário, continuando...');
       
       setImageUrl('');
       await loadFactoryData();
@@ -368,9 +377,12 @@ const FactoryDetail = () => {
       console.log('Product deleted successfully');
       
       // Verificar se é mobile e forçar refresh
+      console.log('🔄 Verificando se deve fazer refresh após operação...');
       if (forceRefreshIfMobile()) {
+        console.log('📱 Refresh foi executado, retornando...');
         return; // Refresh foi feito, não precisa continuar
       }
+      console.log('💻 Não é mobile ou refresh não foi necessário, continuando...');
       
       console.log('Reloading factory data...');
       await loadFactoryData();
@@ -559,9 +571,12 @@ const FactoryDetail = () => {
       setFactoryEditModalVisible(false);
       
       // Verificar se é mobile e forçar refresh
+      console.log('🔄 Verificando se deve fazer refresh após operação...');
       if (forceRefreshIfMobile()) {
+        console.log('📱 Refresh foi executado, retornando...');
         return; // Refresh foi feito, não precisa continuar
       }
+      console.log('💻 Não é mobile ou refresh não foi necessário, continuando...');
       
       await loadFactoryData();
       console.log('Factory data reloaded');

@@ -386,15 +386,16 @@ const Products = () => {
         <Card.Body>
           <Row>
             <Col md={12}>
-              <Form.Group>
-                <Form.Label>{t('Buscar', '搜索')}</Form.Label>
+              <div className="d-flex align-items-center gap-3">
+                <Form.Label className="mb-0">{t('Buscar', '搜索')}</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder={t('REF, REMARK, Nome da fábrica ou U.PRICE...', '参考号、备注、工厂名称或单价...')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-grow-1"
                 />
-              </Form.Group>
+              </div>
             </Col>
           </Row>
         </Card.Body>
