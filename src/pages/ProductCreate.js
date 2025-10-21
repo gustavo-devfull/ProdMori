@@ -277,8 +277,7 @@ const ProductCreate = () => {
                 <Form.Group>
                   <Form.Label>{t('UNIT', '单位')}</Form.Label>
                   <Form.Control
-                    type="number"
-                    step="1"
+                    type="text"
                     name="unit"
                     defaultValue={editingProduct?.unit || 'PC'}
                     placeholder={t('Digite a unidade', '输入单位')}

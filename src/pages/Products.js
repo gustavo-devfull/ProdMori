@@ -646,7 +646,8 @@ const Products = () => {
                 <Form.Group>
                   <Form.Label>{t('U.PRICE', '单价')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.01"
                     name="uPrice"
                     defaultValue={editingProduct?.uPrice || ''}
                     placeholder={t('Digite o preço unitário', '输入单价')}
@@ -672,7 +673,8 @@ const Products = () => {
                 <Form.Group>
                   <Form.Label>{t('UNIT/CTN', '单位/箱')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="1"
                     name="unitCtn"
                     defaultValue={editingProduct?.unitCtn || ''}
                     placeholder={t('Digite unidades por caixa', '输入每箱单位')}
@@ -683,7 +685,8 @@ const Products = () => {
                 <Form.Group>
                   <Form.Label>{t('CBM', 'CBM')}</Form.Label>
                   <Form.Control
-                    type="text"
+                    type="number"
+                    step="0.001"
                     name="cbm"
                     defaultValue={editingProduct?.cbm || ''}
                     placeholder={t('Digite o CBM', '输入CBM')}
