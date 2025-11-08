@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Navbar, Nav } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import './MainHeader.css';
 
 const MainHeader = () => {
@@ -43,10 +43,10 @@ const MainHeader = () => {
 
   return (
     <header className="main-header">
-      <Container fluid>
-        <Nav className="main-header-nav">
+      <Container fluid className="main-header-container">
+        <div className="main-header-nav">
           {navigationLinks.map((link, index) => (
-            <Nav.Link
+            <a
               key={index}
               href={link.url}
               target="_blank"
@@ -54,9 +54,9 @@ const MainHeader = () => {
               className={`main-header-link main-header-link-${link.variant}`}
             >
               {link.label}
-            </Nav.Link>
+            </a>
           ))}
-        </Nav>
+        </div>
       </Container>
     </header>
   );
