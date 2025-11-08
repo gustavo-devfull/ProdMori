@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Container } from 'react-bootstrap';
+import MainHeader from './components/MainHeader';
 import AppHeader from './components/AppHeader';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -24,6 +25,7 @@ function App() {
             <Route path="/create-admin" element={<CreateAdminUser />} />
             <Route path="*" element={
               <ProtectedRoute>
+                <MainHeader />
                 <AppHeader />
                 <Container fluid className="flex-grow-1 py-3">
                   <ErrorBoundary>

@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, Nav, Button, Dropdown } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import './AppHeader.css';
 
 const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, language, toggleLanguage } = useLanguage();
-  const { logout } = useAuth();
+  const { t } = useLanguage();
+  const { logout, user } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  
-  // Detectar se estamos na página de produtos
-  const isProductsPage = location.pathname === '/products';
-  // Detectar se estamos na página de tags
-  const isTagsPage = location.pathname === '/tags';
 
   useEffect(() => {
     const checkMobile = () => {
@@ -40,136 +34,125 @@ const AppHeader = () => {
     }
   };
 
+  // Determinar qual item está ativo
+  const isActive = (path) => {
+    if (path === '/dashboard' || path === '/') {
+      return location.pathname === '/' || location.pathname === '/dashboard';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  // Obter informações do usuário
+  const getUserInitial = () => {
+    if (user?.displayName) {
+      return user.displayName.charAt(0).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getUserName = () => {
+    if (user?.displayName) {
+      return user.displayName;
+    }
+    if (user?.email) {
+      const emailName = user.email.split('@')[0];
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1) + ' Santos';
+    }
+    return 'Guto Santos';
+  };
+
+  const getUserRole = () => {
+    // Verificar se é admin
+    const adminEmails = ['gutopc@gmail.com', 'vinicius@ravi.com.br', 'cotacao@ravi.com.br'];
+    if (user?.email && adminEmails.includes(user.email)) {
+      return 'Administrador';
+    }
+    return 'Usuário';
+  };
+
   return (
-    <Navbar bg="dark" variant="dark" className="px-3">
-      <Navbar.Brand className="d-flex align-items-center">
-        {/* Logo Ravi - oculto em mobile */}
-        {!isMobile && (
+    <header className="app-header">
+      {/* Left: Logo and Title */}
+      {!isMobile && (
+        <div className="app-header-left">
           <img 
             src="/RAVI-LOGO-COLOR.svg" 
             alt="RAVI Logo" 
-            style={{ 
-              height: '40px'
-            }}
+            className="app-header-logo"
           />
-        )}
-        
-        {/* Ícone de Tradução */}
-        <Dropdown 
-          show={showLanguageDropdown} 
-          onToggle={setShowLanguageDropdown}
-          className={!isMobile ? "ms-3" : ""}
-        >
-          <Dropdown.Toggle 
-            variant="outline-light" 
-            size="sm"
-            className="d-flex align-items-center"
-            style={{
-              backgroundColor: 'transparent',
-              borderColor: 'rgba(255,255,255,0.5)',
-              color: 'white',
-              padding: '4px 8px'
-            }}
-            title={t('Choose Language', '选择语言')}
-          >
-            <i className="bi bi-translate me-1"></i>
-            <span className="small">{language === 'pt' ? 'PT' : '中文'}</span>
-          </Dropdown.Toggle>
-          
-          <Dropdown.Menu align="end">
-            <Dropdown.Item 
-              active={language === 'pt'}
-              onClick={() => {
-                if (language !== 'pt') {
-                  toggleLanguage();
-                }
-                setShowLanguageDropdown(false);
-              }}
-            >
-              <i className="bi bi-flag me-2"></i>
-              Português
-            </Dropdown.Item>
-            <Dropdown.Item 
-              active={language === 'zh'}
-              onClick={() => {
-                if (language !== 'zh') {
-                  toggleLanguage();
-                }
-                setShowLanguageDropdown(false);
-              }}
-            >
-              <i className="bi bi-flag me-2"></i>
-              中文
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </Navbar.Brand>
-      
-      <Nav className="ms-auto d-flex align-items-center" style={{ gap: isMobile ? '8px' : '12px' }}>
-        <Button
-          variant="primary"
-          onClick={() => handleNavigation('/')}
-          size={isMobile ? 'sm' : 'md'}
-          className="px-3 fw-semibold"
-          style={{
-            backgroundColor: '#0d6efd',
-            borderColor: '#0d6efd',
-            color: 'white'
-          }}
+          <h1 className="app-header-title">
+            {t('Cotação Online', '在线报价')}
+          </h1>
+        </div>
+      )}
+
+      {/* Center: Navigation Menu */}
+      <nav className="app-header-nav">
+        <button
+          className={`app-header-nav-item ${isActive('/dashboard') || isActive('/') ? 'active' : ''}`}
+          onClick={() => handleNavigation('/dashboard')}
           title={t('Fábricas', '工厂')}
         >
-          {t('FÁBRICAS', '工厂')}
-        </Button>
-        
-        <Button
-          variant={isProductsPage ? "success" : "outline-light"}
+          <i className="bi bi-shop"></i>
+          {!isMobile && <span>{t('Fábricas', '工厂')}</span>}
+        </button>
+
+        {!isMobile && <span className="app-header-nav-divider">|</span>}
+
+        <button
+          className={`app-header-nav-item ${isActive('/products') ? 'active' : ''}`}
           onClick={() => handleNavigation('/products')}
-          size={isMobile ? 'sm' : 'md'}
-          className="px-3 d-flex align-items-center"
-          style={{
-            backgroundColor: isProductsPage ? '#198754' : 'transparent',
-            borderColor: isProductsPage ? '#198754' : 'white',
-            color: 'white'
-          }}
           title={t('Produtos', '产品')}
         >
           <i className="bi bi-box-seam"></i>
-        </Button>
+          {!isMobile && <span>{t('Produtos', '产品')}</span>}
+        </button>
 
-        <Button
-          variant={isTagsPage ? "warning" : "outline-light"}
+        {!isMobile && <span className="app-header-nav-divider">|</span>}
+
+        <button
+          className={`app-header-nav-item ${isActive('/tags') ? 'active' : ''}`}
           onClick={() => handleNavigation('/tags')}
-          size={isMobile ? 'sm' : 'md'}
-          className="px-3 d-flex align-items-center"
-          style={{
-            backgroundColor: isTagsPage ? '#ffc107' : 'transparent',
-            borderColor: isTagsPage ? '#ffc107' : 'white',
-            color: 'white'
-          }}
           title={t('Tags', '标签')}
         >
           <i className="bi bi-tags"></i>
-        </Button>
+          {!isMobile && <span>{t('Tags', '标签')}</span>}
+        </button>
 
-        {/* Botão de Logout */}
-        <Button
-          variant="outline-danger"
+        {!isMobile && <span className="app-header-nav-divider">|</span>}
+
+        <button
+          className="app-header-logout-btn"
           onClick={handleLogout}
-          size={isMobile ? 'sm' : 'md'}
-          className="px-3 d-flex align-items-center"
-          style={{
-            backgroundColor: 'transparent',
-            borderColor: '#dc3545',
-            color: '#dc3545',
-            minWidth: isMobile ? '40px' : 'auto'
-          }}
           title={t('Sair', '退出')}
         >
           <i className="bi bi-box-arrow-right"></i>
-          {!isMobile && <span className="ms-1">{t('Sair', '退出')}</span>}
-        </Button>
-      </Nav>
-    </Navbar>
+          {!isMobile && <span>{t('Sair', '退出')}</span>}
+        </button>
+      </nav>
+
+      {/* Right: User Profile - Only Desktop */}
+      {!isMobile && (
+        <div className="app-header-right">
+          <div className="app-header-user">
+            <div className="app-header-avatar">
+              {getUserInitial()}
+            </div>
+            <div className="app-header-user-info">
+              <p className="app-header-user-name">
+                {getUserName()}
+              </p>
+              <p className="app-header-user-role">
+                {getUserRole()}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 

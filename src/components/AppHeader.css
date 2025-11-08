@@ -1,0 +1,244 @@
+/* Header Styles */
+.app-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-header-logo {
+  height: 3.5rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.app-header-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0ea5e9;
+  margin: 0;
+  font-family: 'Archivo', sans-serif;
+}
+
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.app-header-nav .app-header-logout-btn {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  min-width: auto;
+}
+
+.app-header-nav .app-header-logout-btn:hover {
+  background-color: #f3f4f6;
+  border: none;
+}
+
+.app-header-nav .app-header-logout-btn.active {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.app-header-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-family: 'Archivo', sans-serif;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  min-width: 2.5rem;
+}
+
+.app-header-nav-item i {
+  font-size: 1.125rem;
+}
+
+.app-header-nav-item:hover {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.app-header-nav-item.active {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.app-header-nav-divider {
+  color: #d1d5db;
+  font-size: 0.875rem;
+  padding: 0 0.25rem;
+  user-select: none;
+}
+
+
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-header-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app-header-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: 'Archivo', sans-serif;
+}
+
+.app-header-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.app-header-user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+  font-family: 'Archivo', sans-serif;
+}
+
+.app-header-user-role {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0;
+  font-family: 'Archivo', sans-serif;
+}
+
+.app-header-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Archivo', sans-serif;
+  min-width: 2.5rem;
+}
+
+.app-header-logout-btn i {
+  font-size: 1.125rem;
+}
+
+.app-header-logout-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+.app-header-logout-btn:active {
+  background: #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .app-header-title {
+    font-size: 0.875rem;
+  }
+
+  .app-header {
+    padding: 0.75rem 1rem;
+    flex-wrap: nowrap;
+  }
+
+  .app-header-left {
+    display: none;
+  }
+
+  .app-header-nav {
+    width: 100%;
+    margin-top: 0;
+    justify-content: space-around;
+    gap: 0.25rem;
+  }
+
+  .app-header-nav-item {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    flex: 1;
+    max-width: none;
+  }
+
+  .app-header-nav-item span {
+    display: none;
+  }
+
+  .app-header-nav-item i {
+    font-size: 1.25rem;
+  }
+
+  .app-header-user-info {
+    display: none;
+  }
+
+  .app-header-logout-btn {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    min-width: 2.5rem;
+  }
+
+  .app-header-logout-btn span {
+    display: none;
+  }
+
+  .app-header-logout-btn i {
+    font-size: 1.25rem;
+  }
+
+  .app-header-right {
+    gap: 0.5rem;
+  }
+}
+

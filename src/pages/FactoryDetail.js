@@ -1103,11 +1103,11 @@ const FactoryDetail = () => {
       )}
 
       {/* Card dos Produtos Cadastrados */}
-      <Card className="mb-4">
+      <Card className="mb-4 produtos-cadastrados-card">
         <Card.Header>
           <h5 className="mb-0">{t('Produtos Cadastrados', '已注册产品')}</h5>
         </Card.Header>
-        <Card.Body>
+        <Card.Body className="produtos-cadastrados-card-body">
           {/* Listagem dos produtos */}
             {!products || products.length === 0 ? (
               <div className="text-center py-4">
@@ -1216,21 +1216,6 @@ const FactoryDetail = () => {
             )}
         </Card.Body>
       </Card>
-
-      {/* Botão de Exportação */}
-      {products && products.length > 0 && (
-        <div className="text-center mb-4">
-          <Button 
-            variant="success" 
-            size="lg"
-            onClick={exportFactoryToExcel}
-            className="px-4 py-2"
-          >
-            <i className="bi bi-file-earmark-excel me-2"></i>
-            {t('EXPORTAR Fábrica', '导出工厂')}
-          </Button>
-        </div>
-      )}
 
       {/* Modal para cadastrar produto */}
       <Modal show={modalVisible} onHide={handleModalClose} size="lg">
